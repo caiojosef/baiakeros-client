@@ -1,0 +1,44 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+
+    height: 60
+  
+    OptionCheckBox
+      id: enableLights
+      !text: tr('Enable lights')
+
+    OptionScaleScroll
+      id: ambientLight
+      anchors.top: prev.bottom
+      &minimumScrollValue: 0
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      @onSetup: |
+        local value = modules.client_options.getOption('ambientLight')
+        self:setText(string.format('Ambient light: %s%%', value))
+
+    OptionScaleScroll
+      id: shadowFloorIntensity
+      anchors.top: prev.bottom
+      &minimumScrollValue: 0
+      &maximumScrollValue: 100
+      &scrollSize: 21
+      @onSetup: |
+        local value = modules.client_options.getOption('shadowFloorIntensity')
+        self:setText(string.format('Floor Shadowing Intensity: %s%%', value))
+
+    OptionScaleScroll
+      id: floorFading
+      anchors.top: prev.bottom
+      &minimumScrollValue: 0
+      &maximumScrollValue: 1000
+      &scrollSize: 21
+      @onSetup: |
+        local value = modules.client_options.getOption('floorFading')
+        self:setText(tr('Floor Fading: %s ms', value))

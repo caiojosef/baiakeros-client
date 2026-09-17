@@ -1,0 +1,9 @@
+Module
+  name: game_quentin_test_shop
+  description: Temporary Quentin equipment test shop
+  sandboxed: true
+  autoload: false
+  dependencies: [ game_interface ]
+  scripts: [ shop ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -1,0 +1,2 @@
+EKShieldEffect < UIWidget
+  image-individual-animation: true

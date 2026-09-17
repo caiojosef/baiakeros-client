@@ -1,0 +1,40 @@
+Panel
+  id: pingFpsOverlay
+  anchors.top: parent.top
+  anchors.left: gameLeftActionPanel.right
+  margin-top: 58
+  margin-left: 8
+  width: 180
+  height: 34
+  phantom: true
+  focusable: false
+
+  UIWidget
+    id: pingIcon
+    anchors.top: parent.top
+    anchors.left: parent.left
+    size: 14 14
+    phantom: true
+    focusable: false
+
+  Label
+    id: pingText
+    anchors.verticalCenter: pingIcon.verticalCenter
+    anchors.left: pingIcon.right
+    margin-left: 6
+    height: 14
+    text-horizontal-auto-resize: true
+    font: verdana-11px-rounded
+    phantom: true
+    focusable: false
+
+  Label
+    id: fpsText
+    anchors.top: pingText.bottom
+    anchors.left: pingText.left
+    margin-top: 1
+    height: 14
+    text-horizontal-auto-resize: true
+    font: verdana-11px-rounded
+    phantom: true
+    focusable: false

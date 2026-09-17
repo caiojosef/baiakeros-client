@@ -1,0 +1,10 @@
+Module
+  name: client_diagnostics
+  description: Persistent BaiakEros crash and unclean-session diagnostics
+  author: BaiakEros
+  reloadable: false
+  sandboxed: true
+  dependencies: [ corelib ]
+  scripts: [ client_diagnostics ]
+  @onLoad: init()
+  @onUnload: terminate()

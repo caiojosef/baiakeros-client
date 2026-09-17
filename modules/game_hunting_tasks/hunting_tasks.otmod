@@ -1,0 +1,13 @@
+Module
+  name: game_hunting_tasks
+  description: BaiakEros Hunting Tasks interface
+  author: BaiakEros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+    - game_mainpanel
+    - game_baiakeros_helper
+  scripts: [ hunting_tasks ]
+  @onLoad: init()
+  @onUnload: terminate()

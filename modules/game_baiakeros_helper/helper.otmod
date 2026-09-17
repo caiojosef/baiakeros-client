@@ -1,0 +1,14 @@
+Module
+  name: game_baiakeros_helper
+  description: BaiakEros automatic spell and potion healing helper
+  author: BaiakEros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+    - game_mainpanel
+    - game_actionbar
+    - client_options
+  scripts: [ helper ]
+  @onLoad: init()
+  @onUnload: terminate()

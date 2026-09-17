@@ -1,0 +1,11 @@
+Module
+  name: game_codex
+  description: BaiakEros Codex collections
+  author: BaiakEros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+  scripts: [ codex ]
+  @onLoad: init()
+  @onUnload: terminate()

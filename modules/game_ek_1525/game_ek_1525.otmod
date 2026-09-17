@@ -1,0 +1,12 @@
+Module
+  name: game_ek_1525
+  description: Elite Knight 15.25 visual synchronization
+  author: BaiakEros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+    - game_actionbar
+  scripts: [ game_ek_1525 ]
+  @onLoad: init()
+  @onUnload: terminate()

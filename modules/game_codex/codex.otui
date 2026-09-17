@@ -1,0 +1,275 @@
+CodexRequirement < UIWidget
+  size: 122 112
+  image-source: /images/ui/window_headless
+  image-border: 4
+
+  UIItem
+    id: item
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 5
+    size: 42 42
+    virtual: true
+    phantom: false
+
+  Label
+    id: amount
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: item.bottom
+    margin-top: 3
+    height: 14
+    text-align: center
+    color: #e0e0e0
+
+  Label
+    id: available
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: amount.bottom
+    height: 14
+    text-align: center
+    color: #a8a8a8
+
+  QtButton
+    id: deposit
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-left: 6
+    margin-right: 6
+    margin-bottom: 4
+    height: 20
+    text: Deliver
+
+CodexCollection < UIWidget
+  height: 184
+  image-source: /images/ui/window_headless
+  image-border: 5
+  margin-bottom: 7
+
+  Label
+    id: title
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.right: status.left
+    margin-left: 10
+    margin-right: 8
+    margin-top: 8
+    font: verdana-11px-antialised
+    color: #f0d48a
+
+  Label
+    id: status
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-right: 10
+    margin-top: 8
+    color: #bdbdbd
+
+  Label
+    id: monsters
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: title.bottom
+    margin-left: 10
+    margin-right: 10
+    margin-top: 4
+    height: 18
+    color: #a8a8a8
+
+  UIWidget
+    id: requirements
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: monsters.bottom
+    anchors.bottom: parent.bottom
+    margin-left: 8
+    margin-right: 8
+    margin-top: 5
+    margin-bottom: 7
+
+CodexWindow < MainWindow
+  id: codexWindow
+  size: 860 620
+  text: Codex
+  @onEscape: modules.game_codex.hide()
+
+  UIWidget
+    id: summary
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: closeButton.top
+    margin-left: 12
+    margin-top: 38
+    margin-bottom: 12
+    width: 190
+    image-source: /images/ui/window_headless
+    image-border: 5
+
+    Label
+      id: heading
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 14
+      text: Beginner Codex
+      font: verdana-11px-antialised
+      color: #f0d48a
+
+    QtButton
+      id: categoryBeginner
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: heading.bottom
+      margin-left: 9
+      margin-right: 9
+      margin-top: 10
+      height: 23
+      text: Beginner
+
+    QtButton
+      id: categoryIntermediate
+      anchors.left: categoryBeginner.left
+      anchors.right: categoryBeginner.right
+      anchors.top: categoryBeginner.bottom
+      margin-top: 3
+      height: 23
+      text: Intermediate
+
+    QtButton
+      id: categoryAdvanced
+      anchors.left: categoryBeginner.left
+      anchors.right: categoryBeginner.right
+      anchors.top: categoryIntermediate.bottom
+      margin-top: 3
+      height: 23
+      text: Advanced
+
+    QtButton
+      id: categoryElite
+      anchors.left: categoryBeginner.left
+      anchors.right: categoryBeginner.right
+      anchors.top: categoryAdvanced.bottom
+      margin-top: 3
+      height: 23
+      text: Elite
+
+    QtButton
+      id: categoryBoss
+      anchors.left: categoryBeginner.left
+      anchors.right: categoryBeginner.right
+      anchors.top: categoryElite.bottom
+      margin-top: 3
+      height: 23
+      text: Bosses
+
+    HorizontalSeparator
+      id: categorySeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: categoryBoss.bottom
+      margin-left: 9
+      margin-right: 9
+      margin-top: 9
+
+    Label
+      id: points
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: categorySeparator.bottom
+      margin-left: 10
+      margin-right: 10
+      margin-top: 10
+      text: Active global bonuses
+      color: #9fd48d
+
+    Label
+      id: completed
+      anchors.left: points.left
+      anchors.right: points.right
+      anchors.top: points.bottom
+      margin-top: 7
+      text: Collections: 0 / 6
+
+    HorizontalSeparator
+      id: separator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: completed.bottom
+      margin-left: 9
+      margin-right: 9
+      margin-top: 13
+
+    Label
+      id: previewTitle
+      anchors.left: points.left
+      anchors.right: points.right
+      anchors.top: separator.bottom
+      margin-top: 12
+      text: Current bonuses
+      color: #f0d48a
+
+    Label
+      id: preview
+      anchors.left: points.left
+      anchors.right: points.right
+      anchors.top: previewTitle.bottom
+      margin-top: 8
+      height: 210
+      text-wrap: true
+      color: #9a9a9a
+
+  Label
+    id: listTitle
+    anchors.left: summary.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 12
+    margin-right: 23
+    margin-top: 42
+    text: Monster Collections
+    text-align: center
+    color: #f0d48a
+
+  ScrollablePanel
+    id: collectionList
+    anchors.left: summary.right
+    anchors.right: parent.right
+    anchors.top: listTitle.bottom
+    anchors.bottom: closeButton.top
+    margin-left: 12
+    margin-right: 23
+    margin-top: 8
+    margin-bottom: 12
+    vertical-scrollbar: collectionScroll
+    layout:
+      type: verticalBox
+
+  VerticalScrollBar
+    id: collectionScroll
+    anchors.top: collectionList.top
+    anchors.bottom: collectionList.bottom
+    anchors.right: parent.right
+    margin-right: 10
+    step: 80
+    pixels-scroll: true
+
+  QtButton
+    id: refreshButton
+    anchors.right: closeButton.left
+    anchors.bottom: parent.bottom
+    margin-right: 8
+    margin-bottom: 10
+    size: 80 22
+    text: Refresh
+    @onClick: modules.game_codex.refreshFromServer()
+
+  QtButton
+    id: closeButton
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-right: 12
+    margin-bottom: 10
+    size: 80 22
+    text: Close
+    @onClick: modules.game_codex.hide()

@@ -1,0 +1,78 @@
+QuentinOffer < Panel
+  height: 32
+  margin-bottom: 3
+
+  Label
+    id: description
+    anchors.left: parent.left
+    anchors.right: buy.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+
+  Button
+    id: buy
+    text: Buy - 1 gp
+    width: 90
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+
+MainWindow
+  id: quentinShop
+  text: Quentin - Equipment Test Shop
+  size: 640 500
+  @onEscape: closeQuentinShop()
+
+  TextEdit
+    id: query
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: search.left
+    margin-right: 8
+    height: 24
+    @onEnter: performQuentinSearch()
+
+  Button
+    id: search
+    text: Search
+    width: 90
+    anchors.top: parent.top
+    anchors.right: parent.right
+    @onClick: performQuentinSearch()
+
+  Label
+    id: status
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: query.bottom
+    margin-top: 8
+    height: 36
+    text-wrap: true
+
+  ScrollablePanel
+    id: results
+    anchors.top: status.bottom
+    anchors.left: parent.left
+    anchors.right: scrollbar.left
+    anchors.bottom: closeButton.top
+    margin-top: 6
+    margin-bottom: 10
+    margin-right: 6
+    vertical-scrollbar: scrollbar
+    layout:
+      type: verticalBox
+
+  VerticalScrollBar
+    id: scrollbar
+    anchors.top: results.top
+    anchors.bottom: results.bottom
+    anchors.right: parent.right
+    step: 35
+    pixels-scroll: true
+
+  Button
+    id: closeButton
+    text: Close
+    width: 90
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: closeQuentinShop()

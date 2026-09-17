@@ -1,0 +1,189 @@
+UIWidget
+  anchors.fill: parent
+  visible: false
+
+  SmallReversedQtPanel
+    id: mousePresetPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 32
+
+    Label
+      text: Mouse Preset:
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 10
+      color: #c0c0c0
+
+    QtComboBox
+      id: mouseControlMode
+      width: 140
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 8
+      mouse-scroll: false
+
+    QtComboBox
+      id: lootControlMode
+      width: 140
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 14
+      mouse-scroll: false
+
+    UIWidget
+      size: 12 12
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 8
+      image-source: /images/icons/show_gui_help_grey
+      tooltip: Select the mouse preset and the button used to loot.
+
+  SmallReversedQtPanel
+    id: keyboardDelayPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    height: 54
+    margin-top: 7
+
+    QtCheckBox
+      id: useDefaultKeyboardDelay
+      text: Use Default Keyboard Delay (250 ms)
+      size: 300 20
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 8
+      margin-top: 5
+      checked: true
+      @onCheckChange: modules.client_options.setDefaultKeyboardDelay(self:isChecked())
+
+    Label
+      id: hotkeyDelay
+      text: Keyboard Delay: 250 ms
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      height: 22
+      text-offset: 18 0
+      color: #8f8f8f
+      &minimumScrollValue: 30
+      &maximumScrollValue: 250
+      &scrollSize: 21
+
+      HorizontalQtScrollBar
+        id: valueBar
+        step: 1
+        width: 174
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        margin-right: 18
+        enabled: false
+        @onValueChange: modules.client_options.setOption('hotkeyDelay', self:getValue())
+
+    UIWidget
+      size: 12 12
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-right: 8
+      margin-top: 5
+      image-source: /images/icons/show_gui_help_grey
+      tooltip: Use the official default keyboard repeat delay.
+
+  SmallReversedQtPanel
+    id: rotateCharacterPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    height: 58
+    margin-top: 7
+
+    Label
+      text: To Rotate Your Character Hold:
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 8
+      margin-top: 5
+      color: #c0c0c0
+
+    QtCheckBox
+      id: rotateWithCtrl
+      text: Ctrl
+      size: 48 20
+      anchors.left: prev.right
+      anchors.verticalCenter: prev.verticalCenter
+      margin-left: 10
+      checked: true
+      @onCheckChange: modules.client_options.setDirectSetting('rotateWithCtrl', self:isChecked())
+
+    QtCheckBox
+      id: rotateWithShift
+      text: Shift
+      size: 55 20
+      anchors.left: prev.right
+      anchors.verticalCenter: prev.verticalCenter
+      margin-left: 10
+      @onCheckChange: modules.client_options.setDirectSetting('rotateWithShift', self:isChecked())
+
+    QtCheckBox
+      id: rotateWithAlt
+      text: Alt
+      size: 40 20
+      anchors.left: prev.right
+      anchors.verticalCenter: prev.verticalCenter
+      margin-left: 10
+      @onCheckChange: modules.client_options.setDirectSetting('rotateWithAlt', self:isChecked())
+
+    UIWidget
+      size: 12 12
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-right: 8
+      margin-top: 5
+      image-source: /images/icons/show_gui_help_grey
+
+    QtCheckBox
+      id: alwaysTurnOnMove
+      text: Always turn towards the direction of movement
+      size: 350 20
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-left: 8
+      margin-bottom: 5
+      @onCheckChange: modules.client_options.setDirectSetting('alwaysTurnOnMove', self:isChecked())
+
+    UIWidget
+      size: 12 12
+      anchors.right: parent.right
+      anchors.verticalCenter: prev.verticalCenter
+      margin-right: 8
+      image-source: /images/icons/show_gui_help_grey
+
+  SmallReversedQtPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    height: 30
+    margin-top: 7
+
+    OptionCheckBoxMarked
+      id: moveStack
+      text: Press CTRL to Drag Complete Stacks
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 8
+      tooltip: Hold CTRL while dragging to move the complete item stack.
+
+  Label
+    id: walkTurnDelay
+    visible: false
+
+  Label
+    id: walkTeleportDelay
+    visible: false
+
+  Label
+    id: walkStairsDelay
+    visible: false

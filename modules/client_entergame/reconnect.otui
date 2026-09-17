@@ -1,0 +1,64 @@
+ReconnectWindow < MainWindow
+  id: reconnectWindow
+  !text: tr('Connection')
+  size: 360 190
+  draggable: false
+  @onEscape: CharacterList.cancelReconnect()
+
+  Label
+    id: reconnectStatusLabel
+    text: Server temporarily unavailable
+    height: 18
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    text-align: center
+
+  Label
+    id: reconnectDetailLabel
+    text: The game server may be restarting. We will keep trying automatically.
+    height: 34
+    anchors.top: reconnectStatusLabel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 6
+    text-align: center
+    text-wrap: true
+
+  ProgressBar
+    id: reconnectProgressBar
+    height: 15
+    anchors.top: reconnectDetailLabel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    background-color: #4444ff
+
+  Label
+    id: reconnectAttemptLabel
+    text: Attempt 1 of 8
+    anchors.top: reconnectProgressBar.bottom
+    anchors.left: reconnectProgressBar.left
+    margin-top: 7
+
+  Label
+    id: reconnectCountdownLabel
+    text: Next attempt in 3.0s
+    anchors.right: reconnectProgressBar.right
+    anchors.verticalCenter: reconnectAttemptLabel.verticalCenter
+    text-align: right
+
+  HorizontalSeparator
+    id: separator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: reconnectCancelButton.top
+    margin-bottom: 10
+
+  Button
+    id: reconnectCancelButton
+    !text: tr('Cancel')
+    width: 64
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: CharacterList.cancelReconnect()

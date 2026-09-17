@@ -1,0 +1,12 @@
+Module
+  name: game_progress_toast
+  description: Shows level and skill advancement toasts
+  author: Baiakeros
+  autoload: true
+  sandboxed: true
+  scripts: [ progress_toast ]
+  @onLoad: progressToastController:init()
+  @onUnload: progressToastController:terminate()
+  dependencies:
+    - game_interface
+    - game_notifications

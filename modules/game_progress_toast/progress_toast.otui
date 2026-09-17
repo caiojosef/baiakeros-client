@@ -1,0 +1,62 @@
+ProgressToast < UIWidget
+  id: progressToast
+  size: 300 70
+  phantom: true
+  focusable: false
+  visible: false
+  opacity: 1
+  image-source: /images/ui/background_dark
+  image-repeated: true
+  image-border: 4
+  background-color: #241a0fee
+  border-color: #b88a36
+  border-width: 1
+  anchors.horizontalCenter: parent.horizontalCenter
+  anchors.top: parent.top
+  margin-top: 24
+
+  UIWidget
+    id: iconFrame
+    size: 52 52
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    image-source: /images/ui/background_dark
+    image-repeated: true
+    image-border: 4
+    background-color: #5e4218
+    border-color: #dfbd63
+    border-width: 1
+
+    UIWidget
+      id: icon
+      size: 32 32
+      anchors.centerIn: parent
+      image-smooth: false
+
+  Label
+    id: title
+    anchors.left: iconFrame.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 10
+    margin-right: 10
+    margin-top: 11
+    height: 18
+    font: verdana-11px-monochrome
+    color: #f2d583
+    text-align: left
+
+  Label
+    id: description
+    anchors.left: title.left
+    anchors.right: title.right
+    anchors.top: title.bottom
+    margin-top: 2
+    height: 22
+    font: verdana-11px-monochrome
+    color: #f0f0f0
+    text-wrap: true
+    text-align: left
+
+ProgressToast
