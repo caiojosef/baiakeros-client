@@ -591,8 +591,8 @@ PhantomMiniWindow
         image-clip: 20 20 20 20
     SafeFightBox
       id: pvp
-      anchors.left: standPosture.left
-      anchors.top: standPosture.bottom
+      anchors.left: expert.left
+      anchors.top: expert.bottom
       margin-left: 0
       margin-top: 4
       phantom: false
