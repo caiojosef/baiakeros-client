@@ -169,9 +169,9 @@ local VOCATION_PROFILES = {
 
 local ATTACK_SPELL_SLOT_COUNTS = {
     knight = 5,
-    paladin = 3,
-    sorcerer = 3,
-    druid = 3,
+    paladin = 5,
+    sorcerer = 5,
+    druid = 5,
     monk = 5
 }
 
@@ -4682,10 +4682,32 @@ function init()
         tr('Helper'), '/images/topbuttons/bot')
     helperButton:show()
     helperButton:setOn(false)
-    local helperHighlight = helperButton:getChildById('highlight')
-    if helperHighlight then
-        helperHighlight:show()
+    local helperBright = helperButton:getChildById('brightButton')
+    if not helperBright then
+        helperBright = g_ui.createWidget('UIWidget', helperButton)
+        helperBright:setId('brightButton')
+        helperBright:setSize('20 20')
+        helperBright:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        helperBright:addAnchor(AnchorTop, 'parent', AnchorTop)
+        helperBright:setMarginLeft(5)
+        helperBright:setImageSource('/images/ui/bright-x20')
+        helperBright:setPhantom(true)
     end
+    helperBright:show()
+
+    local helperHighlight = helperButton:getChildById('highlight')
+    if not helperHighlight then
+        helperHighlight = g_ui.createWidget('UIWidget', helperButton)
+        helperHighlight:setId('highlight')
+        helperHighlight:setSize('22 22')
+        helperHighlight:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        helperHighlight:addAnchor(AnchorTop, 'parent', AnchorTop)
+        helperHighlight:setMarginLeft(4)
+        helperHighlight:setMarginTop(-1)
+        helperHighlight:setImageSource('/images/ui/highlight')
+        helperHighlight:setPhantom(true)
+    end
+    helperHighlight:show()
     modules.game_mainpanel.reloadMainPanelSizes()
 
     connect(g_game, {
