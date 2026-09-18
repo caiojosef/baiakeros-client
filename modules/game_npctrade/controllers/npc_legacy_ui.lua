@@ -55,6 +55,10 @@ local selectedItem = nil
 local cancelNextRelease = nil
 
 function controllerNpcTrader:legacy_init()
+    if initialized then
+        return
+    end
+
     npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy')
     npcWindow:setVisible(false)
 
@@ -134,11 +138,36 @@ function controllerNpcTrader:legacy_show()
     end
 end
 
+function controllerNpcTrader:legacy_hideOverlay()
+    if npcWindow then
+        npcWindow:hide()
+    end
+end
+
 function controllerNpcTrader:legacy_hide()
     self:resetSellAllState()
     self.isTradeOpen = false
-    if npcWindow then
-        npcWindow:hide()
+    self:legacy_hideOverlay()
+end
+
+function controllerNpcTrader:openRashidSellAllWindow()
+    if self:isLegacyMode() or not self.rashidTrade or not self.isTradeOpen or not initialized then
+        return
+    end
+
+    radioTabs:selectWidget(sellTab)
+    showAllItems:setChecked(false)
+    refreshTradeItems()
+    refreshPlayerGoods()
+    self:legacy_show()
+end
+
+function closeRashidSellAllWindow()
+    if controllerNpcTrader:isLegacyMode() then
+        closeNpcTradeLegacy()
+    else
+        controllerNpcTrader:cancelRashidSellQueue('Selling cancelled.', true)
+        controllerNpcTrader:legacy_hideOverlay()
     end
 end
 
@@ -463,7 +492,7 @@ function refreshPlayerGoods()
     end
 end
 
-function onOpenNpcTrade(items, currencyId, currencyName, npcName)
+function onOpenNpcTrade(items, currencyId, currencyName, npcName, suppressShow)
     controllerNpcTrader:resetSellAllState()
     tradeItems[BUY] = {}
     tradeItems[SELL] = {}
@@ -535,10 +564,15 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName)
         end
     end
 
+    if suppressShow and controllerNpcTrader.rashidTrade then
+        showAllItems:setChecked(false)
+    end
     refreshTradeItems()
-    addEvent(function()
-        controllerNpcTrader:legacy_show()
-    end) -- player goods has not been parsed yet
+    if not suppressShow then
+        addEvent(function()
+            controllerNpcTrader:legacy_show()
+        end) -- player goods has not been parsed yet
+    end
 end
 
 function closeNpcTradeLegacy()

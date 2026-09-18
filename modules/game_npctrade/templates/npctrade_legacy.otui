@@ -34,7 +34,7 @@ MainWindow
   id: npcWindow
   !text: tr('NPC Trade')
   size: 550 515
-  @onEscape: modules.game_npctrade.closeNpcTrade()
+  @onEscape: modules.game_npctrade.closeRashidSellAllWindow()
 
   TabButton
     id: buyTab
@@ -291,7 +291,7 @@ MainWindow
     anchors.bottom: parent.bottom
     margin-right: 10
     visible: false
-    @onClick: modules.game_npctrade.sellAll()
+    @onClick: modules.game_npctrade.sellAllLegacy()
 
   Button
     id: tradeButton
@@ -307,4 +307,4 @@ MainWindow
     width: 64
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    @onClick: modules.game_npctrade.closeNpcTrade()
+    @onClick: modules.game_npctrade.closeRashidSellAllWindow()
