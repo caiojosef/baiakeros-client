@@ -291,8 +291,9 @@ end
 function controllerNpcTrader:onGameStart()
     self:loadRashidBlacklist()
     self.legacyMode = not g_game.getFeature(GameNpcWindowRedesign)
-    -- The legacy window is also reused as Rashid's detailed Sell All view.
-    self:legacy_init()
+    if self:isLegacyMode() then
+        self:legacy_init()
+    end
 
     self:registerEvents(g_game, {
         onNpcChatWindow = function(data)
@@ -305,11 +306,7 @@ function controllerNpcTrader:onGameStart()
                 self.isTradeOpen = true
                 onOpenNpcTrade(...)
             else
-                local items, currencyId, currencyName, npcName = ...
-                self:onOpenNpcTrade(items, currencyId, currencyName, npcName)
-                if self.rashidTrade then
-                    onOpenNpcTrade(items, currencyId, currencyName, npcName, true)
-                end
+                self:onOpenNpcTrade(...)
             end
         end,
         onPlayerGoods = function(money, items)
@@ -317,9 +314,6 @@ function controllerNpcTrader:onGameStart()
                 onPlayerGoods(money, items)
             else
                 self:onPlayerGoods(money, items)
-                if self.rashidTrade then
-                    onPlayerGoods(money, items)
-                end
             end
         end,
         onUpdateImbuementTracker = function(items)
@@ -384,10 +378,11 @@ end
 
 function controllerNpcTrader:onTerminate()
     self:resetSellAllState()
-    if not self:isLegacyMode() then
+    if self:isLegacyMode() then
+        self:legacy_terminate()
+    else
         self:onCloseNpcTrade()
     end
-    self:legacy_terminate()
 end
 
 function controllerNpcTrader:onGameEnd()
@@ -404,7 +399,6 @@ function controllerNpcTrader:onCloseNpcTrade()
     if self:isLegacyMode() then
         self:legacy_hide()
     else
-        self:legacy_hideOverlay()
         self:disconnectNpcTalkEvent()
         if controllerNpcTrader.ui and controllerNpcTrader.ui:isVisible() then
             controllerNpcTrader:unloadHtml()

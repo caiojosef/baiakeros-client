@@ -27,7 +27,7 @@ function controllerNpcTrader:onOptionsClick()
         if self.rashidTrade then
             menu:addSeparator()
             menu:addOption("Sell All...", function()
-                self:openRashidSellAllWindow()
+                self:confirmRashidSellAll()
             end)
         end
     end

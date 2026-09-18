@@ -59,7 +59,9 @@ function controllerNpcTrader:legacy_init()
         return
     end
 
-    npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy')
+    npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy',
+        modules.game_interface.getRightPanel())
+    npcWindow:setup()
     npcWindow:setVisible(false)
 
     itemsPanel = npcWindow:recursiveGetChildById('itemsPanel')
@@ -85,9 +87,9 @@ function controllerNpcTrader:legacy_init()
     sellAllProgress = npcWindow:recursiveGetChildById('sellAllProgress')
     sellAllProgressLabel = npcWindow:recursiveGetChildById('sellAllProgressLabel')
 
-    buyTab = npcWindow:getChildById('buyTab')
-    sellTab = npcWindow:getChildById('sellTab')
-    blacklistTab = npcWindow:getChildById('blacklistTab')
+    buyTab = npcWindow:recursiveGetChildById('buyTab')
+    sellTab = npcWindow:recursiveGetChildById('sellTab')
+    blacklistTab = npcWindow:recursiveGetChildById('blacklistTab')
 
     radioTabs = UIRadioGroup.create()
     radioTabs:addWidget(buyTab)
@@ -132,42 +134,20 @@ function controllerNpcTrader:legacy_show()
             radioTabs:selectWidget(sellTab)
         end
 
-        npcWindow:show()
+        if npcWindow:isOn() then
+            npcWindow:maximize(true)
+        end
+        npcWindow:open(true)
         npcWindow:raise()
         npcWindow:focus()
-    end
-end
-
-function controllerNpcTrader:legacy_hideOverlay()
-    if npcWindow then
-        npcWindow:hide()
     end
 end
 
 function controllerNpcTrader:legacy_hide()
     self:resetSellAllState()
     self.isTradeOpen = false
-    self:legacy_hideOverlay()
-end
-
-function controllerNpcTrader:openRashidSellAllWindow()
-    if self:isLegacyMode() or not self.rashidTrade or not self.isTradeOpen or not initialized then
-        return
-    end
-
-    radioTabs:selectWidget(sellTab)
-    showAllItems:setChecked(false)
-    refreshTradeItems()
-    refreshPlayerGoods()
-    self:legacy_show()
-end
-
-function closeRashidSellAllWindow()
-    if controllerNpcTrader:isLegacyMode() then
-        closeNpcTradeLegacy()
-    else
-        controllerNpcTrader:cancelRashidSellQueue('Selling cancelled.', true)
-        controllerNpcTrader:legacy_hideOverlay()
+    if npcWindow then
+        npcWindow:hide()
     end
 end
 
@@ -394,21 +374,23 @@ function refreshItem(item)
     setupPanel:enable()
 end
 
+local function getLegacyItemText(item)
+    if controllerNpcTrader.rashidTrade then
+        return string.format('%s\n%d x - %s', item.name, getSellQuantityLegacy(item.ptr),
+            formatCurrency(item.price))
+    end
+
+    local text = item.name
+    if showWeight then
+        text = text .. '\n' .. string.format('%.2f', item.weight) .. ' ' .. WEIGHT_UNIT
+    end
+    return text .. '\n' .. formatCurrency(item.price)
+end
+
 local function addLegacyTradeItem(item)
     local itemBox = g_ui.createWidget('NPCItemBox', itemsPanel)
     itemBox.item = item
-
-    if controllerNpcTrader.rashidTrade then
-        itemBox:setText(tostring(getSellQuantityLegacy(item.ptr)))
-    else
-        local text = item.name
-        if showWeight then
-            local weight = string.format('%.2f', item.weight) .. ' ' .. WEIGHT_UNIT
-            text = text .. '\n' .. weight
-        end
-        text = text .. '\n' .. formatCurrency(item.price)
-        itemBox:setText(text)
-    end
+    itemBox:setText(getLegacyItemText(item))
 
     local itemWidget = itemBox:getChildById('item')
     itemWidget:setItem(item.ptr)
@@ -465,7 +447,7 @@ function refreshPlayerGoods()
         local item = itemWidget.item
 
         if controllerNpcTrader.rashidTrade then
-            itemWidget:setText(tostring(getSellQuantityLegacy(item.ptr)))
+            itemWidget:setText(getLegacyItemText(item))
         end
 
         local canTrade = canTradeItemLegacy(item)
@@ -492,7 +474,7 @@ function refreshPlayerGoods()
     end
 end
 
-function onOpenNpcTrade(items, currencyId, currencyName, npcName, suppressShow)
+function onOpenNpcTrade(items, currencyId, currencyName, npcName)
     controllerNpcTrader:resetSellAllState()
     tradeItems[BUY] = {}
     tradeItems[SELL] = {}
@@ -503,15 +485,17 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName, suppressShow)
         controllerNpcTrader:cancelRashidSellQueue('Selling cancelled.', true)
     end
     controllerNpcTrader.shopNpcName = effectiveNpcName or ''
+    npcWindow:setText(controllerNpcTrader.shopNpcName ~= '' and controllerNpcTrader.shopNpcName or tr('NPC Trade'))
     controllerNpcTrader.rashidTrade = controllerNpcTrader.shopNpcName == 'Rashid'
     controllerNpcTrader.isTradeOpen = true
     local itemLayout = itemsPanel:getLayout()
     if itemLayout and itemLayout:isUIGridLayout() then
-        itemLayout:setCellWidth(controllerNpcTrader.rashidTrade and 64 or 160)
-        itemLayout:setCellHeight(controllerNpcTrader.rashidTrade and 64 or 95)
+        itemLayout:setCellWidth(146)
+        itemLayout:setCellHeight(58)
     end
     if controllerNpcTrader.rashidTrade then
         controllerNpcTrader:loadRashidBlacklist()
+        showAllItems:setChecked(false)
         buyTab:setVisible(false)
         sellTab:setVisible(true)
         sellTab:setText(tr('Sell'))
@@ -523,6 +507,7 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName, suppressShow)
         sellTab:setMarginRight(5)
         blacklistTab:setVisible(true)
     else
+        showAllItems:setChecked(true)
         buyTab:setVisible(true)
         sellTab:setVisible(true)
         sellTab:setText(tr('Sell'))
@@ -564,15 +549,10 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName, suppressShow)
         end
     end
 
-    if suppressShow and controllerNpcTrader.rashidTrade then
-        showAllItems:setChecked(false)
-    end
     refreshTradeItems()
-    if not suppressShow then
-        addEvent(function()
-            controllerNpcTrader:legacy_show()
-        end) -- player goods has not been parsed yet
-    end
+    addEvent(function()
+        controllerNpcTrader:legacy_show()
+    end) -- player goods has not been parsed yet
 end
 
 function closeNpcTradeLegacy()

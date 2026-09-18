@@ -275,7 +275,7 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameProficiency)
         end
 
-        if version >= 1511 then
+        if version >= 1513 then
             g_game.enableFeature(GameNpcWindowRedesign)
         end
 
