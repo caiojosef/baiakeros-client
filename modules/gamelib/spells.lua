@@ -550,53 +550,59 @@ function Spells.filterSpellsByGroups(spells, groups)
     return filtered
 end
 
+local function getNormalizedSpellGroups(spellData)
+    if not spellData then
+        return {}
+    end
+    if type(spellData.group) == 'table' then
+        return spellData.group
+    end
+    local groupId = tonumber(spellData.group)
+    if not groupId then
+        return {}
+    end
+    return { [groupId] = tonumber(spellData.exhaustion) or 0 }
+end
+
 function Spells.getCooldownByGroup(spellData, groupId)
+    local groups = getNormalizedSpellGroups(spellData)
     local keys = {}
-    for k in pairs(spellData.group) do
+    for k in pairs(groups) do
         table.insert(keys, k)
     end
     table.sort(keys)
-    local index = 1
-    for _, k in ipairs(keys) do
-        if index == 1 and k == groupId then
-            return spellData.group[k]
-        end
-        index = index + 1
+    local primaryGroup = keys[1]
+    if primaryGroup == tonumber(groupId) then
+        return groups[primaryGroup]
     end
     return nil
 end
 
 function Spells.getCooldownBySecondaryGroup(spellData, groupId)
+    local groups = getNormalizedSpellGroups(spellData)
     local keys = {}
-    for k in pairs(spellData.group) do
+    for k in pairs(groups) do
         table.insert(keys, k)
     end
     table.sort(keys)
-    local index = 1
-    for _, k in ipairs(keys) do
-        if index == 2 and k == groupId then
-            return spellData.group[k]
-        end
-        index = index + 1
+    local secondaryGroup = keys[2]
+    if secondaryGroup == tonumber(groupId) then
+        return groups[secondaryGroup]
     end
     return nil
 end
 
 function Spells.getGroupIds(spell)
     local groups = {}
-    for k, _ in pairs(spell.group) do
-        table.insert(groups, k)
+    for groupId in pairs(getNormalizedSpellGroups(spell)) do
+        table.insert(groups, groupId)
     end
+    table.sort(groups)
     return groups
 end
 
 function Spells.getPrimaryGroup(spell)
-    local indexes = {}
-    for k in pairs(spell.group) do
-        table.insert(indexes, k)
-    end
-    table.sort(indexes)
-    return indexes[1] or -1
+    return Spells.getGroupIds(spell)[1] or -1
 end
 
 function Spells.getIconFileByProfile(profile)
