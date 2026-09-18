@@ -332,6 +332,12 @@ local ATTACK_SPELL_AREAS = {
     ['exevo tempo mas san'] = {
         shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
     },
+    ['exori dir san'] = {
+        shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
+    },
+    ['exori dir moe'] = {
+        shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
+    },
 
     -- Monk
     ['exori mas pug'] = { shape = 'directional', area = 'flurry' },
@@ -4686,11 +4692,10 @@ function init()
     if not helperBright then
         helperBright = g_ui.createWidget('UIWidget', helperButton)
         helperBright:setId('brightButton')
-        helperBright:setSize('20 20')
+        helperBright:setSize('78 20')
         helperBright:addAnchor(AnchorLeft, 'parent', AnchorLeft)
         helperBright:addAnchor(AnchorTop, 'parent', AnchorTop)
-        helperBright:setMarginLeft(5)
-        helperBright:setImageSource('/images/ui/bright-x20')
+        helperBright:setImageSource('/images/baiakeros/helper-button-bright')
         helperBright:setPhantom(true)
     end
     helperBright:show()
@@ -4699,12 +4704,11 @@ function init()
     if not helperHighlight then
         helperHighlight = g_ui.createWidget('UIWidget', helperButton)
         helperHighlight:setId('highlight')
-        helperHighlight:setSize('22 22')
+        helperHighlight:setSize('78 22')
         helperHighlight:addAnchor(AnchorLeft, 'parent', AnchorLeft)
         helperHighlight:addAnchor(AnchorTop, 'parent', AnchorTop)
-        helperHighlight:setMarginLeft(4)
         helperHighlight:setMarginTop(-1)
-        helperHighlight:setImageSource('/images/ui/highlight')
+        helperHighlight:setImageSource('/images/baiakeros/helper-button-highlight')
         helperHighlight:setPhantom(true)
     end
     helperHighlight:show()
