@@ -55,13 +55,7 @@ local selectedItem = nil
 local cancelNextRelease = nil
 
 function controllerNpcTrader:legacy_init()
-    if initialized then
-        return
-    end
-
-    npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy',
-        modules.game_interface.getRightPanel())
-    npcWindow:setup()
+    npcWindow = g_ui.displayUI('/game_npctrade/templates/npctrade_legacy')
     npcWindow:setVisible(false)
 
     itemsPanel = npcWindow:recursiveGetChildById('itemsPanel')
@@ -87,9 +81,9 @@ function controllerNpcTrader:legacy_init()
     sellAllProgress = npcWindow:recursiveGetChildById('sellAllProgress')
     sellAllProgressLabel = npcWindow:recursiveGetChildById('sellAllProgressLabel')
 
-    buyTab = npcWindow:recursiveGetChildById('buyTab')
-    sellTab = npcWindow:recursiveGetChildById('sellTab')
-    blacklistTab = npcWindow:recursiveGetChildById('blacklistTab')
+    buyTab = npcWindow:getChildById('buyTab')
+    sellTab = npcWindow:getChildById('sellTab')
+    blacklistTab = npcWindow:getChildById('blacklistTab')
 
     radioTabs = UIRadioGroup.create()
     radioTabs:addWidget(buyTab)
@@ -134,10 +128,7 @@ function controllerNpcTrader:legacy_show()
             radioTabs:selectWidget(sellTab)
         end
 
-        if npcWindow:isOn() then
-            npcWindow:maximize(true)
-        end
-        npcWindow:open(true)
+        npcWindow:show()
         npcWindow:raise()
         npcWindow:focus()
     end
@@ -374,23 +365,21 @@ function refreshItem(item)
     setupPanel:enable()
 end
 
-local function getLegacyItemText(item)
-    if controllerNpcTrader.rashidTrade then
-        return string.format('%s\n%d x - %s', item.name, getSellQuantityLegacy(item.ptr),
-            formatCurrency(item.price))
-    end
-
-    local text = item.name
-    if showWeight then
-        text = text .. '\n' .. string.format('%.2f', item.weight) .. ' ' .. WEIGHT_UNIT
-    end
-    return text .. '\n' .. formatCurrency(item.price)
-end
-
 local function addLegacyTradeItem(item)
     local itemBox = g_ui.createWidget('NPCItemBox', itemsPanel)
     itemBox.item = item
-    itemBox:setText(getLegacyItemText(item))
+
+    if controllerNpcTrader.rashidTrade then
+        itemBox:setText(tostring(getSellQuantityLegacy(item.ptr)))
+    else
+        local text = item.name
+        if showWeight then
+            local weight = string.format('%.2f', item.weight) .. ' ' .. WEIGHT_UNIT
+            text = text .. '\n' .. weight
+        end
+        text = text .. '\n' .. formatCurrency(item.price)
+        itemBox:setText(text)
+    end
 
     local itemWidget = itemBox:getChildById('item')
     itemWidget:setItem(item.ptr)
@@ -447,7 +436,7 @@ function refreshPlayerGoods()
         local item = itemWidget.item
 
         if controllerNpcTrader.rashidTrade then
-            itemWidget:setText(getLegacyItemText(item))
+            itemWidget:setText(tostring(getSellQuantityLegacy(item.ptr)))
         end
 
         local canTrade = canTradeItemLegacy(item)
@@ -485,17 +474,15 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName)
         controllerNpcTrader:cancelRashidSellQueue('Selling cancelled.', true)
     end
     controllerNpcTrader.shopNpcName = effectiveNpcName or ''
-    npcWindow:setText(controllerNpcTrader.shopNpcName ~= '' and controllerNpcTrader.shopNpcName or tr('NPC Trade'))
     controllerNpcTrader.rashidTrade = controllerNpcTrader.shopNpcName == 'Rashid'
     controllerNpcTrader.isTradeOpen = true
     local itemLayout = itemsPanel:getLayout()
     if itemLayout and itemLayout:isUIGridLayout() then
-        itemLayout:setCellWidth(146)
-        itemLayout:setCellHeight(58)
+        itemLayout:setCellWidth(controllerNpcTrader.rashidTrade and 64 or 160)
+        itemLayout:setCellHeight(controllerNpcTrader.rashidTrade and 64 or 95)
     end
     if controllerNpcTrader.rashidTrade then
         controllerNpcTrader:loadRashidBlacklist()
-        showAllItems:setChecked(false)
         buyTab:setVisible(false)
         sellTab:setVisible(true)
         sellTab:setText(tr('Sell'))
@@ -507,7 +494,6 @@ function onOpenNpcTrade(items, currencyId, currencyName, npcName)
         sellTab:setMarginRight(5)
         blacklistTab:setVisible(true)
     else
-        showAllItems:setChecked(true)
         buyTab:setVisible(true)
         sellTab:setVisible(true)
         sellTab:setText(tr('Sell'))
