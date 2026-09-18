@@ -103,12 +103,10 @@ local function combatEvent()
         selectPosture('stand', true)
     end
     
-    if g_game.getFightMode() == FightOffensive then
-        selectCombat('attack', true)
-    elseif g_game.getFightMode() == FightBalanced then
-        selectCombat('balanced', true)
-    elseif g_game.getFightMode() == FightDefensive then
-        selectCombat('defense', true)
+    -- Combat stances were removed in Tibia 15.25. Keep the protocol
+    -- field pinned to offensive while chase and secure mode remain selectable.
+    if g_game.getFightMode() ~= FightOffensive then
+        g_game.setFightMode(FightOffensive)
     end
 end
 
@@ -289,7 +287,6 @@ function inventoryController:onGameStart()
         local lastCombatControls = g_settings.getNode('LastCombatControls')
         if not table.empty(lastCombatControls) then
             if lastCombatControls[char] then
-                g_game.setFightMode(lastCombatControls[char].fightMode)
                 g_game.setChaseMode(lastCombatControls[char].chaseMode)
                 g_game.setSafeFight(lastCombatControls[char].safeFight)
                 if lastCombatControls[char].pvpMode then
@@ -298,6 +295,8 @@ function inventoryController:onGameStart()
             end
         end
     end
+    g_game.setFightMode(FightOffensive)
+
     inventoryController:registerEvents(LocalPlayer, {
         onInventoryChange = inventoryEvent,
         onSoulChange = onSoulChange,
@@ -363,7 +362,6 @@ function inventoryController:onGameEnd()
     if player then
         local char = g_game.getCharacterName()
         lastCombatControls[char] = {
-            fightMode = g_game.getFightMode(),
             chaseMode = g_game.getChaseMode(),
             safeFight = g_game.isSafeFight()
         }
@@ -421,28 +419,13 @@ function selectPosture(key, ignoreUpdate)
 end
 
 function selectCombat(combat, ignoreUpdate)
+    -- Compatibility entry point for old hotkeys and modules.
     local ui = getInventoryUi()
-    if combat == 'attack' then
-        ui.attack:setEnabled(false)
-        ui.balanced:setEnabled(true)
-        ui.defense:setEnabled(true)
-        if not ignoreUpdate then
-            g_game.setFightMode(FightOffensive)
-        end
-    elseif combat == 'balanced' then
-        ui.attack:setEnabled(true)
-        ui.balanced:setEnabled(false)
-        ui.defense:setEnabled(true)
-        if not ignoreUpdate then
-            g_game.setFightMode(FightBalanced)
-        end
-    elseif combat == 'defense' then
-        ui.attack:setEnabled(true)
-        ui.balanced:setEnabled(true)
-        ui.defense:setEnabled(false)
-        if not ignoreUpdate then
-            g_game.setFightMode(FightDefensive)
-        end
+    ui.attack:setEnabled(false)
+    ui.balanced:setEnabled(false)
+    ui.defense:setEnabled(false)
+    if not ignoreUpdate or g_game.getFightMode() ~= FightOffensive then
+        g_game.setFightMode(FightOffensive)
     end
 end
 

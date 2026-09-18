@@ -98,7 +98,7 @@ PhantomMiniWindow
       image-clip: 0 0 20 20
       anchors.right: parent.right
       anchors.top: changeSize.top
-      margin-right: 7
+      margin-right: 31
       size: 20 20
       @onClick: |
         selectPosture('stand')
@@ -218,6 +218,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: attack
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 40 20 20
       anchors.right: standPosture.left
@@ -235,6 +237,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: balanced
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 80 20 20
       anchors.right: attack.right
@@ -252,6 +256,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: defense
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 60 20 20
       anchors.right: attack.right
@@ -270,9 +276,10 @@ PhantomMiniWindow
     TopToggleButton
       id: stop
       !text: tr('Stop')
-      anchors.left: defense.left
-      anchors.right: standPosture.right
+      anchors.left: standPosture.left
+      anchors.right: parent.right
       anchors.bottom: parent.bottom
+      margin-right: 7
       font: cipsoftFont
       color: #c0c0c0ff
       size: 44 13
@@ -494,6 +501,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: attack
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 40 20 20
       anchors.left: soulAndCapacity.right
@@ -511,6 +520,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: defense
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 60 20 20
       anchors.left: attack.right
@@ -528,6 +539,8 @@ PhantomMiniWindow
 
     TopToggleButton
       id: balanced
+      visible: false
+      enabled: false
       image-source: /images/inventory/buttons_general
       image-clip: 0 80 20 20
       anchors.left: defense.right
@@ -547,9 +560,9 @@ PhantomMiniWindow
       id: standPosture
       image-source: /images/inventory/buttons_general
       image-clip: 0 0 20 20
-      anchors.left: attack.left
-      anchors.top: attack.bottom
-      margin-top: 4
+      anchors.left: soulAndCapacity.right
+      anchors.top: changeSize.top
+      margin-left: 3
       size: 20 20
       @onClick: |
         selectPosture('stand')
@@ -565,7 +578,7 @@ PhantomMiniWindow
       image-source: /images/inventory/buttons_general
       image-clip: 0 20 20 20
       anchors.left: standPosture.right
-      anchors.top: standPosture.top
+      anchors.top: changeSize.top
       margin-left: 1
       size: 20 20
       @onClick: |
@@ -578,19 +591,20 @@ PhantomMiniWindow
         image-clip: 20 20 20 20
     SafeFightBox
       id: pvp
-      anchors.left: followPosture.right
-      anchors.top: standPosture.top
-      margin-left: 1
-      margin-top: 0
+      anchors.left: standPosture.left
+      anchors.top: standPosture.bottom
+      margin-left: 0
+      margin-top: 4
       phantom: false
 
     UIWidget
       id: expert
       image-source: /data/images/inventory/button-expert-up
-      anchors.left: changeSize.left
-      anchors.bottom: soulAndCapacity.bottom
+      anchors.left: followPosture.right
+      anchors.top: changeSize.top
+      margin-left: 1
       phantom: false
-      size: 12 12
+      size: 20 20
       @onClick: |
         expertMode()
 

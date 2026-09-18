@@ -500,7 +500,7 @@ private:
     CreaturePtr m_followingCreature;
     ProtocolGamePtr m_protocolGame;
     Timer m_dashTimer;
-    Otc::FightModes m_fightMode{ Otc::FightBalanced };
+    Otc::FightModes m_fightMode{ Otc::FightOffensive };
     Otc::ChaseModes m_chaseMode{ Otc::DontChase };
     Otc::PVPModes m_pvpMode{ Otc::WhiteDove };
     Otc::OperatingSystem_t m_clientCustomOs{ Otc::CLIENTOS_NONE };

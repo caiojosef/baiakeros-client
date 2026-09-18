@@ -64,7 +64,7 @@ void Game::resetGameStates()
     m_mapUpdateTimer = { true, Timer{} };
     setCanReportBugs(false);
     setCanExivaOptions(false);
-    m_fightMode = Otc::FightBalanced;
+    m_fightMode = Otc::FightOffensive;
     m_chaseMode = Otc::DontChase;
     m_pvpMode = Otc::WhiteDove;
     m_safeFight = true;
@@ -1308,17 +1308,18 @@ void Game::setChaseMode(const Otc::ChaseModes chaseMode)
     g_lua.callGlobalField("g_game", "onChaseModeChange", chaseMode);
 }
 
-void Game::setFightMode(const Otc::FightModes fightMode)
+void Game::setFightMode(const Otc::FightModes /* fightMode */)
 {
     if (!canPerformGameAction())
         return;
 
-    if (m_fightMode == fightMode)
+    constexpr auto effectiveFightMode = Otc::FightOffensive;
+    if (m_fightMode == effectiveFightMode)
         return;
 
-    m_fightMode = fightMode;
+    m_fightMode = effectiveFightMode;
     m_protocolGame->sendChangeFightModes(m_fightMode, m_chaseMode, m_safeFight, m_pvpMode);
-    g_lua.callGlobalField("g_game", "onFightModeChange", fightMode);
+    g_lua.callGlobalField("g_game", "onFightModeChange", effectiveFightMode);
 }
 
 void Game::setSafeFight(const bool on)
