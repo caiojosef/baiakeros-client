@@ -106,6 +106,9 @@ local TEXT_SHADERS = { {
     name = 'Text - Gold Outline',
     frag = 'shaders/fragment/text_golden_shadow_bold_fragment.frag' -- Smooth gold (#ee8413) outline
 }, {
+    name = 'Text - Red Outline',
+    frag = 'shaders/fragment/text_red_shadow_bold_fragment.frag' -- Echo Warden marker
+}, {
     name = 'Text - Black Outline',
     frag = 'shaders/fragment/text_black_outline.frag' -- Classic black outline, max readability
 }, {

@@ -150,20 +150,28 @@ function getIconsImagePath(category)
 end
 
 function Creature:onIconsChange(icon, category, count)
+    -- Modification 10 is reserved for Echo Wardens. It marks the creature by
+    -- its red name outline and intentionally has no atlas icon of its own.
+    local isEchoWarden = category == 1 and icon == 10
     local imagePath = getIconsImagePath(category)
-    if imagePath then
+    if imagePath and not isEchoWarden then
         local clipX = (icon - 1) * 11
         self:setIconsTexture(imagePath, torect(clipX .. ' 0 11 11'), count)
     end
-    -- Apply fiendish text shader only to monsters and only when the icon matches
+
     if type(self.isMonster) ~= 'function' or not self:isMonster() then
         return
     end
-    if category == 1 and icon == 5 then
+
+    if isEchoWarden then
+        self:setNameShader('Text - Red Outline')
+    elseif category == 1 and icon == 5 then
         self:setNameShader('Text - Gold Outline')
-    elseif self.getNameShader and self:getNameShader() == 'Text - Gold Outline' then
-        -- Reset only if we previously applied the fiendish shader
-        self:setNameShader('Text - Default')
+    elseif self.getNameShader then
+        local currentShader = self:getNameShader()
+        if currentShader == 'Text - Gold Outline' or currentShader == 'Text - Red Outline' then
+            self:setNameShader('Text - Default')
+        end
     end
 end
 
