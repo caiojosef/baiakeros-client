@@ -76,6 +76,30 @@ local OUTFIT_SHADERS = { {
     useFramebuffer = true,
     frag = 'shaders/fragment/outline_red.frag'
 }, {
+    name = 'Outfit - Echo Warden Harmless',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_harmless.frag'
+}, {
+    name = 'Outfit - Echo Warden Trivial',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_trivial.frag'
+}, {
+    name = 'Outfit - Echo Warden Easy',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_easy.frag'
+}, {
+    name = 'Outfit - Echo Warden Medium',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_medium.frag'
+}, {
+    name = 'Outfit - Echo Warden Hard',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_hard.frag'
+}, {
+    name = 'Outfit - Echo Warden Challenging',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_challenging.frag'
+}, {
     name = 'Outfit - ForgeDonor',
     useFramebuffer = true,
     frag = 'shaders/fragment/forge_donor.frag'
@@ -105,9 +129,6 @@ local TEXT_SHADERS = { {
 }, {
     name = 'Text - Gold Outline',
     frag = 'shaders/fragment/text_golden_shadow_bold_fragment.frag' -- Smooth gold (#ee8413) outline
-}, {
-    name = 'Text - Red Outline',
-    frag = 'shaders/fragment/text_red_shadow_bold_fragment.frag' -- Echo Warden marker
 }, {
     name = 'Text - Black Outline',
     frag = 'shaders/fragment/text_black_outline.frag' -- Classic black outline, max readability
