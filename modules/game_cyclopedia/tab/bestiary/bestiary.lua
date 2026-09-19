@@ -290,6 +290,32 @@ function Cyclopedia.CreateCreatureItems(data)
     end
 end
 
+function Cyclopedia.updateEchoWardenProgress(data)
+    if not UI or not UI.ListBase or not UI.ListBase.CreatureInfo then
+        return
+    end
+    if not Cyclopedia.Bestiary or Cyclopedia.Bestiary.EchoWardenRaceId ~= data.raceId then
+        return
+    end
+
+    local panel = UI.ListBase.CreatureInfo.EchoWarden
+    if not panel then
+        return
+    end
+
+    local points = tonumber(data.charmPoints) or 0
+    if data.completed then
+        panel.Status:setText(string.format("Echo Warden: Defeated (+%d Charm Points)", points))
+        panel.Status:setColor("#8BC34A")
+        panel:setTooltip(string.format("You have defeated this species' Echo Warden and received %d Charm Points.", points))
+    else
+        panel.Status:setText(string.format("Echo Warden: Not defeated (+%d Charm Points)", points))
+        panel.Status:setColor("#A9A9A9")
+        panel:setTooltip(string.format("Defeat this species' Echo Warden for the first time to receive %d Charm Points.", points))
+    end
+    panel:setVisible(true)
+end
+
 function Cyclopedia.loadBestiarySelectedCreature(data)
     local occurence = {
         [0] = 1,
@@ -302,6 +328,16 @@ function Cyclopedia.loadBestiarySelectedCreature(data)
     local formattedName = raceData.name:gsub("(%l)(%w*)", function(first, rest)
         return first:upper() .. rest
     end)
+
+    Cyclopedia.Bestiary.EchoWardenRaceId = data.id
+    local echoWardenData = Cyclopedia.EchoWardenProgress and Cyclopedia.EchoWardenProgress[data.id]
+    if echoWardenData then
+        Cyclopedia.updateEchoWardenProgress(echoWardenData)
+    else
+        UI.ListBase.CreatureInfo.EchoWarden.Status:setText("Echo Warden: Loading...")
+        UI.ListBase.CreatureInfo.EchoWarden.Status:setColor("#A9A9A9")
+        UI.ListBase.CreatureInfo.EchoWarden:setVisible(true)
+    end
 
     UI.ListBase.CreatureInfo:setText(formattedName)
     Cyclopedia.SetBestiaryDiamonds(occurence[data.ocorrence])

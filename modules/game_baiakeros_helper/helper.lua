@@ -169,9 +169,9 @@ local VOCATION_PROFILES = {
 
 local ATTACK_SPELL_SLOT_COUNTS = {
     knight = 5,
-    paladin = 3,
-    sorcerer = 3,
-    druid = 3,
+    paladin = 5,
+    sorcerer = 5,
+    druid = 5,
     monk = 5
 }
 
@@ -330,6 +330,12 @@ local ATTACK_SPELL_AREAS = {
     -- Paladin
     ['exevo mas san'] = { shape = 'circle', radius = 3, manhattan = 4 },
     ['exevo tempo mas san'] = {
+        shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
+    },
+    ['exori dir san'] = {
+        shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
+    },
+    ['exori dir moe'] = {
         shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3
     },
 
@@ -4682,10 +4688,30 @@ function init()
         tr('Helper'), '/images/topbuttons/bot')
     helperButton:show()
     helperButton:setOn(false)
-    local helperHighlight = helperButton:getChildById('highlight')
-    if helperHighlight then
-        helperHighlight:show()
+    local helperBright = helperButton:getChildById('brightButton')
+    if not helperBright then
+        helperBright = g_ui.createWidget('UIWidget', helperButton)
+        helperBright:setId('brightButton')
+        helperBright:setSize('78 20')
+        helperBright:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        helperBright:addAnchor(AnchorTop, 'parent', AnchorTop)
+        helperBright:setImageSource('/images/baiakeros/helper-button-bright')
+        helperBright:setPhantom(true)
     end
+    helperBright:show()
+
+    local helperHighlight = helperButton:getChildById('highlight')
+    if not helperHighlight then
+        helperHighlight = g_ui.createWidget('UIWidget', helperButton)
+        helperHighlight:setId('highlight')
+        helperHighlight:setSize('78 22')
+        helperHighlight:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        helperHighlight:addAnchor(AnchorTop, 'parent', AnchorTop)
+        helperHighlight:setMarginTop(-1)
+        helperHighlight:setImageSource('/images/baiakeros/helper-button-highlight')
+        helperHighlight:setPhantom(true)
+    end
+    helperHighlight:show()
     modules.game_mainpanel.reloadMainPanelSizes()
 
     connect(g_game, {

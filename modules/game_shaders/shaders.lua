@@ -76,6 +76,30 @@ local OUTFIT_SHADERS = { {
     useFramebuffer = true,
     frag = 'shaders/fragment/outline_red.frag'
 }, {
+    name = 'Outfit - Echo Warden Harmless',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_harmless.frag'
+}, {
+    name = 'Outfit - Echo Warden Trivial',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_trivial.frag'
+}, {
+    name = 'Outfit - Echo Warden Easy',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_easy.frag'
+}, {
+    name = 'Outfit - Echo Warden Medium',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_medium.frag'
+}, {
+    name = 'Outfit - Echo Warden Hard',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_hard.frag'
+}, {
+    name = 'Outfit - Echo Warden Challenging',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_challenging.frag'
+}, {
     name = 'Outfit - ForgeDonor',
     useFramebuffer = true,
     frag = 'shaders/fragment/forge_donor.frag'

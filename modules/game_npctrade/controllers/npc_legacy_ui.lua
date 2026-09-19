@@ -10,6 +10,10 @@ local CURRENCY = 'gold'
 local CURRENCY_DECIMAL = false
 local WEIGHT_UNIT = 'oz'
 local LAST_INVENTORY = 10
+local LARGE_STACK_BUY_NPCS = {
+    galuna = true,
+    xodet = true
+}
 
 local npcWindow = nil
 local itemsPanel = nil
@@ -346,12 +350,14 @@ function refreshItem(item)
             capacityMaxCount = 65535
         end
         local priceMaxCount = math.floor(playerMoney / getItemPrice(item, true))
-        local finalCount = math.max(0, math.min(getMaxAmount(), math.min(priceMaxCount, capacityMaxCount)))
+        local finalCount = math.max(0,
+            math.min(getMaxAmount(item), priceMaxCount, capacityMaxCount))
         quantityScroll:setMinimum(1)
         quantityScroll:setMaximum(finalCount)
     else
         quantityScroll:setMinimum(1)
-        quantityScroll:setMaximum(math.max(0, math.min(getMaxAmount(), getSellQuantityLegacy(item.ptr))))
+        quantityScroll:setMaximum(math.max(0,
+            math.min(getMaxAmount(item), getSellQuantityLegacy(item.ptr))))
     end
 
     onQuantityValueChange(quantityScroll:getValue())
@@ -638,9 +644,17 @@ function formatCurrency(amount)
     end
 end
 
-function getMaxAmount()
-    if getCurrentTradeType() == SELL and g_game.getFeature(GameDoubleShopSellAmount) then
+function getMaxAmount(item)
+    local tradeType = getCurrentTradeType()
+    if tradeType == SELL and g_game.getFeature(GameDoubleShopSellAmount) then
         return 10000
+    end
+
+    if tradeType == BUY and item and item.ptr and item.ptr:isStackable() then
+        local npcName = tostring(controllerNpcTrader.shopNpcName or ''):lower()
+        if LARGE_STACK_BUY_NPCS[npcName] then
+            return 10000
+        end
     end
     return 100
 end

@@ -26,7 +26,9 @@ local previousType = nil
 local windowTypes = {}
 local magicalArchives = nil
 local BESTIARY_DISCOVERY_OPCODE = 217
+local ECHO_WARDEN_PROGRESS_OPCODE = 221
 local pendingBestiaryDiscoveryRaceId = nil
+Cyclopedia.EchoWardenProgress = {}
 
 local function setBestiaryDiscoveryHighlight(enabled)
     if not CyclopediaButton then
@@ -75,6 +77,23 @@ function Cyclopedia.onBestiaryDiscovery(_, _, buffer)
     end
 end
 
+function Cyclopedia.onEchoWardenProgress(_, _, buffer)
+    local ok, data = pcall(json.decode, buffer)
+    if not ok or type(data) ~= "table" or not tonumber(data.raceId) then
+        g_logger.warning('[Cyclopedia] Invalid Echo Warden payload: ' .. tostring(buffer))
+        return
+    end
+
+    data.raceId = tonumber(data.raceId)
+    data.charmPoints = tonumber(data.charmPoints) or 0
+    data.completed = data.completed == true
+    Cyclopedia.EchoWardenProgress[data.raceId] = data
+
+    if Cyclopedia.updateEchoWardenProgress then
+        Cyclopedia.updateEchoWardenProgress(data)
+    end
+end
+
 function toggle(defaultWindow)
     if not controllerCyclopedia.ui then
         return
@@ -98,6 +117,7 @@ function controllerCyclopedia:onInit()
         end
     })
     self:registerExtendedOpcode(BESTIARY_DISCOVERY_OPCODE, Cyclopedia.onBestiaryDiscovery)
+    self:registerExtendedOpcode(ECHO_WARDEN_PROGRESS_OPCODE, Cyclopedia.onEchoWardenProgress)
 end
 
 function controllerCyclopedia:onGameStart()

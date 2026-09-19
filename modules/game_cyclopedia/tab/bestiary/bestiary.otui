@@ -119,6 +119,21 @@ UIWidget
         margin-left: 3
         image-source: /game_cyclopedia/images/indicator_soulcore
       UIWidget
+        id: EchoWarden
+        anchors.top: parent.top
+        anchors.right: parent.right
+        margin-top: 18
+        margin-right: 5
+        size: 220 16
+        image-source: /images/ui/panel_flat
+        image-border: 4
+        Label
+          id: Status
+          anchors.centerIn: parent
+          text-auto-resize: true
+          !text: tr('Echo Warden: Loading...')
+          color: #A9A9A9
+      UIWidget
         id: LeftBase
         anchors.left: parent.left
         anchors.top: parent.top

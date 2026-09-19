@@ -1,0 +1,947 @@
+HelperV2HealingStepButton < UIButton
+  color: #cfcfcf
+  image-source: /images/ui/button
+  image-clip: 0 0 22 23
+  image-border: 3
+  text-offset: 0 0
+  font: verdana-11px-antialised
+
+  $hover:
+    color: #ffffff
+
+  $pressed:
+    color: #ffffff
+    image-clip: 0 46 22 23
+    text-offset: 1 1
+
+  $disabled:
+    color: #555555
+    opacity: 0.65
+
+HelperV2HealingEmptySlot < UIWidget
+  size: 26 8
+  background-color: #252727
+  phantom: true
+
+  UIWidget
+    size: 5 5
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 1
+    background-color: #303232
+    border-width: 1
+    border-color: #424444
+
+  UIWidget
+    size: 5 5
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 1
+    background-color: #303232
+    border-width: 1
+    border-color: #424444
+
+  UIWidget
+    size: 5 5
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 1
+    background-color: #303232
+    border-width: 1
+    border-color: #424444
+
+  UIWidget
+    size: 5 5
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 1
+    background-color: #303232
+    border-width: 1
+    border-color: #424444
+
+HelperV2HealingValuePanel < UIWidget
+  background-color: #0b0b0b5c
+  border-width: 1
+  border-color: #4c4c4c
+  font: verdana-11px-antialised
+
+HelperV2HealingSlot < UIWidget
+  size: 176 42
+
+  UIButton
+    id: assignButton
+    size: 38 38
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 18
+    image-source: /images/game/actionbar/actionbarslot
+    text: ''
+    font: verdana-11px-antialised
+
+    HelperV2HealingEmptySlot
+      id: emptyDecoration
+      anchors.centerIn: parent
+
+  UIWidget
+    id: spellIcon
+    anchors.fill: assignButton
+    visible: false
+    phantom: true
+
+  UIItem
+    id: itemIcon
+    anchors.fill: assignButton
+    visible: false
+    virtual: true
+    phantom: true
+
+  Label
+    id: assignedName
+    visible: false
+
+  HelperV2HealingStepButton
+    id: decreaseButton
+    text: <
+    size: 18 26
+    anchors.left: assignButton.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+
+  HelperV2HealingValuePanel
+    id: thresholdPanel
+    size: 52 26
+    anchors.left: decreaseButton.right
+    anchors.verticalCenter: parent.verticalCenter
+
+    Label
+      id: thresholdLabel
+      text: 90%
+      anchors.fill: parent
+      text-align: center
+      color: #eeeeee
+      font: verdana-11px-antialised
+
+  HelperV2HealingStepButton
+    id: increaseButton
+    text: >
+    size: 18 26
+    anchors.left: thresholdPanel.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  UIButton
+    id: resourceButton
+    text: H
+    size: 16 16
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 0
+    text-align: center
+    color: #ed6464
+    border-width: 1
+    border-color: #b83c3c
+    visible: false
+    !tooltip: tr('Hybrid potion resource.')
+HelperV2Section < UIWidget
+  image-source: /images/ui/window
+  image-border: 6
+  image-border-top: 27
+
+HelperV2AttackRow < UIWidget
+  height: 40
+  background-color: #ffffff03
+
+  UIButton
+    id: assignButton
+    size: 34 34
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    image-source: /images/game/actionbar/actionbarslot
+
+    UIWidget
+      size: 24 7
+      anchors.centerIn: parent
+      background-color: #252727
+      phantom: true
+
+  SmallButton
+    text: <
+    size: 14 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 73
+
+  UIWidget
+    size: 46 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/ui/button
+    image-border: 3
+
+    Label
+      text: 0%
+      anchors.fill: parent
+      text-align: center
+      color: #eeeeee
+
+  SmallButton
+    text: >
+    size: 14 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  SmallButton
+    text: <
+    size: 14 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 176
+
+  UIWidget
+    size: 36 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+    image-source: /images/ui/button
+    image-border: 3
+
+    Label
+      text: 1
+      anchors.fill: parent
+      text-align: center
+      color: #eeeeee
+
+  SmallButton
+    text: >
+    size: 14 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  QtComboBox
+    id: priorityBox
+    size: 70 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 280
+    mouse-scroll: false
+
+BaiakerosHelperV2Window < MainWindow
+  id: baiakerosHelperV2Window
+  !text: tr('BaiakEros Helper V2 - Healing')
+  size: 840 610
+  anchors.centerIn: parent
+  visible: false
+  @onEscape: modules.game_baiakeros_helper_v2.hide()
+
+  UIWidget
+    id: navigationBar
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 36
+    background-color: #404040
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+
+    UIButton
+      id: healingToolsTab
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-left: 1
+      size: 668 36
+      @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('healing')
+      $on:
+        size: 150 34
+        image-clip: 0 0 150 34
+        image-source: /images/baiakeros/helper-v2-healing_on
+      $!on:
+        size: 34 34
+        image-clip: 0 0 34 34
+        image-source: /images/baiakeros/helper-v2-healing_off
+      $pressed:
+        size: 34 34
+        image-clip: 0 34 34 34
+        image-source: /images/baiakeros/helper-v2-healing_off
+
+    UIButton
+      id: attackTab
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 1
+      @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('attack')
+      $on:
+        size: 150 34
+        image-clip: 0 0 150 34
+        image-source: /images/baiakeros/helper-v2-attack_on
+      $!on:
+        size: 34 34
+        image-clip: 0 0 34 34
+        image-source: /images/baiakeros/helper-v2-attack_off
+      $pressed:
+        size: 34 34
+        image-clip: 0 34 34 34
+        image-source: /images/baiakeros/helper-v2-attack_off
+  UIWidget
+    id: contentContainer
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: navigationBar.bottom
+    anchors.bottom: bottomSeparator.top
+    margin-top: 7
+    margin-bottom: 7
+
+    UIWidget
+      id: healingToolsPage
+      anchors.fill: parent
+
+      HelperV2Section
+        id: healingSection
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 398
+        margin-left: 6
+
+        Label
+          text: Healing
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-top: 6
+          font: verdana-11px-antialised
+          color: #dfdfdf
+
+        UIWidget
+          id: healingPresetPanel
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: parent.top
+          height: 27
+          margin-left: 10
+          margin-right: 10
+          margin-top: 29
+
+          Label
+            text: Preset
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            color: #cfcfcf
+
+          QtComboBox
+            id: v2HealingPresetBox
+            size: 108 22
+            anchors.left: prev.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 6
+            mouse-scroll: false
+
+          SmallButton
+            text: +
+            size: 22 20
+            anchors.left: prev.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 5
+
+          SmallButton
+            text: x
+            size: 22 20
+            anchors.left: prev.right
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 4
+
+          SmallButton
+            text: Set Hotkey
+            size: 70 20
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+
+        VerticalSeparator
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: healingPresetPanel.bottom
+          anchors.bottom: healingBottomPanel.top
+          margin-top: 10
+          margin-bottom: 8
+
+        UIWidget
+          id: spellHealingColumn
+          width: 186
+          anchors.left: parent.left
+          anchors.top: healingPresetPanel.bottom
+          anchors.bottom: healingBottomPanel.top
+          margin-left: 8
+          margin-top: 7
+
+          Label
+            text: Spell Healing
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            color: #e5e5e5
+
+          HelperV2HealingSlot
+            id: spellSlot1
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+            margin-top: 7
+
+          HelperV2HealingSlot
+            id: spellSlot2
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+
+          HelperV2HealingSlot
+            id: spellSlot3
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+
+        UIWidget
+          id: potionHealingColumn
+          width: 186
+          anchors.right: parent.right
+          anchors.top: spellHealingColumn.top
+          anchors.bottom: healingBottomPanel.top
+          margin-right: 8
+
+          Label
+            text: Potion Healing
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            color: #e5e5e5
+
+          HelperV2HealingSlot
+            id: potionSlot1
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+            margin-top: 7
+
+          HelperV2HealingSlot
+            id: potionSlot2
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+
+          HelperV2HealingSlot
+            id: potionSlot3
+            anchors.left: parent.left
+            anchors.top: prev.bottom
+
+        UIWidget
+          id: healingBottomPanel
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          height: 76
+          margin-left: 10
+          margin-right: 10
+          margin-bottom: 8
+
+          HorizontalSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+
+          QtCheckBox
+            id: v2HealingEnabledBox
+            text: Enable Healing Helper
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-top: 15
+            size: 165 16
+            text-offset: 18 0
+
+          SmallButton
+            text: Set Hotkey
+            size: 72 20
+            anchors.left: prev.right
+            anchors.verticalCenter: prev.verticalCenter
+            margin-left: 8
+
+          Label
+            text: Healing V2 - spell slots enabled
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            color: #888888
+
+      HelperV2Section
+        id: toolsSection
+        anchors.left: healingSection.right
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        margin-left: 7
+        margin-right: 6
+
+        Label
+          text: Tools
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-top: 6
+          font: verdana-11px-antialised
+          color: #dfdfdf
+
+        QtCheckBox
+          id: v2AutoReconnectBox
+          text: Auto Reconnect
+          anchors.left: parent.left
+          anchors.top: parent.top
+          margin-left: 22
+          margin-top: 42
+          size: 160 16
+          text-offset: 18 0
+
+        QtCheckBox
+          id: v2AutoEatFoodBox
+          text: Auto Eat Food
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 18
+          size: 160 16
+          text-offset: 18 0
+
+        QtCheckBox
+          id: v2AutoHasteBox
+          text: Auto Haste
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 18
+          size: 112 16
+          text-offset: 18 0
+
+        QtComboBox
+          id: v2AutoHasteSpellBox
+          size: 166 22
+          anchors.left: v2AutoHasteBox.right
+          anchors.verticalCenter: v2AutoHasteBox.verticalCenter
+          margin-left: 5
+          mouse-scroll: false
+
+        QtCheckBox
+          id: v2AutoHasteInPzBox
+          size: 18 18
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 5
+          !tooltip: tr('Allow Auto Haste inside a Protection Zone.')
+
+        QtCheckBox
+          id: v2ChangeGoldBox
+          text: Change Gold
+          anchors.left: v2AutoReconnectBox.left
+          anchors.top: v2AutoHasteBox.bottom
+          margin-top: 18
+          size: 160 16
+          text-offset: 18 0
+
+        QtCheckBox
+          id: v2FlaskRemoverBox
+          text: Flask Remover
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 18
+          size: 160 16
+          text-offset: 18 0
+
+        QtCheckBox
+          id: v2AutolootBox
+          text: Autoloot
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 18
+          size: 100 16
+          text-offset: 18 0
+
+        SmallButton
+          text: Store
+          size: 48 18
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+
+        HorizontalSeparator
+          id: toolsTrainingSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2AutolootBox.bottom
+          margin-left: 15
+          margin-right: 15
+          margin-top: 20
+
+        Label
+          text: Training
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: toolsTrainingSeparator.bottom
+          margin-top: 12
+          color: #f0d48a
+
+        Label
+          text: Exercise Weapon
+          anchors.left: parent.left
+          anchors.top: prev.bottom
+          margin-left: 22
+          margin-top: 18
+          color: #dcdcdc
+
+        UIButton
+          id: v2ExerciseWeaponSlot
+          size: 40 40
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        QtComboBox
+          id: v2ExerciseModeBox
+          size: 100 22
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 9
+          mouse-scroll: false
+
+        Label
+          text: Mana Training
+          anchors.left: parent.left
+          anchors.top: v2ExerciseWeaponSlot.bottom
+          margin-left: 22
+          margin-top: 21
+          color: #dcdcdc
+
+        UIButton
+          id: v2ManaTrainingSlot
+          size: 40 40
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        SmallButton
+          text: <
+          size: 16 22
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 8
+
+        UIWidget
+          size: 44 22
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          image-source: /images/ui/button
+          image-border: 3
+
+          Label
+            text: 90%
+            anchors.fill: parent
+            text-align: center
+
+        SmallButton
+          text: >
+          size: 16 22
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+
+        QtCheckBox
+          size: 18 18
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+
+    UIWidget
+      id: attackPage
+      anchors.fill: parent
+      visible: false
+
+      HelperV2Section
+        id: attackConfiguration
+        anchors.left: parent.left
+        anchors.right: combatStylePanel.left
+        anchors.top: parent.top
+        anchors.bottom: attackControls.bottom
+        margin-left: 6
+        margin-right: 7
+
+        Label
+          text: Attack
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-top: 6
+          color: #dfdfdf
+
+        Label
+          text: Spell
+          anchors.left: parent.left
+          anchors.top: parent.top
+          margin-left: 16
+          margin-top: 36
+          color: #aaaaaa
+
+        Label
+          text: Mana %
+          anchors.left: parent.left
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 91
+          color: #aaaaaa
+
+        Label
+          text: Creatures
+          anchors.left: parent.left
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 185
+          color: #aaaaaa
+
+        Label
+          text: Priority
+          anchors.left: parent.left
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 290
+          color: #aaaaaa
+
+        UIWidget
+          id: v2SpellRows
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: prev.bottom
+          height: 200
+          margin-top: 4
+          layout:
+            type: verticalBox
+
+          HelperV2AttackRow
+            id: v2SpellSlot1
+            QtComboBox
+              id: v2SpellPriority1
+              anchors.fill: priorityBox
+
+          HelperV2AttackRow
+            id: v2SpellSlot2
+            QtComboBox
+              id: v2SpellPriority2
+              anchors.fill: priorityBox
+
+          HelperV2AttackRow
+            id: v2SpellSlot3
+            QtComboBox
+              id: v2SpellPriority3
+              anchors.fill: priorityBox
+
+          HelperV2AttackRow
+            id: v2SpellSlot4
+            QtComboBox
+              id: v2SpellPriority4
+              anchors.fill: priorityBox
+
+          HelperV2AttackRow
+            id: v2SpellSlot5
+            QtComboBox
+              id: v2SpellPriority5
+              anchors.fill: priorityBox
+
+        HorizontalSeparator
+          id: runeSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2SpellRows.bottom
+          margin-left: 10
+          margin-right: 10
+          margin-top: 9
+
+        Label
+          text: Rune Shooter
+          anchors.left: parent.left
+          anchors.top: runeSeparator.bottom
+          margin-left: 15
+          margin-top: 9
+          color: #f0d48a
+
+        UIWidget
+          id: v2RuneRows
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: prev.bottom
+          height: 80
+          margin-top: 4
+          layout:
+            type: verticalBox
+
+          HelperV2AttackRow
+            id: v2RuneSlot1
+            QtComboBox
+              id: v2RunePriority1
+              anchors.fill: priorityBox
+
+          HelperV2AttackRow
+            id: v2RuneSlot2
+            QtComboBox
+              id: v2RunePriority2
+              anchors.fill: priorityBox
+
+      HelperV2Section
+        id: combatStylePanel
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: attackControls.top
+        width: 146
+        margin-right: 6
+        margin-bottom: 7
+
+        Label
+          text: Combat Style
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          margin-top: 6
+          color: #dfdfdf
+
+        Label
+          text: Stance
+          anchors.left: parent.left
+          anchors.top: parent.top
+          margin-left: 13
+          margin-top: 43
+          color: #aaaaaa
+
+        UIButton
+          size: 38 38
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        UIButton
+          size: 38 38
+          anchors.left: prev.right
+          anchors.top: prev.top
+          margin-left: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        UIButton
+          size: 38 38
+          anchors.left: parent.left
+          anchors.top: prev.bottom
+          margin-left: 13
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        Label
+          text: Passive
+          anchors.left: parent.left
+          anchors.top: prev.bottom
+          margin-left: 13
+          margin-top: 16
+          color: #aaaaaa
+
+        UIButton
+          size: 38 38
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        UIButton
+          size: 38 38
+          anchors.left: prev.right
+          anchors.top: prev.top
+          margin-left: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+      UIWidget
+        id: attackControls
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 104
+        margin-left: 6
+        margin-right: 6
+        image-source: /images/ui/window_headless
+        image-border: 5
+
+        QtCheckBox
+          id: v2AutoAttackEnabledBox
+          text: Auto Target
+          anchors.left: parent.left
+          anchors.top: parent.top
+          margin-left: 14
+          margin-top: 13
+          size: 102 16
+          text-offset: 18 0
+
+        SmallButton
+          text: Set Hotkey
+          size: 70 20
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+
+        QtComboBox
+          id: v2AutoAttackModeBox
+          size: 44 22
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+          mouse-scroll: false
+
+        QtCheckBox
+          id: v2AttackRotationEnabledBox
+          text: Enable Shooter Helper
+          anchors.left: parent.left
+          anchors.top: v2AutoAttackEnabledBox.bottom
+          margin-left: 14
+          margin-top: 15
+          size: 166 16
+          text-offset: 18 0
+
+        SmallButton
+          text: Set Hotkey
+          size: 70 20
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+
+        Label
+          text: Helper Status: Disabled
+          anchors.left: parent.left
+          anchors.top: prev.bottom
+          margin-left: 14
+          margin-top: 9
+          color: #999999
+
+        Label
+          text: Spell Preset: Default
+          anchors.right: parent.right
+          anchors.top: parent.top
+          margin-right: 17
+          margin-top: 17
+          color: #cfcfcf
+
+        SmallButton
+          text: Set Hotkey (Both)
+          size: 112 20
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+          margin-right: 14
+          margin-bottom: 12
+
+  HorizontalSeparator
+    id: bottomSeparator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: closeButton.top
+    margin-bottom: 10
+
+  Label
+    text: V2 stage 2 - spell selection
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    color: #888888
+
+  Button
+    id: closeButton
+    text: Close
+    size: 48 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_baiakeros_helper_v2.hide()
+
+
+
+
+
