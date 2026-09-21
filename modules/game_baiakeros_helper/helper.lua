@@ -394,7 +394,10 @@ local POTIONS = {
     [268] = { id = 268, name = 'Mana Potion', resources = { mana = true } },
     [237] = { id = 237, name = 'Strong Mana Potion', resources = { mana = true } },
     [238] = { id = 238, name = 'Great Mana Potion', resources = { mana = true } },
-    [23373] = { id = 23373, name = 'Ultimate Mana Potion', resources = { mana = true } }
+    [53162] = { id = 53162, name = 'Superior Mana Potion', resources = { mana = true } },
+    [53163] = { id = 53163, name = 'Distilled Superior Mana Potion', resources = { mana = true } },
+    [23373] = { id = 23373, name = 'Ultimate Mana Potion', resources = { mana = true } },
+    [53164] = { id = 53164, name = 'Distilled Ultimate Mana Potion', resources = { mana = true } }
 }
 
 -- Foods registered by data/scripts/actions/items/foods.lua on the BaiakEros
