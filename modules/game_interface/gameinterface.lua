@@ -70,6 +70,7 @@ local POTION_IDS = {
     [9173] = true, [11372] = true, [21154] = true,
     [23373] = true, [23374] = true, [23375] = true,
     [35563] = true, [37708] = true, [49271] = true, [51302] = true,
+    [53162] = true, [53163] = true, [53164] = true,
 }
 local LOOT_POUCH_ID = 23721
 
