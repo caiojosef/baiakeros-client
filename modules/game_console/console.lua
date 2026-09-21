@@ -168,6 +168,8 @@ spellsTab = nil
 raidsTab = nil
 local lastCapturedSpellSignature = nil
 local lastCapturedSpellAt = 0
+local lastRaidNotificationText = nil
+local lastRaidNotificationAt = 0
 violationsChannelId = nil
 violationWindow = nil
 violationReportTab = nil
@@ -193,10 +195,23 @@ local communicationSettings = {
     whitelistedPlayers = {}
 }
 
-local function onRaidAnnouncement(_protocol, _opcode, message)
-    if raidsTab then
-        addTabText(message, SpeakTypesSettings.broadcast, raidsTab)
+function addServerNotificationToRaids(message)
+    if not raidsTab or not message or message == '' then
+        return
     end
+
+    local now = g_clock.millis()
+    if message == lastRaidNotificationText and now - lastRaidNotificationAt <= 500 then
+        return
+    end
+
+    addTabText(message, SpeakTypesSettings.channelWhite, raidsTab)
+    lastRaidNotificationText = message
+    lastRaidNotificationAt = now
+end
+
+local function onRaidAnnouncement(_protocol, _opcode, message)
+    addServerNotificationToRaids(message)
 end
 
 function consoleController:onInit()

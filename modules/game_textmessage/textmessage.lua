@@ -199,8 +199,21 @@ MessageTypes = {
     [254] = MessageSettings.private
 }
 
-messagesPanel = nil
+local RAID_NOTIFICATION_MODES = {
+    [MessageModes.Login] = true,
+    [MessageModes.Game] = true,
+    [MessageModes.Status] = true,
+    [MessageModes.Warning] = true,
+    [MessageModes.BeyondLast] = true,
+    [MessageModes.Report] = true,
+    [MessageModes.GameHighlight] = true,
+    [MessageModes.Attention] = true,
+    [MessageModes.BoostedCreature] = true,
+    [MessageModes.OfflineTrainning] = true,
+    [MessageModes.Transaction] = true
+}
 
+messagesPanel = nil
 function init()
     for messageMode, _ in pairs(MessageTypes) do
         registerMessageMode(messageMode, displayMessage)
@@ -220,7 +233,6 @@ function terminate()
     messagesPanel:destroy()
     messagesPanel = nil
 end
-
 function calculateVisibleTime(text, isLoot)
     if isLoot then
         return math.min(math.max(#text * 10, 2000), 5000)
@@ -248,6 +260,7 @@ function displayMessage(mode, text)
         MessageTypes[MessageModes.MonsterYell] = MessageSettings.consoleOrange
     end
     local msgtype = MessageTypes[mode]
+    local isRaidNotification = RAID_NOTIFICATION_MODES[mode] == true
     if not msgtype then
         return
     end
@@ -257,7 +270,7 @@ function displayMessage(mode, text)
     end
 
     if msgtype.consoleTab ~= nil and
-        (msgtype.consoleOption == nil or modules.client_options.getOption(msgtype.consoleOption)) then
+        (isRaidNotification or msgtype.consoleOption == nil or modules.client_options.getOption(msgtype.consoleOption)) then
         if msgtype == MessageSettings.loot or msgtype == MessageSettings.valuableLoot then
             local lootColoredText = ItemsDatabase.setColorLootMessage(text)
             local lootTabName = tr(msgtype.consoleTab)
@@ -266,6 +279,10 @@ function displayMessage(mode, text)
         else
             modules.game_console.addText(text, msgtype, tr(msgtype.consoleTab))
         end
+    end
+
+    if isRaidNotification and modules.game_console.addServerNotificationToRaids then
+        modules.game_console.addServerNotificationToRaids(text)
     end
 
     if msgtype.screenTarget then
