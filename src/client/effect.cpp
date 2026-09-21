@@ -81,6 +81,16 @@ void Effect::draw(const Point& dest, const bool drawThings, LightView* lightView
             yPattern += getNumPatternY();
     }
 
+    // Basic attack effects 304-309 use this attacker position grid around the target:
+    //   8 7 6
+    //   5 4 3
+    //   2 1 0
+    // offsetX/offsetY are the target position relative to the local attacker.
+    if (m_clientId >= 304 && m_clientId <= 309) {
+        xPattern = std::clamp(offsetX, -1, 1) + 1;
+        yPattern = std::clamp(offsetY, -1, 1) + 1;
+    }
+
     // Check if the effect can actually be drawn before setting opacity/shader
     // This prevents stale state from affecting subsequent draws when this effect
     // returns early due to missing texture or invalid state

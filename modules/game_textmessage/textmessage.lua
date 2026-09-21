@@ -169,7 +169,7 @@ MessageTypes = {
     [MessageModes.RVRChannel] = MessageSettings.channelWhite,
     [MessageModes.RVRContinue] = MessageSettings.consoleYellow,
 
-    [MessageModes.GamemasterBroadcast] = MessageSettings.consoleRed,
+    [MessageModes.GamemasterBroadcast] = MessageSettings.centerRed,
 
     [MessageModes.DamageDealed] = MessageSettings.statusOwn,
     [MessageModes.DamageReceived] = MessageSettings.statusOwn,
@@ -188,7 +188,7 @@ MessageTypes = {
     [MessageModes.TutorialHint] = MessageSettings.statusSmall,
     [MessageModes.BeyondLast] = MessageSettings.centerWhite,
     [MessageModes.Report] = MessageSettings.centerWhite,
-    [MessageModes.GameHighlight] = MessageSettings.centerRed,
+    [MessageModes.GameHighlight] = MessageSettings.centerWhite,
     [MessageModes.HotkeyUse] = MessageSettings.centerGreen,
     [MessageModes.Attention] = MessageSettings.bottomWhite,
     [MessageModes.BoostedCreature] = MessageSettings.centerWhite,

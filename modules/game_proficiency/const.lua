@@ -36,10 +36,10 @@ PERK_ATTACK_RANGE = 24
 PERK_MELEE_SKILL_FLAT_DAMAGE = 25
 PERK_SPELL_SKILL_FLAT_DAMAGE = 26
 PERK_HEALING_SKILL_FLAT_DAMAGE = 27
-PERK_ARMOR_PENETRATION = 28
-PERK_PIERCE = 29
-PERK_DAMAGE_VS_FULL_HP = 30
-PERK_DAMAGE_VS_LOW_HP = 31
+PERK_DAMAGE_VS_FULL_HP = 28
+PERK_DAMAGE_VS_LOW_HP = 29
+PERK_ARMOR_PENETRATION = 30
+PERK_PIERCE = 31
 
 -- Perk Augment Types
 AUGMENT_NONE = 0
@@ -67,6 +67,7 @@ ExperienceTable = {
 
 -- Elemental Damage Masks
 ElementalMask = {
+    [1]       = {name = "Physical", imageOffset = "0 0"},
     [4]       = {name = "Physical", imageOffset = "0 0"},
     [8]       = {name = "Fire", imageOffset = "64 0"},
     [16]      = {name = "Earth", imageOffset = "192 0"},
@@ -85,6 +86,7 @@ ElementalMask = {
 
 PierceElementMask = {
     [0]       = {name = "Physical", imageOffset = "0 0"},
+    [1]       = {name = "Physical", imageOffset = "0 0"},
     [8]       = {name = "Fire", imageOffset = "64 0"},
     [16]      = {name = "Earth", imageOffset = "192 0"},
     [32]      = {name = "Energy", imageOffset = "128 0"},
@@ -290,8 +292,8 @@ PerkTextData = {
     [PERK_HEALING_SKILL_FLAT_DAMAGE] = {name = "Skill Percentage Spell Healing", desc = "+%s%% of your %s as extra healing for your spells"},
     [PERK_ARMOR_PENETRATION]         = {name = "Armor Penetration", desc = "+%s%% armor penetration"},
     [PERK_PIERCE]                    = {name = "Elemental Pierce", desc = "+%s%% %s pierce"},
-    [PERK_DAMAGE_VS_FULL_HP]         = {name = "Damage vs Full HP", desc = "+%s%% damage against targets with full hit points"},
-    [PERK_DAMAGE_VS_LOW_HP]          = {name = "Damage vs Low HP", desc = "+%s%% damage against targets below 30%% hit points"}
+    [PERK_DAMAGE_VS_FULL_HP]         = {name = "Alpha Strike Extra Damage", desc = "+%s%% damage against targets above 95%% hit points"},
+    [PERK_DAMAGE_VS_LOW_HP]          = {name = "Omega Strike Extra Damage", desc = "+%s%% damage against targets below 30%% hit points"}
 }
 
 -- Types that require elemental critical calculation

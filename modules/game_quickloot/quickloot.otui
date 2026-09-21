@@ -112,7 +112,7 @@ Window
   id: main
   !text: tr('Manage Containers')
   color: #C0C0C0
-  size: 700 425
+  size: 720 425
   anchors.centerIn: parent
   @onEscape: modules.game_quickloot.QuickLoot.toggle()
   SmallReversedQtPanel
@@ -132,20 +132,22 @@ Window
       !tooltip: tr('Tick this check box to loot into your main container if you cannot \nloot into the container for the particular loot category and \nunassigned loot. Note that "Auto-Sort \nPurchases" and "Auto-Sort Stash into Containers" are not afflected by this option.')
 
   Label
-
+    id: lootHeader
     !text: tr('Loot')
     color: #C0C0C0
     anchors.top: fallbackPanel.bottom
-    anchors.left: parent.left
-    margin-left: 85
+    anchors.left: fallbackPanel.left
+    margin-top: 4
+    margin-left: 72
 
   Label
-
+    id: obtainHeader
     !text: tr('Obtain')
     color: #C0C0C0
-    margin-right: 15
     anchors.top: fallbackPanel.bottom
-    anchors.right: fallbackPanel.right
+    anchors.left: fallbackPanel.left
+    margin-top: 4
+    margin-left: 158
   ScrollablePanel
     id: list
     focusable: false
@@ -158,7 +160,7 @@ Window
     anchors.right: fallbackPanel.right
     padding-left: 1
     padding-top: 1
-    margin-top: 25
+    margin-top: 20
     margin-bottom: 32
     padding-bottom: 3
     vertical-scrollbar: scrollbar
@@ -176,14 +178,14 @@ Window
     pixels-scroll: true
   Panel
     id: filters
-    size: 140 115
+    size: 160 125
     image-source: /images/ui/2pixel_up_frame_borderimage
     image-border: 5
     anchors.top: fallbackPanel.top
     anchors.left: list.right
     margin-left: 5
     padding: 7
-    image-size: 140 111
+    image-size: 160 125
     Label
       id: label
       !text: tr('Quick Loot Filter:')
@@ -213,40 +215,48 @@ Window
       @onClick: QuickLoot.filter(self, self:isChecked())
     QtButton
       id: clear
-      size: 128 20
+      size: 148 20
       !text: tr('Clear Skipped Loot List')
-      color: #C0C0C0
-      font: small-9px
+      color: #FFFFFF
       anchors.top: accepted.bottom
       anchors.left: parent.left
       margin-top: 5
       @onClick: QuickLoot.clearFilterItems()
     QtButton
       id: add
-      size: 128 20
+      size: 148 20
       !text: tr('Add to Skipped Loot List')
-      color: #C0C0C0
-      font: small-9px
-      anchors.bottom: parent.bottom
+      color: #FFFFFF
+      anchors.top: clear.bottom
       anchors.left: parent.left
+      margin-top: 5
       @onClick: |
         modules.game_cyclopedia.show("items")
         
   Panel
     id: information
-    size: 140 115
     image-source: /images/ui/2pixel_up_frame_borderimage
     image-border: 5
-    text-wrap: true
-    color: #C0C0C0
-    text-align: left
-    text-offset: 5 -50
-    !text: tr('Select containers for your loot!\n\nRefine your Quick Looting by setting objects on your skipped loot or accepted loot list!')
     anchors.top: filters.bottom
     anchors.bottom: list.bottom
     anchors.left: filters.left
     anchors.right: filters.right
     padding: 7
+    margin-top: 5
+
+    Label
+      id: instructions
+      !text: tr('Select containers for your loot!\n\nRefine your Quick Looting by setting objects on your skipped loot or accepted loot list!')
+      color: #C0C0C0
+      text-wrap: true
+      text-align: left
+      text-auto-resize: false
+      anchors.top: parent.top
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: vipPanel.top
+      margin: 7
+      margin-bottom: 6
 
     Panel
       id: vipPanel
@@ -271,13 +281,6 @@ Window
         $disabled:
           color: #dfdfdf88
           opacity: 0.8
-      Label
-        id: label
-        !text: tr('Premium')
-        text-auto-resize: true
-        anchors.verticalCenter: premium.verticalCenter
-        anchors.left: premium.right
-        margin-left: 10
   TextEdit
     id: search
     height: 22
@@ -325,7 +328,7 @@ Window
   QtButton
     size: 43 20
     !text: tr('Close')
-    color: #C0C0C0
+    color: #FFFFFF
     anchors.bottom: parent.bottom
     anchors.right: parent.right
     @onClick: QuickLoot.toggle()

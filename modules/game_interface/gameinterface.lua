@@ -1581,6 +1581,10 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
         if keyboardModifiers == KeyboardNoModifier and mouseButton == MouseRightButton then
             createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             return true
+        elseif mouseButton == MouseRightButton and g_keyboard.isPrimaryModifierOnly(keyboardModifiers) and
+            (lookThing or useThing or creatureThing) then
+            createThingMenu(menuPosition, lookThing, useThing, creatureThing)
+            return true
         elseif lookThing and keyboardModifiers == KeyboardShiftModifier and
             (mouseButton == MouseLeftButton or mouseButton == MouseRightButton) then
             g_game.look(lookThing)

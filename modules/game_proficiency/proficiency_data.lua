@@ -625,7 +625,7 @@ function ProficiencyData:getImageSourceAndClip(perkData)
     end
 
     if perkType == PERK_PIERCE then
-        local pierceData = PierceElementMask[perkData.DamageType]
+        local pierceData = PierceElementMask[perkData.ElementId]
         return imagePath, pierceData and pierceData.imageOffset or "0 0"
     end
 
@@ -689,7 +689,7 @@ function ProficiencyData:getBonusNameAndTooltip(perkData)
     end
 
     if perkType == PERK_PIERCE then
-        local pierceData = PierceElementMask[perkData.DamageType]
+        local pierceData = PierceElementMask[perkData.ElementId]
         local elementName = pierceData and pierceData.name or "Unknown"
         local description = string.format(data.desc, value, elementName)
         return bonusName, description

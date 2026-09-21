@@ -684,7 +684,8 @@ LRESULT WIN32Window::windowProc(const HWND hWnd, const uint32_t uMsg, const WPAR
         }
         case WM_SYSKEYDOWN:
         {
-            if (wParam == VK_F4 && m_inputEvent.keyboardModifiers & Fw::KeyboardAltModifier)
+            if ((wParam == VK_F4 || wParam == VK_TAB) &&
+                m_inputEvent.keyboardModifiers & Fw::KeyboardAltModifier)
                 return DefWindowProc(hWnd, uMsg, wParam, lParam);
 
             signalKeyEvent = true;
@@ -1047,14 +1048,17 @@ void WIN32Window::setFullscreen(bool fullscreen)
 
     g_mainDispatcher.addEvent([this, fullscreen] {
         const DWORD dwStyle = GetWindowLong(m_window, GWL_STYLE);
+        const DWORD dwExStyle = GetWindowLong(m_window, GWL_EXSTYLE);
 
         if (fullscreen) {
             const auto& size = getDisplaySize();
             GetWindowPlacement(m_window, &wpPrev);
-            SetWindowLong(m_window, GWL_STYLE, (dwStyle & ~WS_OVERLAPPEDWINDOW) | WS_POPUP | WS_EX_TOPMOST);
-            SetWindowPos(m_window, HWND_TOPMOST, 0, 0, size.width(), size.height(), SWP_FRAMECHANGED);
+            SetWindowLong(m_window, GWL_STYLE, (dwStyle & ~WS_OVERLAPPEDWINDOW) | WS_POPUP);
+            SetWindowLong(m_window, GWL_EXSTYLE, dwExStyle & ~WS_EX_TOPMOST);
+            SetWindowPos(m_window, HWND_NOTOPMOST, 0, 0, size.width(), size.height(), SWP_FRAMECHANGED);
         } else {
-            SetWindowLong(m_window, GWL_STYLE, (dwStyle & ~(WS_POPUP | WS_EX_TOPMOST)) | WS_OVERLAPPEDWINDOW);
+            SetWindowLong(m_window, GWL_STYLE, (dwStyle & ~WS_POPUP) | WS_OVERLAPPEDWINDOW);
+            SetWindowLong(m_window, GWL_EXSTYLE, dwExStyle & ~WS_EX_TOPMOST);
             SetWindowPlacement(m_window, &wpPrev);
             SetWindowPos(m_window, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
         }
