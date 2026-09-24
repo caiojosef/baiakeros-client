@@ -453,7 +453,8 @@ function notificationsController:processNext()
             appendW:append(html)
         elseif data.extraData.raceId then
             local raceId = data.extraData.raceId
-            local raceData = g_things.getRaceData(raceId)
+            local raceData = data.extraData.bosstiaryRaceId and Cyclopedia and Cyclopedia.getBossRaceData
+                and Cyclopedia.getBossRaceData(raceId) or g_things.getRaceData(raceId)
             if not raceData or (raceData.raceId == 0 and (not raceData.outfit or raceData.outfit.type == 0)) then
                 g_logger.warning(string.format("Creature with race id %s was not found.", raceId))
             else

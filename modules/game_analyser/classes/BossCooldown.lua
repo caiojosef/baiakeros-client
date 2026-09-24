@@ -337,11 +337,23 @@ function BossCooldown:updateWindow()
 	contentsPanel.bosses:setHeight(40 + (35 * c))
 end
 
+-- The 15.11 static-data names for these race IDs differ from the bosses
+-- registered on this server. Only override the cooldown panel; preserve IDs
+-- and existing player timers.
+local baiakerosBosses = {
+    [2595] = { name = "Adlerauge", outfit = { type = 1901 } },
+    [2598] = { name = "Clavius", outfit = { type = 1902 } },
+    [2602] = { name = "Michael the Stalwart", outfit = { type = 1900, head = 94, body = 31, legs = 19, feet = 38, addons = 3 } },
+    [2603] = { name = "Overseer Osverger", outfit = { type = 1902 } },
+    [50010] = { name = "Ancient Lion Knight", outfit = { type = 1071, head = 57, body = 78, legs = 76, feet = 76, addons = 1 } },
+    [50011] = { name = "The Flaming Orchid", outfit = { type = 150, head = 114, body = 94, legs = 78, feet = 79, addons = 1 } },
+}
+
 function BossCooldown:setupCooldown(cooldown)
 	BossCooldown.cooldown = {}
 
 	for i, cooldownData in pairs(cooldown) do
-		local raceData = g_things.getRaceData(cooldownData.bossRaceId)
+		local raceData = baiakerosBosses[cooldownData.bossRaceId] or g_things.getRaceData(cooldownData.bossRaceId)
 
 		local bossEntry = {
 			bossId = cooldownData.bossRaceId,

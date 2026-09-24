@@ -37,12 +37,14 @@ const Color* getLocationLabelPalette(const std::string_view text)
     static const Color hunts[] = { Color(80, 222, 122), Color(48, 205, 173), Color(148, 225, 79), Color(91, 232, 175) };
     static const Color quests[] = { Color(255, 213, 77), Color(255, 175, 76), Color(240, 226, 105), Color(255, 198, 114) };
     static const Color bossIsland[] = { Color(178, 116, 255), Color(222, 132, 243), Color(143, 143, 255), Color(198, 158, 255) };
+    static const Color miniBosses[] = { Color(255, 118, 210), Color(193, 129, 255), Color(255, 157, 193), Color(151, 168, 255) };
 
     if (text == "TRAINERS") return trainers;
     if (text == "BOSSES") return bosses;
     if (text == "HUNTS") return hunts;
     if (text == "QUESTS") return quests;
     if (text == "BOSS ISLAND") return bossIsland;
+    if (text == "MINI BOSSES") return miniBosses;
     return nullptr;
 }
 } // namespace

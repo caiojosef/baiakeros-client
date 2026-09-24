@@ -252,10 +252,10 @@ PerkVisualData = {
     [PERK_MELEE_SKILL_FLAT_DAMAGE]   = {source = "icons-4", offset = "0 0"},
     [PERK_SPELL_SKILL_FLAT_DAMAGE]   = {source = "icons-5", offset = "0 0"},
     [PERK_HEALING_SKILL_FLAT_DAMAGE] = {source = "icons-6", offset = "0 0"},
-    [PERK_ARMOR_PENETRATION]         = {source = "icons-0", offset = "1344 0"},
+    [PERK_ARMOR_PENETRATION]         = {source = "icons-0", offset = "128 0"},
     [PERK_PIERCE]                    = {source = "icons-weaponmastery-elementalPiercing", offset = "0 0"},
-    [PERK_DAMAGE_VS_FULL_HP]         = {source = "icons-0", offset = "1216 0"},
-    [PERK_DAMAGE_VS_LOW_HP]          = {source = "icons-0", offset = "1280 0"}
+    [PERK_DAMAGE_VS_FULL_HP]         = {source = "icons-0", offset = "0 0"},
+    [PERK_DAMAGE_VS_LOW_HP]          = {source = "icons-0", offset = "192 0"}
 }
 
 -- Perk Text Data (names and descriptions)
