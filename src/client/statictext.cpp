@@ -29,6 +29,24 @@
 #include "framework/core/graphicalapplication.h"
 #include "framework/graphics/fontmanager.h"
 
+namespace {
+const Color* getLocationLabelPalette(const std::string_view text)
+{
+    static const Color trainers[] = { Color(73, 187, 255), Color(91, 146, 255), Color(66, 220, 237), Color(128, 174, 255) };
+    static const Color bosses[] = { Color(255, 84, 101), Color(255, 121, 83), Color(230, 86, 163), Color(255, 160, 92) };
+    static const Color hunts[] = { Color(80, 222, 122), Color(48, 205, 173), Color(148, 225, 79), Color(91, 232, 175) };
+    static const Color quests[] = { Color(255, 213, 77), Color(255, 175, 76), Color(240, 226, 105), Color(255, 198, 114) };
+    static const Color bossIsland[] = { Color(178, 116, 255), Color(222, 132, 243), Color(143, 143, 255), Color(198, 158, 255) };
+
+    if (text == "TRAINERS") return trainers;
+    if (text == "BOSSES") return bosses;
+    if (text == "HUNTS") return hunts;
+    if (text == "QUESTS") return quests;
+    if (text == "BOSS ISLAND") return bossIsland;
+    return nullptr;
+}
+} // namespace
+
 StaticText::StaticText()
 {
     m_cachedText.setFont(g_gameConfig.getStaticTextFont());
@@ -58,32 +76,45 @@ void StaticText::setFont(const std::string_view fontName) { m_cachedText.setFont
 
 bool StaticText::addMessage(const std::string_view name, const Otc::MessageMode mode, const std::string_view text)
 {
-    //TODO: this could be moved to lua
-    // first message
+    const bool isLocationLabel = (mode == Otc::MessageMonsterSay || mode == Otc::MessageBarkLow) && getLocationLabelPalette(text);
     if (m_messages.empty()) {
         m_name = name;
         m_mode = mode;
-    }
-    // check if we can really own the message
-    else if (m_name != name || m_mode != mode) {
+        m_isLocationLabel = isLocationLabel;
+    } else if (m_name != name || m_mode != mode || m_isLocationLabel != isLocationLabel
+               || (isLocationLabel && m_messages.front().first != text)) {
         return false;
-    }
-
-    // too many messages
-    else if (m_messages.size() > 10) {
+    } else if (!isLocationLabel && m_messages.size() > 10) {
         m_messages.pop_front();
         m_updateEvent->cancel();
         m_updateEvent = nullptr;
     }
 
+    if (isLocationLabel && m_messages.size() >= 3) {
+        m_messages.pop_front();
+        m_locationLabelColors.pop_front();
+        if (m_updateEvent) {
+            m_updateEvent->cancel();
+            m_updateEvent = nullptr;
+        }
+    }
+
     int delay = std::max<int>(g_gameConfig.getStaticDurationPerCharacter() * text.length(), g_gameConfig.getMinStatictextDuration());
-    if (isYell())
+    if (isLocationLabel)
+        delay = 2400;
+    else if (isYell())
         delay *= 2;
 
     if (g_app.mustOptimize())
         delay /= 2;
 
     m_messages.emplace_back(text, g_clock.millis() + delay);
+    if (isLocationLabel) {
+        // The next pulse always picks a different shade from this label's palette.
+        const int step = 1 + static_cast<int>(g_clock.millis() % 3);
+        m_lastLocationLabelColor = (m_lastLocationLabelColor + step) % 4;
+        m_locationLabelColors.push_back(static_cast<uint8_t>(m_lastLocationLabelColor));
+    }
     compose();
 
     if (!m_updateEvent)
@@ -95,6 +126,8 @@ bool StaticText::addMessage(const std::string_view name, const Otc::MessageMode 
 void StaticText::update()
 {
     m_messages.pop_front();
+    if (m_isLocationLabel)
+        m_locationLabelColors.pop_front();
     if (m_messages.empty()) {
         // schedule removal
         g_textDispatcher.addEvent([self = asStaticText()] { g_map.removeStaticText(self); });
@@ -149,6 +182,21 @@ void StaticText::compose()
         m_color = MESSAGE_COLOR3;
     } else {
         g_logger.warning("Unknown speak type: {}", static_cast<uint8_t>(m_mode));
+    }
+
+    if (m_isLocationLabel) {
+        const Color* palette = getLocationLabelPalette(m_messages.front().first);
+        std::vector<std::pair<int, Color>> textColors;
+        for (uint32_t i = 0; i < m_messages.size(); ++i) {
+            textColors.emplace_back(static_cast<int>(text.size()), palette[m_locationLabelColors[i]]);
+            text += m_messages[i].first;
+            if (i + 1 < m_messages.size())
+                text += "\n";
+        }
+        m_cachedText.setText(text);
+        m_cachedText.setTextColors(std::move(textColors));
+        m_cachedText.wrapText(275);
+        return;
     }
 
     for (uint32_t i = 0; i < m_messages.size(); ++i) {

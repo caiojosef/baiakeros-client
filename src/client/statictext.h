@@ -64,6 +64,9 @@ private:
     void compose();
 
     std::deque<std::pair<std::string, ticks_t>> m_messages;
+    std::deque<uint8_t> m_locationLabelColors;
+    int m_lastLocationLabelColor{ -1 };
+    bool m_isLocationLabel{ false };
     std::string m_name;
     Otc::MessageMode m_mode{ Otc::MessageNone };
     Color m_color{ Color::white };
