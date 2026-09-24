@@ -1,0 +1,18 @@
+{
+  "item_id": 23721,
+  "sprite_ids": [
+    300734,
+    300735,
+    300736,
+    300737,
+    300738,
+    300739
+  ],
+  "rest_pause_ms": [
+    3500,
+    6000
+  ],
+  "effect_duration_ms": 900,
+  "sheet": "sprites-f870585682d9e852c95787a2c22b2796eda60cc9ccb945425001c943989d8c8b.bmp.lzma",
+  "previous_backup": "D:\\otserv\\otclient-main\\artwork\\loot-pouch-baiakeros-v2\\backup-previous-black-gold"
+}
