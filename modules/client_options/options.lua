@@ -207,6 +207,12 @@ local function setup()
 
     setupComboBox()
 
+    -- Restore the original bright lower-floor rendering once for existing profiles.
+    if not g_settings.getBoolean('brightLowerFloors90V3') then
+        g_settings.set('shadowFloorIntensity', 90)
+        g_settings.set('brightLowerFloors90V3', true)
+    end
+
     -- load options
     for k, obj in pairs(options) do
         local v = obj.value

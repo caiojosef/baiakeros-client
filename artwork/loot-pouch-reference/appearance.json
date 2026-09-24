@@ -1,0 +1,16 @@
+{
+  "id": 23721,
+  "groups": [
+    {
+      "fixed_group": 2,
+      "id": 2,
+      "pattern_width": 1,
+      "pattern_height": 1,
+      "pattern_depth": 1,
+      "layers": 1,
+      "sprite_ids": [
+        212383
+      ]
+    }
+  ]
+}

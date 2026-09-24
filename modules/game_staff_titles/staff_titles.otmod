@@ -1,0 +1,11 @@
+Module
+  name: game_staff_titles
+  description: Per-character staff rank labels
+  author: BaiakEros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+  scripts: [ staff_titles ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -57,6 +57,8 @@ Creature::Creature() :m_type(Proto::CreatureTypeUnknown)
     g_stats.addCreature();
     m_name.setFont(g_gameConfig.getCreatureNameFont());
     m_name.setAlign(Fw::AlignTopCenter);
+    m_staffTitle.setFont(g_gameConfig.getCreatureNameFont());
+    m_staffTitle.setAlign(Fw::AlignTopCenter);
     m_typingIconTexture = g_textures.getTexture(g_gameConfig.getTypingIcon());
 }
 
@@ -315,6 +317,14 @@ void Creature::drawInformation(const MapPosInfo& mapRect, const Point& dest, con
 
         if (nameProgram)
             g_drawPool.setShaderProgram(nameProgram);
+
+        if (!m_staffTitle.getText().empty()) {
+            const auto& titleSize = m_staffTitle.getTextSize();
+            auto titleRect = Rect(p.x - titleSize.width() / 2.0, textRect.y() - titleSize.height(), titleSize);
+            if (!isScaled)
+                titleRect.bind(parentRect);
+            m_staffTitle.draw(titleRect, Color::white);
+        }
 
         m_name.draw(textRect, fillColor);
 

@@ -1,0 +1,17 @@
+{
+  "item_id": 23721,
+  "sprite_ids": [
+    300734,
+    300735,
+    300736,
+    300737,
+    300738,
+    300739
+  ],
+  "sheet": "sprites-124babfa39c83fd75a7a69c76a2abfb6903c4534198f5f09990a97683b264c8c.bmp.lzma",
+  "rest_pause_ms": [
+    3500,
+    6000
+  ],
+  "backup": "D:\\otserv\\otclient-main\\artwork\\loot-pouch-baiakeros-v3\\backup-previous-installed"
+}

@@ -394,7 +394,7 @@ return {
         end
     },
     shadowFloorIntensity              = {
-        value = 30,
+        value = 90,
         action = function(value, options, controller, panels, extraWidgets)
             panels.graphicsEffectsPanel:recursiveGetChildById('shadowFloorIntensity'):setText(string.format(
                 'Shadow floor Intensity: %s%%', value))
