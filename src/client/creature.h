@@ -57,6 +57,8 @@ public:
     void setId(const uint32_t id) override { m_id = id; }
     void setMasterId(const uint32_t id) { m_masterId = id; }
     void setName(std::string_view name);
+    void setStaffTitle(std::string_view title) { m_staffTitle.setText(std::string(title)); }
+    std::string getStaffTitle() const { return m_staffTitle.getText(); }
     void setHealthPercent(uint8_t healthPercent);
     void setManaPercent(uint8_t value) { m_manaPercent = value; }
     void setDirection(Otc::Direction direction);
@@ -300,6 +302,7 @@ private:
     EventPtr m_disappearEvent;
 
     CachedText m_name;
+    CachedText m_staffTitle;
     std::string m_nameShader;
     CachedStep m_stepCache;
 
