@@ -4,6 +4,7 @@ HTTP = {
   agent = "Mozilla/5.0",
   imageId = 1000,
   images = {},
+  imageRequests = {},
   operations = {},
   enableTimeOut = false, -- only work in read/write
 }
@@ -82,10 +83,18 @@ function HTTP.downloadImage(url, callback)
     end
     return
   end
+  local request = HTTP.imageRequests[url]
+  if request then
+    if callback then
+      request.callbacks[#request.callbacks + 1] = callback
+    end
+    return request.operation
+  end
   local file = "autoimage_" .. HTTP.imageId .. ".png"
   HTTP.imageId = HTTP.imageId + 1
   local operation = g_http.download(url, file, HTTP.timeout)
-  HTTP.operations[operation] = { type = "image", url = url, file = file, callback = callback }
+  HTTP.imageRequests[url] = { operation = operation, callbacks = callback and { callback } or {} }
+  HTTP.operations[operation] = { type = "image", url = url, file = file }
   return operation
 end
 
@@ -203,15 +212,18 @@ function HTTP.onDownload(operationId, url, err, path, checksum)
   if err and err:len() == 0 then
     err = nil
   end
-  if operation.callback then
-    if operation["type"] == "image" then
-      if not err then
-        HTTP.images[url] = path
-      end
-      operation.callback('/downloads/' .. path, err)
-    else
-      operation.callback(path, checksum, err)
+  if operation.type == "image" then
+    local request = HTTP.imageRequests[operation.url]
+    HTTP.imageRequests[operation.url] = nil
+    HTTP.operations[operationId] = nil
+    if not err then
+      HTTP.images[operation.url] = path
     end
+    for _, callback in ipairs(request and request.callbacks or {}) do
+      callback(path and ('/downloads/' .. path) or nil, err)
+    end
+  elseif operation.callback then
+    operation.callback(path, checksum, err)
   end
 end
 

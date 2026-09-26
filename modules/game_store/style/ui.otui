@@ -91,29 +91,41 @@ OfferPanel2 < Panel
     icon-offset: 10 0
   
 stackOfferPanel < Panel
+  height: 20
+
   Label
     id: count
-    anchors.bottom: parent.bottom
+    width: 40
+    height: 20
     anchors.left: parent.left
-    margin: 0 0 5 2
-    width: 58
+    anchors.verticalCenter: parent.verticalCenter
     text-align: center
     text-auto-resize: false
     clipping: true
 
+  Label
+    id: lblOriginalPrice
+    width: 36
+    height: 19
+    anchors.right: lblPrice.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 2
+    font: Verdana-Strikethrough-11px
+    color: #a9a9a9
+    text-align: center
+    visible: false
+
   StoreFlatPanel
     id: lblPrice
-    size: 78 20
-    anchors.bottom: parent.bottom
+    size: 78 19
     anchors.right: parent.right
-    margin: 0 3 5 0
-    text-align: center
-    text-offset: 8 0
-    image-color: #1111118c
+    anchors.verticalCenter: parent.verticalCenter
+    text-align: right
+    text-offset: -19 0
+    image-color: #171717c0
     icon: /images/ui/tibiaCoin
     icon-align: right
-    icon-offset: -1 0
-  
+    icon-offset: -2 0
 StoreFlatPanel < UIWidget
   phantom: true
   auto-focus: first

@@ -14,10 +14,37 @@ local a0xF2 = true
 
 local offerDescriptions = {}
 local reasonCategory = {}
-local bannersHome = {}
 
-local currentIndex = 1
+local homeBanners = {
+    'store-banner-arcane-bag',
+    'store-banner-addon-doll',
+    'store-banner-mount-doll'
+}
+local homeBannerIndex = 1
+local homeBannerEvent = nil
 
+local function renderHomeBanner()
+    local banner = controllerShop.ui.HomePanel.HomeContent.HomeBanner
+    banner:setImageSource('/game_store/images/' .. homeBanners[homeBannerIndex])
+end
+
+function changeHomeBanner(direction)
+    homeBannerIndex = (homeBannerIndex - 1 + direction) % #homeBanners + 1
+    renderHomeBanner()
+end
+
+local function scheduleHomeBanner()
+    if homeBannerEvent then
+        removeEvent(homeBannerEvent)
+    end
+    homeBannerEvent = controllerShop:scheduleEvent(function()
+        homeBannerEvent = nil
+        if controllerShop.ui and controllerShop.ui:isVisible() and controllerShop.ui.HomePanel:isVisible() then
+            changeHomeBanner(1)
+            scheduleHomeBanner()
+        end
+    end, 6500)
+end
 -- /*=============================================
 -- =            To-do                  =
 -- =============================================*/
@@ -121,6 +148,16 @@ local function getPageLabelHistory()
 end
 
 local function setImagenHttp(widget, url, isIcon)
+    local filename = url:match("([^/]+)$")
+    local localImage = filename and "/game_store/images/" .. filename
+    if localImage and g_resources.fileExists(localImage) then
+        if isIcon then
+            widget:setIcon(localImage)
+        else
+            widget:setImageSource(localImage)
+        end
+        return
+    end
     if GameStore.website.IMAGES_URL then
         HTTP.downloadImage(GameStore.website.IMAGES_URL .. url, function(path, err)
             if err then
@@ -317,10 +354,10 @@ local function getProductData(product)
             VALOR = "icon",
             ID = product.icon
         }
-    elseif product.outfitId or product.mountId or product.sexId then
+    elseif product.outfitId or product.mountId or product.mountClientId or product.sexId then
         return {
             VALOR = "mountId",
-            ID = product.outfitId or product.mountId or product.sexId
+            ID = product.outfitId or product.mountId or product.mountClientId or product.sexId
         }
     elseif product.maleOutfitId then
         return {
@@ -509,7 +546,8 @@ function controllerShop:onInit()
 
     controllerShop.ui.transferPoints.onClick = transferPoints
     controllerShop.ui.panelItem.listProduct.onChildFocusChange = chooseOffert
-    controllerShop.ui.HomePanel.HomeRecentlyAdded.HomeProductos.onChildFocusChange = chooseHome
+    controllerShop.ui.HomePanel.HomeContent.HomeRecentlyAdded.HomeProductos.onChildFocusChange = chooseHome
+    controllerShop.ui.HomePanel.HomeContent.HomePromotions.PromotionProducts.onChildFocusChange = chooseHome
     -- /*=============================================
     -- =            Parse                         =
     -- =============================================*/
@@ -540,6 +578,10 @@ function controllerShop:onGameEnd()
     purchaseStatusCloseEvent = nil
     purchaseAnimationEvent = nil
     searchEvent = nil
+    if homeBannerEvent then
+        removeEvent(homeBannerEvent)
+        homeBannerEvent = nil
+    end
 end
 
 function controllerShop:onTerminate()
@@ -547,6 +589,10 @@ function controllerShop:onTerminate()
     purchaseStatusCloseEvent = nil
     purchaseAnimationEvent = nil
     searchEvent = nil
+    if homeBannerEvent then
+        removeEvent(homeBannerEvent)
+        homeBannerEvent = nil
+    end
 end
 
 -- /*=============================================
@@ -642,13 +688,16 @@ function onParseStoreCreateProducts(storeProducts)
         local row = g_ui.createWidget('RowStore', listProduct)
         row.product, row.type = product, product.type
 
-        local nameLabel = row:getChildById('lblName')
-        nameLabel:setText(product.name)
-        nameLabel:setTextAlign(AlignCenter)
-        nameLabel:setMarginRight(10)
+        row.lblName:setText(product.name)
 
         local subOffers = product.subOffers or { product }
+        local offerCount = #subOffers
+        row:setHeight(math.max(78, 34 + offerCount * 22))
+        row.StackOffers:setHeight(offerCount * 20 + math.max(0, offerCount - 1) * 2)
         for _, subOffer in ipairs(subOffers) do
+            if subOffer.state == GameStore.States.STATE_NEW then
+                row.newBadge:setVisible(true)
+            end
             local offerI = g_ui.createWidget('stackOfferPanel', row:getChildById('StackOffers'))
             offerI:setId(subOffer.id)
             if subOffer.disabled then
@@ -657,6 +706,10 @@ function onParseStoreCreateProducts(storeProducts)
             end
             local priceLabel = offerI:getChildById('lblPrice')
             priceLabel:setText(subOffer.price)
+            if subOffer.state == GameStore.States.STATE_SALE and subOffer.basePrice and subOffer.basePrice > subOffer.price then
+                offerI.lblOriginalPrice:setText(subOffer.basePrice)
+                offerI.lblOriginalPrice:setVisible(true)
+            end
 
             if subOffer.count and subOffer.count > 0 then
                 offerI:getChildById('count'):setText(subOffer.count .. "x")
@@ -674,7 +727,7 @@ function onParseStoreCreateProducts(storeProducts)
         end
         local data = getProductData(product)
         if data then
-            createProductImage(row:getChildById('image'), data)
+            createProductImage(row:getChildById('image'):getChildById('iconContent'), data)
         end
     end
 
@@ -705,37 +758,60 @@ function onParseStoreCreateProducts(storeProducts)
 end
 
 function onParseStoreCreateHome(offer)
-    local homeProductos = controllerShop.ui.HomePanel.HomeRecentlyAdded.HomeProductos
+    local homeProductos = controllerShop.ui.HomePanel.HomeContent.HomeRecentlyAdded.HomeProductos
+    local promotionProducts = controllerShop.ui.HomePanel.HomeContent.HomePromotions.PromotionProducts
+    homeProductos:destroyChildren()
+    promotionProducts:destroyChildren()
+    local promotionCount = 0
+    local purchasedCount = 0
     for _, product in ipairs(offer.offers) do
-        local row = g_ui.createWidget('RowStore', homeProductos)
-        row.product, row.type = product, product.type
-
-        local nameLabel = row:getChildById('lblName')
-        nameLabel:setText(product.name)
-        nameLabel:setTextAlign(AlignCenter)
-        nameLabel:setMarginRight(10)
-        
-        local subOfferWidget = g_ui.createWidget('stackOfferPanel', row:getChildById('StackOffers'))
-
-        subOfferWidget.lblPrice:setText(product.price)
-        if product.coinType == GameStore.CoinType.Transferable then
-            subOfferWidget.lblPrice:setIcon("/game_store/images/icon-tibiacointransferable")
+        local isPromotion = product.unknownByte2 == GameStore.States.STATE_SALE
+        if isPromotion then
+            promotionCount = promotionCount + 1
+        else
+            purchasedCount = purchasedCount + 1
         end
-
+        local row = g_ui.createWidget('HomeOfferRow', isPromotion and promotionProducts or homeProductos)
+        row.product, row.type = product, product.type
+        row.lblName:setText(product.name)
+        row.lblPrice:setText(product.price)
+        row.newBadge:setVisible(product.unknownByte2 == GameStore.States.STATE_NEW)
+        if isPromotion then
+            -- Home carries the regular price in its otherwise unused stateNewUntil field.
+            local originalPrice = product.stateNewUntil
+            if not originalPrice or originalPrice <= product.price then
+                originalPrice = math.floor(product.price / 0.8 + 0.5)
+            end
+            row.lblOriginalPrice:setText(originalPrice)
+            row.lblOriginalPrice:setVisible(true)
+        end
+        if product.coinType == GameStore.CoinType.Transferable then
+            row.lblPrice:setIcon('/game_store/images/icon-tibiacointransferable')
+        end
         local data = getProductData(product)
         if data then
-            createProductImage(row:getChildById('image'), data)
+            createProductImage(row:getChildById('image'):getChildById('iconContent'), data)
         end
     end
 
-    local ramdomImg = offer.banners[math.random(1, #offer.banners)].image
-    setImagenHttp(controllerShop.ui.HomePanel.HomeImagen, ramdomImg, false)
+    -- Keep each section as tall as its compact two-column cards; the parent scrolls everything.
+    local function sectionHeight(count)
+        local rows = math.ceil(count / 2)
+        if rows == 0 then
+            return 42
+        end
+        return 31 + rows * 72 + (rows - 1) * 4
+    end
+    controllerShop.ui.HomePanel.HomeContent.HomePromotions:setHeight(sectionHeight(promotionCount))
+    controllerShop.ui.HomePanel.HomeContent.HomeRecentlyAdded:setHeight(sectionHeight(purchasedCount))
+    controllerShop.ui.HomePanel.homeScroll:setValue(0)
+    homeBannerIndex = 1
+    renderHomeBanner()
+    scheduleHomeBanner()
     enableAllButtons()
-    bannersHome = table.copy(offer.banners)
-    showPanel("HomePanel")
+    showPanel('HomePanel')
     fixServerNoSend0xF2()
 end
-
 function onParseStoreGetHistory(currentPage, pageCount, historyData)
     local transferHistory = controllerShop.ui.transferHistory.historyPanel
     transferHistory:destroyChildren()
@@ -904,7 +980,7 @@ function onParseStoreGetCategories(buttons)
                     controllerShop.ui.selectedOption:hide()
                 end
                 if category.name == "Home" then
-                    controllerShop.ui.HomePanel.HomeRecentlyAdded.HomeProductos:destroyChildren()
+                    controllerShop.ui.HomePanel.HomeContent.HomeRecentlyAdded.HomeProductos:destroyChildren()
                     g_game.sendRequestStoreHome()
                 else
                     local sortOption = controllerShop.ui.panelItem.comboBoxContainer.MostPopularFirst:getCurrentOption()
@@ -1194,25 +1270,7 @@ function chooseHome(self, focusedChild)
         return
     end
     local product = focusedChild.product
-    local panel = controllerShop.ui.HomePanel.HomeRecentlyAdded.HomeProductos
     g_game.sendRequestStoreOfferById(product.id)
-end
-
-function changeImagenHome(direction)
-    if direction == "nextImagen" then
-        currentIndex = currentIndex + 1
-        if currentIndex > #bannersHome then
-            currentIndex = 1
-        end
-    elseif direction == "prevImagen" then
-        currentIndex = currentIndex - 1
-        if currentIndex < 1 then
-            currentIndex = #bannersHome
-        end
-    end
-    local currentBanner = bannersHome[currentIndex]
-    local imagePath = currentBanner.image
-    setImagenHttp(controllerShop.ui.HomePanel.HomeImagen, imagePath, false)
 end
 
 -- /*=============================================

@@ -36,6 +36,78 @@ HistoryEntry < UIWidget
     anchors.verticalCenter: parent.verticalCenter
     margin-left: 242
 
+HomeOfferRow < StoreLightFlatPanel
+  height: 72
+  border: 1 #666666
+
+  $focus:
+    border: 1 #dedede
+
+  Box
+    id: image
+    size: 66 66
+    anchors.top: parent.top
+    anchors.left: parent.left
+    margin-top: 3
+    margin-left: 3
+
+    UIWidget
+      id: iconContent
+      size: 52 52
+      anchors.centerIn: parent
+
+  UIWidget
+    id: newBadge
+    size: 30 30
+    anchors.left: image.left
+    anchors.bottom: image.bottom
+    image-source: /game_store/images/store-new-ribbon
+    phantom: true
+    visible: false
+
+  Label
+    id: lblName
+    anchors.top: parent.top
+    anchors.left: image.right
+    anchors.right: parent.right
+    margin-top: 5
+    margin-left: 6
+    margin-right: 4
+    height: 30
+    font: verdana-11px-rounded
+    color: #5ebd3c
+    text-align: left
+    text-wrap: true
+    clipping: true
+
+  Label
+    id: lblOriginalPrice
+    width: 43
+    height: 19
+    anchors.bottom: parent.bottom
+    anchors.right: lblPrice.left
+    margin-right: 2
+    margin-bottom: 3
+    font: Verdana-Strikethrough-11px
+    color: #a9a9a9
+    text-align: center
+    visible: false
+
+  StoreFlatPanel
+    id: lblPrice
+    size: 91 19
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    margin-right: 3
+    margin-bottom: 3
+    font: verdana-11px-rounded
+    text-align: right
+    text-offset: -19 0
+    image-color: #171717c0
+    icon: /images/ui/tibiaCoin
+    icon-align: right
+    icon-offset: -2 0
+
 RowStore < StoreLightFlatPanel
   height: 78
   margin: 2
@@ -49,31 +121,50 @@ RowStore < StoreLightFlatPanel
     size: 64 64
     anchors.top: parent.top
     anchors.left: parent.left
-    margin: 5 0 0 5
+    margin-top: 5
+    margin-left: 5
+
+    UIWidget
+      id: iconContent
+      size: 52 52
+      anchors.centerIn: parent
+
+  UIWidget
+    id: newBadge
+    size: 30 30
+    anchors.left: image.left
+    anchors.bottom: image.bottom
+    image-source: /game_store/images/store-new-ribbon
+    phantom: true
+    visible: false
 
   Label
     id: lblName
     anchors.top: parent.top
-    anchors.left: prev.right
-    anchors.right: parent.right
-    margin: 8 0 0 8
-    text-auto-resize: true
-    text-wrap: true
-  Panel
-    id: StackOffers
-    margin-left: 31
-    height: 80
-    margin-top: 12
-    anchors.top: prev.bottom
     anchors.left: image.right
     anchors.right: parent.right
-    layout:
-      type: grid
-      cell-size: 145 20
-      cell-spacing: 5
-      flow: true
-      fit-children: true
+    margin-top: 6
+    margin-left: 8
+    margin-right: 4
+    height: 25
+    font: verdana-11px-rounded
+    color: #dfdfdf
+    text-align: left
+    text-wrap: true
+    clipping: true
 
+  Panel
+    id: StackOffers
+    anchors.left: image.right
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-left: 8
+    margin-right: 3
+    margin-bottom: 3
+    height: 20
+    layout:
+      type: verticalBox
+      spacing: 2
 MenuCategoryStore < UIWidget
   height: 22
   image-source: images/longButton
@@ -432,70 +523,82 @@ StoreWindow
     anchors.bottom: listCategory.bottom
     margin-left: 8
     padding: 6
-    UIWidget
-      id: HomeImagen
-      height: 20
-      size: 530 202
+
+    VerticalScrollBar
+      id: homeScroll
       anchors.top: parent.top
-      anchors.left: parent.left
-      anchors.right: parent.right
-      margin-right:10
-    UIButton
-      id: prevImagen
-      anchors.verticalCenter: prev.verticalCenter
-      anchors.left: prev.left
-      size: 16 29
-      image-source: images/button-featured-offers-left
-      margin-left: 15
-      @onClick: modules.game_store.changeImagenHome(self:getId())
-      $pressed :
-        image-source: images/button-featured-offers-left-highlight
-      $hover:
-        image-source: images/button-featured-offers-left-highlight
-
-
-    UIButton
-      id: nextImagen
-      anchors.verticalCenter: prev.verticalCenter
-      anchors.right: HomeImagen.right
-      size: 16 29
-      margin-right: 15
-      image-source: images/button-featured-offers-right
-      @onClick: modules.game_store.changeImagenHome(self:getId())
-      $pressed:
-        image-source: images/button-featured-offers-right-highlight
-      $hover:
-        image-source: images/button-featured-offers-right-highlight
-
-    MiniPanel
-      id:HomeRecentlyAdded
-      anchors.top: HomeImagen.bottom
-      anchors.left: parent.left
       anchors.bottom: parent.bottom
-      size: 530 407
-      margin-top:10
-      text: Most Purchased
-      UIScrollArea
-        id: HomeProductos
-        size: 505 190
-        vertical-scrollbar: scrollList2
-        image-border: 3
-        layout: verticalBox
-        margin-right:10
+      anchors.right: parent.right
+      step: 36
+      pixels-scroll: true
 
+    UIScrollArea
+      id: HomeContent
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.left: parent.left
+      anchors.right: homeScroll.left
+      margin-right: 3
+      vertical-scrollbar: homeScroll
+      auto-focus: none
+      layout:
+        type: verticalBox
+        spacing: 9
 
-        auto-focus: none
-        anchors.fill: parent
-        layout:
-          type: grid
-          cell-size: 254 94
-          flow: true
+      UIWidget
+        id: HomeBanner
+        height: 188
+        image-source: /game_store/images/store-banner-arcane-bag
+        image-smooth: true
+        image-fixed-ratio: false
 
-      
-      VerticalScrollBar
-        id: scrollList2
-        anchors.top: HomeProductos.top
-        anchors.bottom: HomeProductos.bottom
-        anchors.left: HomeProductos.right
-        step: 14
-        pixels-scroll: true
+        UIButton
+          id: prevBanner
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          margin-left: 5
+          size: 16 29
+          image-source: /game_store/images/button-featured-offers-left
+          @onClick: modules.game_store.changeHomeBanner(-1)
+          $hover:
+            image-source: /game_store/images/button-featured-offers-left-highlight
+
+        UIButton
+          id: nextBanner
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          margin-right: 5
+          size: 16 29
+          image-source: /game_store/images/button-featured-offers-right
+          @onClick: modules.game_store.changeHomeBanner(1)
+          $hover:
+            image-source: /game_store/images/button-featured-offers-right-highlight
+      MiniPanel
+        id: HomePromotions
+        height: 125
+        text: Promotions - 20% OFF
+
+        Panel
+          id: PromotionProducts
+          anchors.fill: parent
+          auto-focus: none
+          layout:
+            type: grid
+            cell-size: 245 72
+            cell-spacing: 4
+            flow: true
+
+      MiniPanel
+        id: HomeRecentlyAdded
+        height: 125
+        text: Most Purchased
+
+        Panel
+          id: HomeProductos
+          anchors.fill: parent
+          auto-focus: none
+          layout:
+            type: grid
+            cell-size: 245 72
+            cell-spacing: 4
+            flow: true
