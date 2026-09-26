@@ -11,6 +11,8 @@ local containerSettingsSaveEvent
 local containerRestoreNextTry = {}
 local containerRestoreAttempts = 0
 local pendingContainerPaths = {}
+local pendingRewardChestRequests = {}
+local REWARD_CHEST_ID = 19250
 
 local function scheduleContainerSettingsSave()
     if containerSettingsSaveEvent then removeEvent(containerSettingsSaveEvent) end
@@ -118,7 +120,15 @@ local function buildContainerPathFromRequest(position, itemId)
     }
 end
 
-local function onOpenContainerRequest(position, itemId, containerId)
+local function onOpenContainerRequest(position, itemId, containerId, stackPos)
+    if itemId == REWARD_CHEST_ID then
+        pendingRewardChestRequests[containerId] = {
+            position = position,
+            itemId = itemId,
+            stackPos = stackPos,
+            expiresAt = g_clock.millis() + 5000
+        }
+    end
     local path = buildContainerPathFromRequest(position, itemId)
     if not path then return end
     pendingContainerPaths[containerId] = {
@@ -344,6 +354,7 @@ local function onContainersGameEnd()
     end
     snapshotOpenContainers()
     pendingContainerPaths = {}
+    pendingRewardChestRequests = {}
     clean()
 end
 
@@ -449,6 +460,7 @@ function terminate()
         g_settings.save()
     end
     pendingContainerPaths = {}
+    pendingRewardChestRequests = {}
     for containerId, event in pairs(goldPouchResyncEvents) do
         removeEvent(event)
         goldPouchResyncEvents[containerId] = nil
@@ -1343,6 +1355,12 @@ end
 
 function onContainerOpen(container, previousContainer)
     cancelGoldPouchResync(container:getId())
+    local pendingRewardRequest = pendingRewardChestRequests[container:getId()]
+    pendingRewardChestRequests[container:getId()] = nil
+    container.rewardChestRequest =
+        (pendingRewardRequest and pendingRewardRequest.expiresAt >= g_clock.millis() and pendingRewardRequest)
+        or container.rewardChestRequest
+        or (previousContainer and previousContainer.rewardChestRequest)
     local pendingPath = pendingContainerPaths[container:getId()]
     pendingContainerPaths[container:getId()] = nil
     if pendingPath and pendingPath.expiresAt >= g_clock.millis() then
@@ -1546,13 +1564,36 @@ function onContainerOpen(container, previousContainer)
     container.itemsPanel = containerPanel
 
     toggleContainerPages(containerWindow, container:hasPages())
+    local collectAllButton = containerWindow:getChildById('collectAllButton')
+    local chestItem = container:getContainerItem()
+    local isRewardChest = chestItem and chestItem:getId() == REWARD_CHEST_ID
+    collectAllButton:setVisible(isRewardChest and true or false)
+    if isRewardChest then
+        collectAllButton:setEnabled(container.rewardChestRequest ~= nil)
+        collectAllButton.onClick = function()
+            local request = container.rewardChestRequest
+            if request then
+                g_game.collectRewardChest(request.position, request.itemId, request.stackPos)
+            end
+        end
+        containerPanel:breakAnchors()
+        containerPanel:addAnchor(AnchorTop, 'collectAllButton', AnchorBottom)
+        containerPanel:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        containerPanel:addAnchor(AnchorRight, 'miniwindowScrollBar', AnchorLeft)
+        containerPanel:addAnchor(AnchorBottom, container:hasPages() and 'separator' or 'parent',
+            container:hasPages() and AnchorTop or AnchorBottom)
+        containerPanel:setMarginLeft(3)
+        containerPanel:setMarginBottom(container:hasPages() and 1 or 3)
+        containerPanel:setMarginTop(2)
+        containerPanel:setMarginRight(1)
+    end
     refreshContainerPages(container)
 
     local layout = containerPanel:getLayout()
     local cellSize = layout:getCellSize()
     local step = cellSize.height + layout:getCellSpacing()
     local numLines = math.max(layout:getNumLines(), 1)
-    local chromeHeight = container:hasPages() and 55 or 31
+    local chromeHeight = (container:hasPages() and 55 or 31) + (isRewardChest and 24 or 0)
     containerWindow:setContentMinimumHeight(cellSize.height)
 
     local resizeBorder = containerWindow:getChildById('bottomResizeBorder')
