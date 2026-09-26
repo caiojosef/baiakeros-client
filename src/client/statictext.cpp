@@ -172,8 +172,8 @@ void StaticText::compose()
         text += " yells:\n";
         m_color = MESSAGE_COLOR1;
     } else if (m_mode == Otc::MessageSpell) {
-        // Baiakeros uses the traditional spell incantation presentation:
-        // yellow text over the creature, without the emote/monster color.
+        text += m_name;
+        text += " casts:\n";
         m_color = MESSAGE_COLOR1;
     } else if (m_mode == Otc::MessageMonsterSay || m_mode == Otc::MessageMonsterYell
                || m_mode == Otc::MessageBarkLow || m_mode == Otc::MessageBarkLoud) {
