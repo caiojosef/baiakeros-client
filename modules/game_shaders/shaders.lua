@@ -100,6 +100,10 @@ local OUTFIT_SHADERS = { {
     useFramebuffer = true,
     frag = 'shaders/fragment/echo_warden_challenging.frag'
 }, {
+    name = 'Outfit - Echo Warden Protector',
+    useFramebuffer = true,
+    frag = 'shaders/fragment/echo_warden_protector.frag'
+}, {
     name = 'Outfit - ForgeDonor',
     useFramebuffer = true,
     frag = 'shaders/fragment/forge_donor.frag'
@@ -135,6 +139,9 @@ local TEXT_SHADERS = { {
 }, {
     name = 'Text - Glow',
     frag = 'shaders/fragment/text_glow.frag' -- Soft glow effect (higher GPU cost)
+}, {
+    name = 'Text - Echo Warden Protector',
+    frag = 'shaders/fragment/text_echo_warden_protector.frag'
 } }
 
 local function attachShaders()
