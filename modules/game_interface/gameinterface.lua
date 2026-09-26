@@ -1068,6 +1068,17 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             end
         end
 
+        if useThing:isItem() and getThingServerId(useThing) == 19250 then
+            local chestPosition = useThing:getPosition()
+            if chestPosition and chestPosition.x ~= 0xffff then
+                local chestItemId = useThing:getId()
+                local chestStackPos = useThing:getStackPos()
+                menu:addOption(tr('Collect All'), function()
+                    g_game.collectRewardChest(chestPosition, chestItemId, chestStackPos)
+                end)
+            end
+        end
+
         if useThing:isRotateable() then
             menu:addOption(tr('Rotate'), function()
                 g_game.rotate(useThing)
@@ -1375,6 +1386,18 @@ end
 
 function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, useThing, creatureThing, attackCreature)
     local keyboardModifiers = g_keyboard.getModifiers()
+
+    -- Keep both Reward Chest actions consistent across control modes.
+    if mouseButton == MouseRightButton and useThing and useThing:isItem() and
+        getThingServerId(useThing) == 19250 then
+        if keyboardModifiers == KeyboardNoModifier then
+            g_game.open(useThing)
+            return true
+        elseif g_keyboard.isPrimaryModifierOnly(keyboardModifiers) then
+            createThingMenu(menuPosition, lookThing, useThing, creatureThing)
+            return true
+        end
+    end
 
     local smartLeftClick = modules.client_options.getOption('smartLeftClick')
     local classicControls = modules.client_options.getOption('classicControl')

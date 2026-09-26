@@ -850,7 +850,10 @@ void Game::use(const ThingPtr& thing)
 
     // some items, e.g. parcel, are not set as containers but they are.
     // always try to use these items in free container slots.
-    m_protocolGame->sendUseItem(pos, thing->getId(), thing->getStackPos(), findEmptyContainerId());
+    const int containerId = findEmptyContainerId();
+    if (thing->getId() == 19250)
+        g_lua.callGlobalField("g_game", "onOpenContainerRequest", pos, thing->getId(), containerId, thing->getStackPos());
+    m_protocolGame->sendUseItem(pos, thing->getId(), thing->getStackPos(), containerId);
 
     g_lua.callGlobalField("g_game", "onUse", pos, thing->getId(), thing->getStackPos(), 0);
 }
@@ -944,7 +947,7 @@ int Game::open(const ItemPtr& item, const ContainerPtr& previousContainer)
     // The server returns a fresh container item without the inventory slot
     // from which it was opened. Keep that origin in Lua before sending the
     // request so container layouts can use a stable path across reconnects.
-    g_lua.callGlobalField("g_game", "onOpenContainerRequest", item->getPosition(), item->getId(), id);
+    g_lua.callGlobalField("g_game", "onOpenContainerRequest", item->getPosition(), item->getId(), id, item->getStackPos());
     m_protocolGame->sendUseItem(item->getPosition(), item->getId(), item->getStackPos(), id);
 
     return id;
@@ -2162,6 +2165,14 @@ void Game::sendQuickLoot(const uint8_t variant, const ItemPtr& item)
     uint16_t itemId = item ? item->getId() : 0;
     uint8_t stackPos = item ? item->getStackPos() : 0;
     m_protocolGame->sendQuickLoot(variant, pos, itemId, stackPos);
+}
+
+void Game::collectRewardChest(const Position& position, uint16_t itemId, uint8_t stackPos)
+{
+    if (!canPerformGameAction() || !position.isValid())
+        return;
+
+    m_protocolGame->sendRewardChestCollect(position, itemId, stackPos);
 }
 
 void Game::requestQuickLootBlackWhiteList(const uint8_t filter, const uint16_t size, const std::vector<uint16_t>& listedItems)

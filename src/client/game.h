@@ -449,6 +449,7 @@ public:
 
     // quickLoot related
     void sendQuickLoot(const uint8_t variant, const ItemPtr& item);
+    void collectRewardChest(const Position& position, uint16_t itemId, uint8_t stackPos);
     void requestQuickLootBlackWhiteList(uint8_t filter, uint16_t size, const std::vector<uint16_t>& listedItems);
     void openContainerQuickLoot(uint8_t action, uint8_t category, const Position& pos, uint16_t itemId, uint8_t stackpos, bool useMainAsFallback);
 

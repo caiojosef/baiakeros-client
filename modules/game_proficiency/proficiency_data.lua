@@ -37,6 +37,16 @@ local TIER_PATTERNS = {
     { pattern = "destruction", tier = "Destruction" },
 }
 -- LuaFormatter on
+local CRYPT_WEAPON_PROFILES = {
+    ["crypt spine"] = 461,
+    ["crypt splitter"] = 458,
+    ["crypt breaker"] = 459,
+    ["crypt strike"] = 460,
+    ["crypt bile"] = 462,
+    ["crypt jaw"] = 463,
+    ["crypt slicer"] = 457,
+}
+
 -- Weapon type keywords
 local WEAPON_KEYWORDS = {
     sword = {"sword", "blade", "sabre", "dagger", "knife", "slayer", "chopper"},
@@ -89,6 +99,20 @@ function ProficiencyData:loadProficiencyJson(skipItemCache)
             if ProficiencyId and name then
                 local lowerName = string.lower(name)
                 self.nameIndex[lowerName] = ProficiencyId
+            end
+        end
+    end
+
+    -- The 15.11 catalog predates the seven Crypt weapon profiles shipped by the server.
+    local cryptStatus, cryptProfiles = pcall(function()
+        return json.decode(g_resources.readFileContents("/modules/game_proficiency/crypt_profiles.json"))
+    end)
+    if cryptStatus and type(cryptProfiles) == "table" then
+        for _, data in ipairs(cryptProfiles) do
+            local id = data.ProficiencyId
+            if id and not self.content[id] then
+                self.content[id] = data
+                self.nameIndex[string.lower(data.Name)] = id
             end
         end
     end
@@ -414,6 +438,20 @@ end
 function ProficiencyData:getProficiencyIdForItem(displayItem, thingType, marketData)
     if not displayItem and not thingType and not marketData then
         return 6 -- Default fallback
+    end
+
+    -- Crypt names need an explicit mapping on 15.11, whose appearances predate them.
+    local marketName = marketData and marketData.name
+    if not marketName and thingType and thingType.getMarketData then
+        local data = thingType:getMarketData()
+        marketName = data and data.name
+    end
+    if not marketName and displayItem and displayItem.getName then
+        marketName = displayItem:getName()
+    end
+    local cryptId = marketName and CRYPT_WEAPON_PROFILES[string.lower(marketName)]
+    if cryptId and self:isValidProficiencyId(cryptId) then
+        return cryptId
     end
 
     -- Prefer the original ThingType over the visual Item, which may use marketData.showAs.

@@ -4252,6 +4252,10 @@ CreaturePtr ProtocolGame::getCreature(const InputMessagePtr& msg, int type) cons
             creature->setLight(light);
             creature->setMasterId(masterId);
             creature->setShader(shader);
+            if (shader == "Outfit - Echo Warden Protector")
+                creature->setNameShader("Text - Echo Warden Protector");
+            else if (creature->getNameShader() == "Text - Echo Warden Protector")
+                creature->setNameShader("");
             creature->clearTemporaryAttachedEffects();
             std::unordered_set<uint16_t> currentAttachedEffectIds;
             for (const auto& attachedEffect : creature->getAttachedEffects()) {
@@ -7218,6 +7222,10 @@ void ProtocolGame::parseCreatureShader(const InputMessagePtr& msg)
     }
 
     creature->setShader(shaderName);
+    if (shaderName == "Outfit - Echo Warden Protector")
+        creature->setNameShader("Text - Echo Warden Protector");
+    else if (creature->getNameShader() == "Text - Echo Warden Protector")
+        creature->setNameShader("");
 }
 
 void ProtocolGame::parseMapShader(const InputMessagePtr& msg)

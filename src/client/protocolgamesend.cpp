@@ -1752,6 +1752,16 @@ void ProtocolGame::sendQuickLoot(const uint8_t variant, const Position& pos, con
     send(msg);
 }
 
+void ProtocolGame::sendRewardChestCollect(const Position& pos, uint16_t itemId, uint8_t stackpos)
+{
+    const auto msg = std::make_shared<OutputMessage>();
+    msg->addU8(Proto::ClientRewardChestCollect);
+    addPosition(msg, pos);
+    msg->addU16(itemId);
+    msg->addU8(stackpos);
+    send(msg);
+}
+
 void ProtocolGame::requestQuickLootBlackWhiteList(const uint8_t filter, const uint16_t size, const std::vector<uint16_t>& listedItems)
 {
     const auto msg = std::make_shared<OutputMessage>();

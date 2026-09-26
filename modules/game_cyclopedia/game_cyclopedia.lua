@@ -26,9 +26,24 @@ local previousType = nil
 local windowTypes = {}
 local magicalArchives = nil
 local BESTIARY_DISCOVERY_OPCODE = 217
+local BOSSTIARY_DISCOVERY_OPCODE = 223
 local ECHO_WARDEN_PROGRESS_OPCODE = 221
 local pendingBestiaryDiscoveryRaceId = nil
+local pendingBosstiaryDiscoveryRaceId = nil
 Cyclopedia.EchoWardenProgress = {}
+Cyclopedia.BossRaceOverrides = {
+    [2595] = { name = "Adlerauge", outfit = { type = 1901 } },
+    [2598] = { name = "Clavius", outfit = { type = 1902 } },
+    [2602] = { name = "Michael the Stalwart", outfit = { type = 1900, head = 94, body = 31, legs = 19, feet = 38, addons = 3 } },
+    [2603] = { name = "Overseer Osverger", outfit = { type = 1902 } },
+    [50010] = { name = "Ancient Lion Knight", outfit = { type = 1071, head = 57, body = 78, legs = 76, feet = 76, addons = 1 } },
+    [50011] = { name = "The Flaming Orchid", outfit = { type = 150, head = 114, body = 94, legs = 78, feet = 79, addons = 1 } },
+}
+
+function Cyclopedia.getBossRaceData(raceId)
+    return Cyclopedia.BossRaceOverrides[raceId] or g_things.getRaceData(raceId)
+end
+
 
 local function setBestiaryDiscoveryHighlight(enabled)
     if not CyclopediaButton then
@@ -38,6 +53,62 @@ local function setBestiaryDiscoveryHighlight(enabled)
     local highlight = CyclopediaButton:getChildById('highlight')
     if highlight then
         highlight:setVisible(enabled)
+    end
+end
+
+local function setBosstiaryDiscoveryHighlight(enabled)
+    if not ButtonBestiary then
+        return
+    end
+    local highlight = ButtonBestiary:getChildById('highlight')
+    if highlight then
+        highlight:setVisible(enabled)
+    end
+end
+
+function Cyclopedia.openDiscoveredBoss(raceId)
+    raceId = tonumber(raceId)
+    if not raceId then
+        return
+    end
+    pendingBosstiaryDiscoveryRaceId = nil
+    setBosstiaryDiscoveryHighlight(false)
+    Cyclopedia.pendingBosstiaryRaceId = raceId
+    local alreadyOpen = controllerCyclopedia.ui and controllerCyclopedia.ui:isVisible() and previousType == 'bosstiary'
+    Cyclopedia.openTab('bosstiary')
+    if alreadyOpen then
+        g_game.requestBosstiaryInfo()
+    end
+end
+
+function Cyclopedia.onBosstiaryButtonClick()
+    if pendingBosstiaryDiscoveryRaceId then
+        Cyclopedia.openDiscoveredBoss(pendingBosstiaryDiscoveryRaceId)
+        return
+    end
+    toggle('bosstiary')
+end
+
+function Cyclopedia.onBosstiaryDiscovery(_, _, buffer)
+    local idText, bossName = tostring(buffer):match('^(%d+)|(.+)$')
+    local raceId = tonumber(idText or buffer)
+    if not raceId or raceId <= 0 then
+        g_logger.warning('[Cyclopedia] Invalid Bosstiary discovery payload: ' .. tostring(buffer))
+        return
+    end
+    local raceData = Cyclopedia.getBossRaceData(raceId)
+    bossName = raceData and raceData.name or bossName or tr('Unknown Boss')
+    pendingBosstiaryDiscoveryRaceId = raceId
+    setBosstiaryDiscoveryHighlight(true)
+    local notifications = modules.game_notifications and modules.game_notifications.notificationsController
+    if notifications then
+        notifications:show(
+            tr('New Bosstiary'),
+            tr("You have defeated '%s' for the first time.", bossName),
+            '/game_notifications/assets/images/nodo/icon-infobanner-unlock',
+            5000,
+            { raceId = raceId, bosstiaryRaceId = raceId }
+        )
     end
 end
 
@@ -117,6 +188,7 @@ function controllerCyclopedia:onInit()
         end
     })
     self:registerExtendedOpcode(BESTIARY_DISCOVERY_OPCODE, Cyclopedia.onBestiaryDiscovery)
+    self:registerExtendedOpcode(BOSSTIARY_DISCOVERY_OPCODE, Cyclopedia.onBosstiaryDiscovery)
     self:registerExtendedOpcode(ECHO_WARDEN_PROGRESS_OPCODE, Cyclopedia.onEchoWardenProgress)
 end
 
@@ -134,7 +206,7 @@ function controllerCyclopedia:onGameStart()
             "/images/options/ButtonBossSlot", function() toggle("bossSlot") end, false, 20)
         CyclopediaButton:setOn(false)
         ButtonBestiary = modules.game_mainpanel.addToggleButton("bosstiary", tr("Open Bosstiary dialog"),
-            "/images/options/ButtonBosstiary", function() toggle("bosstiary") end, false, 17)
+            "/images/options/ButtonBosstiary", Cyclopedia.onBosstiaryButtonClick, false, 17)
 
         contentContainer = controllerCyclopedia.ui:recursiveGetChildById('contentContainer')
         buttonSelection = controllerCyclopedia.ui:recursiveGetChildById('buttonSelection')
@@ -382,7 +454,10 @@ end
 
 function controllerCyclopedia:onGameEnd()
     pendingBestiaryDiscoveryRaceId = nil
+    pendingBosstiaryDiscoveryRaceId = nil
+    Cyclopedia.pendingBosstiaryRaceId = nil
     setBestiaryDiscoveryHighlight(false)
+    setBosstiaryDiscoveryHighlight(false)
     hide()
     
     if Cyclopedia.saveTrackerFilters then

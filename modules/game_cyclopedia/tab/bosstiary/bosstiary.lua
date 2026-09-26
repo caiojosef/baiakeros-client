@@ -345,7 +345,7 @@ function Cyclopedia.CreateBosstiaryCreature(data)
 
     local widget = g_ui.createWidget("BosstiaryItem", UI.ListBase.BossList)
     widget:setId(data.raceId)
-    local raceData = g_things.getRaceData(data.raceId)
+    local raceData = Cyclopedia.getBossRaceData(data.raceId)
     local icons = {
         [CATEGORY.BANE] = "/game_cyclopedia/images/boss/icon_bane",
         [CATEGORY.ARCHFOE] = "/game_cyclopedia/images/boss/icon_archfoe",
@@ -457,7 +457,7 @@ function Cyclopedia.LoadBosstiaryCreatures(data)
     local validCreatures = {}
 
     for i, dataEntry in ipairs(data) do
-        local raceData = g_things.getRaceData(dataEntry.raceId)
+        local raceData = Cyclopedia.getBossRaceData(dataEntry.raceId)
         local creature = {
             visible = true,
             raceId = dataEntry.raceId,
