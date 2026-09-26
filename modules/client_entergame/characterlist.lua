@@ -87,12 +87,35 @@ local SHOW_PREMIUM_WIDGETS = false
 -- autoReconnect Button
 local autoReconnectButton
 local autoReconnectEvent
-local lastLogout = 0
+local manualLogoutRequested = false
 local function removeAutoReconnectEvent() --prevent
     if autoReconnectEvent then
         removeEvent(autoReconnectEvent)
         autoReconnectEvent = nil
     end
+end
+
+local function helperAutoReconnectKey()
+    local characterName = g_settings.getString('last-used-character', '')
+    if characterName == '' then return nil, false end
+
+    local prefix = 'baiakeros_helper_' .. characterName:lower():gsub('[^%w]', '_')
+    local preset = g_settings.getString(prefix .. '_current_preset', 'default'):lower()
+    if preset ~= 'default' then
+        return prefix .. '_preset_' .. preset .. '_auto_reconnect', true
+    end
+    return prefix .. '_auto_reconnect', false
+end
+
+local function isAutoReconnectEnabled()
+    local globalEnabled = g_settings.getBoolean('autoReconnect', false)
+    local helperKey, presetSpecific = helperAutoReconnectKey()
+    if not helperKey then return globalEnabled end
+    -- Named Helper presets default to off; the default preset retains the
+    -- older character-list setting until the Helper has its own saved value.
+    local defaultEnabled = globalEnabled
+    if presetSpecific then defaultEnabled = false end
+    return g_settings.getBoolean(helperKey, defaultEnabled)
 end
 
 local function resetUIReferences()
@@ -790,12 +813,12 @@ local function onGameStart()
     onlineSessionStartedAt = g_clock.millis()
     autoReconnectSessionEligible = false
     reconnectCancelUntil = 0
+    manualLogoutRequested = false
     CharacterList.destroyLoadBox()
     stopReconnect(true)
 end
 
 local function onGameEnd()
-    local now = g_clock.millis()
     -- Any established game session is eligible. Requiring 15 minutes here
     -- prevented a second Server Save reconnect shortly after the first one.
     autoReconnectSessionEligible = onlineSessionStartedAt > 0
@@ -804,9 +827,9 @@ local function onGameEnd()
     -- A socket failure can create the regular connection-error box just
     -- before onGameEnd. For an eligible unexpected disconnect, dismiss it so
     -- the character list can perform the same action as pressing Enter.
-    local unexpectedDisconnect = lastLogout + 2000 <= now
+    local unexpectedDisconnect = not manualLogoutRequested
     if autoReconnectSessionEligible and unexpectedDisconnect and
-        g_settings.getBoolean('autoReconnect', false) and errorBox then
+        isAutoReconnectEnabled() and errorBox then
         errorBox:destroy()
         errorBox = nil
     end
@@ -902,7 +925,7 @@ function CharacterList.init()
         onGameEnd = onGameEnd
     })
     connect(g_game, {
-        onLogout = onLogout
+        onBeforeLogout = onLogout
     })
 
     if G.characters then
@@ -938,7 +961,7 @@ function CharacterList.terminate()
         onGameEnd = onGameEnd
     })
     disconnect(g_game, {
-        onLogout = onLogout
+        onBeforeLogout = onLogout
     })
 
     if charactersWindow then
@@ -1065,9 +1088,12 @@ function CharacterList.create(characters, account, otui)
     CharacterList.rebuildCharactersList()
 
     autoReconnectButton.onClick = function(widget)
-        local autoReconnect = not g_settings.getBoolean('autoReconnect', false)
+        local autoReconnect = not isAutoReconnectEnabled()
         autoReconnectButton:setOn(autoReconnect)
+        local helperKey = helperAutoReconnectKey()
+        if helperKey then g_settings.set(helperKey, autoReconnect) end
         g_settings.set('autoReconnect', autoReconnect)
+        g_settings.save()
         local statusText = autoReconnect and 'Auto reconnect: On' or 'Auto reconnect: off'
         if not shouldShowAppearance() then
             statusText = autoReconnect and 'Auto reconnect:\n On' or 'Auto reconnect:\n off'
@@ -1206,7 +1232,7 @@ function CharacterList.show()
     updatePremiumBenefitsVisibility(G.characterAccount)
     updateSortButtons()
 
-    local autoReconnect = g_settings.getBoolean('autoReconnect', false)
+    local autoReconnect = isAutoReconnectEnabled()
     autoReconnectButton:setOn(autoReconnect)
     local reconnectStatus = autoReconnect and 'On' or 'Off'
     if not shouldShowAppearance() then
@@ -1418,12 +1444,12 @@ function CharacterList.updateCharactersAppearances(showOutfits)
 end
 
 function onLogout()
-    lastLogout = g_clock.millis()
+    manualLogoutRequested = true
 end
 
 function scheduleAutoReconnect()
-    if not g_settings.getBoolean('autoReconnect') or not autoReconnectSessionEligible or
-        lastLogout + 2000 > g_clock.millis() then
+    if not isAutoReconnectEnabled() or not autoReconnectSessionEligible or
+        manualLogoutRequested then
         return
     end
 
@@ -1432,7 +1458,8 @@ function scheduleAutoReconnect()
 end
 
 function executeAutoReconnect()
-    if not g_settings.getBoolean('autoReconnect') or not autoReconnectSessionEligible then
+    if not isAutoReconnectEnabled() or not autoReconnectSessionEligible or
+        manualLogoutRequested then
         return
     end
 
