@@ -662,8 +662,13 @@ function ProficiencyData:getImageSourceAndClip(perkData)
         return imagePath, skillData and skillData.imageOffset or "0 0"
     end
 
+    if perkType == PERK_HOMING_MISSILE then
+        local elementData = ElementalMask[perkData.ElementId]
+        return imagePath, (elementData and elementData.imageOffset) or "0 0"
+    end
+
     if perkType == PERK_PIERCE then
-        local pierceData = PierceElementMask[perkData.DamageType]
+        local pierceData = PierceElementMask[perkData.ElementId or perkData.DamageType]
         return imagePath, pierceData and pierceData.imageOffset or "0 0"
     end
 
@@ -674,11 +679,20 @@ end
 function ProficiencyData:getBonusNameAndTooltip(perkData)
     local perkType = perkData.Type
     local data = PerkTextData[perkType]
-    local value = self:formatFloatValue(perkData.Value, false, perkType)
+    local value = self:formatFloatValue(perkData.Value or 0, false, perkType)
     local bonusName = data and data.name or "Empty"
 
     if not data then
         return bonusName, "Empty"
+    end
+
+    if perkType == PERK_HOMING_MISSILE then
+        local elementData = ElementalMask[perkData.ElementId]
+        return bonusName, string.format(
+            "Offensive spells have a %g%% chance to fire a homing missile dealing %s damage equal to %g%% of your level",
+            (perkData.Probability or 0) * 100,
+            (elementData and elementData.name) or "Unknown",
+            (perkData.Multiplier or 0) * 100)
     end
 
     if perkType == PERK_SPELL_AUGMENT then
@@ -727,7 +741,7 @@ function ProficiencyData:getBonusNameAndTooltip(perkData)
     end
 
     if perkType == PERK_PIERCE then
-        local pierceData = PierceElementMask[perkData.DamageType]
+        local pierceData = PierceElementMask[perkData.ElementId or perkData.DamageType]
         local elementName = pierceData and pierceData.name or "Unknown"
         local description = string.format(data.desc, value, elementName)
         return bonusName, description
