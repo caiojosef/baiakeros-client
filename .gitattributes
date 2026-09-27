@@ -6,3 +6,6 @@
 *.ot* eol=lf 
 *.cpp eol=lf 
 *.h   eol=lf 
+
+# Keep runtime assets byte-exact for compressed sidecars and manifest hashes.
+data/things/1525/** -text

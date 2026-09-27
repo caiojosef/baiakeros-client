@@ -254,6 +254,7 @@ SpellInfo = {
         ['Spiritual Outburst'] = { id = 295, name = 'Spiritual Outburst', words = 'exori gran mas nia', type = 'Instant', level = 300, mana = 425, soul = 0, maglevel = 0, icon = '', clientId = 183, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 60000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Mass Spirit Mend'] = { id = 296, name = 'Mass Spirit Mend', words = 'exura mas nia', type = 'Instant', level = 150, mana = 250, soul = 0, maglevel = 0, icon = '', clientId = 184, group = { [2] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Restore Balance'] = { id = 297, name = 'Restore Balance', words = 'exura tio sio', type = 'Instant', level = 18, mana = 120, soul = 0, maglevel = 0, icon = '', clientId = 185, group = { [2] = 1000 }, needTarget = true, parameter = true, range = -1, exhaustion = 2000, premium = true, vocations = {9, 10}, special = false, source = 0, },
+        ['Thousand Fist Blows'] = { id = 301, name = 'Thousand Fist Blows', words = 'exori mas amp pug', type = 'Instant', level = 120, mana = 145, soul = 0, maglevel = 0, icon = '', clientId = 177, group = { [1] = 2000 }, needTarget = true, positionTarget = true, parameter = false, range = 7, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
     }
 }
 
