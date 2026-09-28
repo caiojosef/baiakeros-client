@@ -41,7 +41,7 @@ local function onGameStart()
     if helperV2Button then return end
     helperV2Button = modules.game_mainpanel.addToggleButton(
         'baiakerosHelperV2Button',
-        tr('New BaiakEros Helper (Preview)'),
+        tr('BaiakEros Helper 2 (Preview)'),
         '/images/options/button_spells',
         toggle,
         false,

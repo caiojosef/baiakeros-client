@@ -2,7 +2,7 @@ Module
   name: game_baiakeros_helper_v2
   description: BaiakEros Helper wide two-tab preview
   author: BaiakEros
-  autoload: false
+  autoload: true
   sandboxed: true
   dependencies:
     - game_interface
