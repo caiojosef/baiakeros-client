@@ -6,6 +6,8 @@ function showHelperV2Tab(tabName)
     if not helperV2Window then return end
     local healingSelected = tabName ~= 'attack'
     selectedTab = healingSelected and 'healing' or 'attack'
+    helperV2Window:setText(healingSelected and 'BaiakEros Helper 2 - Healing & Tools'
+        or 'BaiakEros Helper 2 - Attack (Preview)')
     local healingPage = helperV2Window:recursiveGetChildById('healingToolsPage')
     local attackPage = helperV2Window:recursiveGetChildById('attackPage')
     local healingTab = helperV2Window:recursiveGetChildById('healingToolsTab')

@@ -8,7 +8,7 @@ Module
     - game_interface
     - game_mainpanel
     - game_baiakeros_helper
-  scripts: [ healing, tools, attack, helper_v2 ]
+  scripts: [ healing_slots, healing, tools, attack, helper_v2 ]
   @onLoad: init()
   @onUnload: terminate()
 
