@@ -64,7 +64,7 @@ local function attachCavebot(force)
     cavebotPanel:setParent(cavebotHomeParent)
     cavebotPanel:breakAnchors()
     cavebotPanel:setWidth(260)
-    cavebotPanel:addAnchor(AnchorRight, 'parent', AnchorRight)
+    cavebotPanel:addAnchor(AnchorLeft, 'parent', AnchorLeft)
     cavebotPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
     cavebotPanel:addAnchor(AnchorBottom, 'parent', AnchorBottom)
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):show()
@@ -101,29 +101,38 @@ end
 
 function returnCavebotToHelper()
     if not explorerActive() and not attachCavebot() then return end
-    showHelperV2Tab('attack')
+    showHelperV2Tab('cavebot')
     show()
 end
 
 function showHelperV2Tab(tabName)
     if not helperV2Window then return end
-    local healingSelected = tabName ~= 'attack'
-    selectedTab = healingSelected and 'healing' or 'attack'
+    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' then
+        tabName = 'healing'
+    end
+    selectedTab = tabName
     helperV2Window:setText('Baiakeros Helper')
     local healingPage = helperV2Window:recursiveGetChildById('healingToolsPage')
     local attackPage = helperV2Window:recursiveGetChildById('attackPage')
+    local cavebotPage = helperV2Window:recursiveGetChildById('cavebotPage')
     local healingTab = helperV2Window:recursiveGetChildById('healingToolsTab')
     local attackTab = helperV2Window:recursiveGetChildById('attackTab')
-    healingPage:setVisible(healingSelected)
-    attackPage:setVisible(not healingSelected)
-    healingTab:setWidth(healingSelected and 162 or 34)
-    healingTab:setText(healingSelected and 'Healing & Tools' or '')
-    attackTab:setWidth(healingSelected and 34 or 116)
-    attackTab:setText(healingSelected and '' or 'Attack')
-    healingTab:setOn(healingSelected)
-    healingTab:setEnabled(not healingSelected)
-    attackTab:setOn(not healingSelected)
-    attackTab:setEnabled(healingSelected)
+    local cavebotTab = helperV2Window:recursiveGetChildById('cavebotTab')
+    for _, tab in ipairs({
+        { name = 'healing', page = healingPage, button = healingTab,
+            label = 'Healing & Tools', width = 162 },
+        { name = 'attack', page = attackPage, button = attackTab,
+            label = 'Attack', width = 116 },
+        { name = 'cavebot', page = cavebotPage, button = cavebotTab,
+            label = 'Cavebot', width = 116 }
+    }) do
+        local active = tabName == tab.name
+        tab.page:setVisible(active)
+        tab.button:setWidth(active and tab.width or 34)
+        tab.button:setText(active and tab.label or '')
+        tab.button:setOn(active)
+        tab.button:setEnabled(not active)
+    end
 end
 
 function show()
