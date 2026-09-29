@@ -1034,15 +1034,23 @@ BaiakerosHelperV2Window < MainWindow
       HelperV2Section
         id: cavebotPanel
         anchors.left: parent.left
+        anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: 260
         margin-left: 6
+        margin-right: 7
+
+        UIWidget
+          id: v2CavebotRuntimeColumn
+          anchors.left: parent.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 260
 
         Label
           id: v2CavebotTitle
           text: Cavebot
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: parent.top
           margin-top: 6
           color: #ffffff
@@ -1062,7 +1070,7 @@ BaiakerosHelperV2Window < MainWindow
           id: v2CavebotTimerTitle
           text: ''
           visible: false
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotTitle.bottom
           margin-top: 8
           color: #ffffff
@@ -1071,7 +1079,7 @@ BaiakerosHelperV2Window < MainWindow
         HelperV2AttackValuePanel
           id: v2CavebotTimerPanel
           size: 106 26
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotTitle.bottom
           margin-top: 8
 
@@ -1093,7 +1101,7 @@ BaiakerosHelperV2Window < MainWindow
         UIWidget
           id: v2CavebotProgressFrame
           size: 210 20
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotTimerPanel.bottom
           margin-top: 4
           background-color: #13191b
@@ -1136,18 +1144,18 @@ BaiakerosHelperV2Window < MainWindow
           text: Start
           color: #ffffff
           size: 130 26
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotProgressFrame.bottom
           margin-top: 7
 
         HorizontalSeparator
           id: v2CavebotOptionsSeparator
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: v2CavebotWaypointPanel.bottom
+          anchors.left: v2CavebotRuntimeColumn.left
+          anchors.right: v2CavebotRuntimeColumn.right
+          anchors.bottom: parent.bottom
           margin-left: 12
           margin-right: 12
-          margin-top: 8
+          margin-bottom: 119
 
         QtCheckBox
           id: v2CavebotEchoRaidsBox
@@ -1185,7 +1193,7 @@ BaiakerosHelperV2Window < MainWindow
           id: v2CavebotHuntStyleBox
           color: #ffffff
           size: 134 22
-          anchors.right: parent.right
+          anchors.right: v2CavebotRuntimeColumn.right
           anchors.verticalCenter: v2CavebotHuntStyleLabel.verticalCenter
           margin-right: 11
           mouse-scroll: false
@@ -1215,146 +1223,254 @@ BaiakerosHelperV2Window < MainWindow
           color: #ffffff
           visible: false
           size: 58 22
-          anchors.right: parent.right
+          anchors.right: v2CavebotRuntimeColumn.right
           anchors.verticalCenter: v2CavebotLureDistanceLabel.verticalCenter
           margin-right: 11
           mouse-scroll: false
           !tooltip: tr('Lure distance: choose 1 to 4 SQMs from the current attack target. The bot may move closer when boxed in.')
 
-        Label
-          id: v2CavebotWaypointTitle
-          text: Waypoints
-          anchors.left: parent.left
-          anchors.top: v2CavebotHuntStyleBox.bottom
-          margin-left: 15
-          margin-top: 8
-          color: #ffffff
-
-        SmallButton
-          id: v2CavebotNodeButton
-          text: Node
-          color: #ffffff
-          size: 50 22
-          anchors.left: parent.left
-          anchors.top: v2CavebotWaypointTitle.bottom
-          margin-left: 13
-          margin-top: 4
-          !tooltip: tr('Record a path point. The explorer moves through Nodes toward the next Stand.')
-
-        SmallButton
-          id: v2CavebotStandButton
-          text: Stand
-          color: #ffffff
-          size: 50 22
-          anchors.left: v2CavebotNodeButton.right
-          anchors.verticalCenter: v2CavebotNodeButton.verticalCenter
-          margin-left: 4
-          !tooltip: tr('Stop here and fight every visible monster before continuing. A direction steps onto the adjacent tile after combat.')
-
-        SmallButton
-          id: v2CavebotUseButton
-          text: Use
-          color: #ffffff
-          size: 43 22
-          anchors.left: v2CavebotStandButton.right
-          anchors.verticalCenter: v2CavebotStandButton.verticalCenter
-          margin-left: 4
-          !tooltip: tr('Record the current position and use the map object in the selected direction.')
-
-        QtComboBox
-          id: v2CavebotDirectionBox
-          color: #ffffff
-          size: 76 22
-          anchors.left: v2CavebotUseButton.right
-          anchors.verticalCenter: v2CavebotStandButton.verticalCenter
-          margin-left: 4
-          mouse-scroll: false
-          !tooltip: tr('Direction from the recorded player position. Center records the same tile.')
-
-        SmallButton
-          id: v2CavebotHurUpButton
-          text: Hur Up
-          color: #ffffff
-          size: 108 22
-          anchors.left: parent.left
-          anchors.top: v2CavebotNodeButton.bottom
-          margin-left: 13
-          margin-top: 5
-          !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Up after combat.')
-
-        SmallButton
-          id: v2CavebotHurDownButton
-          text: Hur Down
-          color: #ffffff
-          size: 108 22
-          anchors.left: v2CavebotHurUpButton.right
-          anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
-          margin-left: 4
-          !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
-
-        SmallButton
-          id: v2CavebotSaveRouteButton
-          text: Save
-          color: #ffffff
-          size: 108 22
-          anchors.left: parent.left
-          anchors.top: v2CavebotHurUpButton.bottom
-          margin-left: 13
-          margin-top: 6
-          !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
-
-        SmallButton
-          id: v2CavebotLoadRouteButton
-          text: Load
-          color: #ffffff
-          size: 108 22
-          anchors.left: v2CavebotSaveRouteButton.right
-          anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
-          margin-left: 4
-          !tooltip: tr('Choose a Cavebot JSON route in the Windows Open dialog.')
-
-        QtPanel
-          id: v2CavebotWaypointPanel
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: v2CavebotSaveRouteButton.bottom
-          height: 106
-          margin-left: 12
-          margin-right: 12
-          margin-top: 5
-
-          UIScrollArea
-            id: v2CavebotWaypointList
-            anchors.fill: parent
-            vertical-scrollbar: v2CavebotWaypointScroll
-            layout:
-              type: verticalBox
-
-          VerticalScrollBar
-            id: v2CavebotWaypointScroll
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.right: parent.right
-            step: 22
-            pixels-scroll: true
+        UIWidget
+          id: v2CavebotScriptPanel
+          anchors.fill: parent
 
           Label
-            id: v2CavebotEmptyWaypoints
-            text: Add Node, Stand, Use or Hur
-            anchors.centerIn: parent
+            id: v2CavebotWaypointTitle
+            text: Waypoints
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 15
+            margin-top: 8
             color: #ffffff
-            phantom: true
+            !tooltip: tr('Select a waypoint before recording; the next one is inserted below it.')
+
+          SmallButton
+            id: v2CavebotNodeButton
+            text: Node
+            color: #ffffff
+            size: 50 22
+            anchors.left: parent.left
+            anchors.top: v2CavebotWaypointTitle.bottom
+            margin-left: 13
+            margin-top: 4
+            !tooltip: tr('Record a path point. The explorer moves through Nodes toward the next Stand.')
+
+          SmallButton
+            id: v2CavebotStandButton
+            text: Stand
+            color: #ffffff
+            size: 50 22
+            anchors.left: v2CavebotNodeButton.right
+            anchors.verticalCenter: v2CavebotNodeButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Stop here and fight every visible monster before continuing. A direction steps onto the adjacent tile after combat.')
+
+          SmallButton
+            id: v2CavebotUseButton
+            text: Use
+            color: #ffffff
+            size: 43 22
+            anchors.left: v2CavebotStandButton.right
+            anchors.verticalCenter: v2CavebotStandButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Record the current position and use the map object in the selected direction.')
+
+          QtComboBox
+            id: v2CavebotDirectionBox
+            color: #ffffff
+            size: 76 22
+            anchors.left: v2CavebotUseButton.right
+            anchors.verticalCenter: v2CavebotStandButton.verticalCenter
+            margin-left: 4
+            mouse-scroll: false
+            !tooltip: tr('Direction from the recorded player position. Center records the same tile.')
+
+          SmallButton
+            id: v2CavebotHurUpButton
+            text: Hur Up
+            color: #ffffff
+            size: 108 22
+            anchors.left: parent.left
+            anchors.top: v2CavebotNodeButton.bottom
+            margin-left: 13
+            margin-top: 5
+            !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Up after combat.')
+
+          SmallButton
+            id: v2CavebotHurDownButton
+            text: Hur Down
+            color: #ffffff
+            size: 108 22
+            anchors.left: v2CavebotHurUpButton.right
+            anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
+
+          SmallButton
+            id: v2CavebotSaveRouteButton
+            text: Save
+            color: #ffffff
+            size: 108 22
+            anchors.left: parent.left
+            anchors.top: v2CavebotHurUpButton.bottom
+            margin-left: 13
+            margin-top: 6
+            !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
+
+          SmallButton
+            id: v2CavebotLoadRouteButton
+            text: Load
+            color: #ffffff
+            size: 108 22
+            anchors.left: v2CavebotSaveRouteButton.right
+            anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Choose a Cavebot JSON route in the Windows Open dialog.')
+
+          QtPanel
+            id: v2CavebotWaypointPanel
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotSaveRouteButton.bottom
+            anchors.bottom: parent.bottom
+            margin-left: 12
+            margin-right: 12
+            margin-top: 5
+            margin-bottom: 8
+
+            UIScrollArea
+              id: v2CavebotWaypointList
+              anchors.fill: parent
+              vertical-scrollbar: v2CavebotWaypointScroll
+              layout:
+                type: verticalBox
+
+            VerticalScrollBar
+              id: v2CavebotWaypointScroll
+              anchors.top: parent.top
+              anchors.bottom: parent.bottom
+              anchors.right: parent.right
+              step: 22
+              pixels-scroll: true
+
+            Label
+              id: v2CavebotEmptyWaypoints
+              text: Add Node, Stand, Use or Hur
+              anchors.centerIn: parent
+              color: #ffffff
+              phantom: true
 
         Label
           id: v2CavebotStatus
           text: Ready to explore
           size: 230 30
-          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.bottom: parent.bottom
           margin-bottom: 6
           text-wrap: true
           text-align: center
           color: #ffffff
+
+        UIWidget
+          id: v2CavebotFloatScriptSlot
+          anchors.left: v2CavebotRuntimeColumn.left
+          anchors.right: v2CavebotRuntimeColumn.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 4
+          margin-right: 4
+          margin-top: 161
+          margin-bottom: 141
+          visible: false
+
+        VerticalSeparator
+          id: v2CavebotMainDivider
+          anchors.left: v2CavebotWorkspace.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: -6
+          margin-top: 9
+          margin-bottom: 9
+
+        UIWidget
+          id: v2CavebotWorkspace
+          anchors.left: v2CavebotRuntimeColumn.right
+          anchors.right: parent.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 12
+          margin-right: 5
+
+          HelperV2TabButton
+            id: v2CavebotScriptsTab
+            text: Scripts
+            size: 108 27
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 4
+            margin-top: 4
+
+          HelperV2TabButton
+            id: v2CavebotHighScoreTab
+            text: High Score
+            size: 112 27
+            anchors.left: v2CavebotScriptsTab.right
+            anchors.verticalCenter: v2CavebotScriptsTab.verticalCenter
+            margin-left: 3
+
+          HorizontalSeparator
+            id: v2CavebotWorkspaceSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotScriptsTab.bottom
+            margin-left: 4
+            margin-right: 4
+            margin-top: 4
+
+          UIWidget
+            id: v2CavebotScriptHomeSlot
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotWorkspaceSeparator.bottom
+            anchors.bottom: parent.bottom
+            margin-top: 5
+
+          UIWidget
+            id: v2CavebotHighScorePage
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotWorkspaceSeparator.bottom
+            anchors.bottom: parent.bottom
+            margin-top: 5
+            visible: false
+
+            Label
+              text: Cavebot XP High Score
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-top: 18
+              color: #ffffff
+
+            HorizontalSeparator
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              margin-left: 16
+              margin-right: 16
+              margin-top: 46
+
+            Label
+              text: Monthly XP ranking
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-top: 68
+              color: #cfcfcf
+
+            Label
+              text: XP earned while Cavebot is active will appear here.
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-top: 91
+              color: #aaaaaa
 
   HorizontalSeparator
     id: bottomSeparator

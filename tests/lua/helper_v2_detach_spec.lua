@@ -46,6 +46,12 @@ widget('attackTab', helper)
 widget('cavebotTab', helper)
 local panel = widget('cavebotPanel', cavebotPage)
 local detachButton = widget('v2CavebotDetachButton', panel)
+local scriptPanel = widget('v2CavebotScriptPanel', panel)
+local scriptHome = widget('v2CavebotScriptHomeSlot', panel)
+local floatScriptSlot = widget('v2CavebotFloatScriptSlot', panel)
+local workspace = widget('v2CavebotWorkspace', panel)
+widget('v2CavebotMainDivider', panel)
+local highScorePage = widget('v2CavebotHighScorePage', workspace)
 local floatSlot = widget('v2CavebotFloatSlot', floating)
 local gamePanel = widget('gamePanel', rootWidget)
 
@@ -104,11 +110,22 @@ showHelperV2Tab('cavebot')
 assert(cavebotPage.visible and not attackPage.visible and
     widgets.cavebotTab.width == 116 and widgets.cavebotTab.text == 'Cavebot',
     'the Cavebot tab must own its full-size page and match Attack tab sizing')
+assert(scriptPanel.parent == scriptHome and scriptPanel.fillTarget == 'parent',
+    'the script editor must fill the fixed Cavebot workspace')
+widgets.v2CavebotHighScoreTab.onClick()
+assert(highScorePage.visible and not scriptHome.visible,
+    'High Score must have its own ready-to-fill Cavebot section')
+widgets.v2CavebotScriptsTab.onClick()
+assert(scriptHome.visible and not highScorePage.visible,
+    'Scripts must restore the route editor')
 
 detachButton.onClick()
 assert(panel.parent == floatSlot and floating.visible and not helper.visible,
     'Detach must move Cavebot into its own window and hide Helper')
 assert(panel.fillTarget == 'parent', 'the detached panel must fill its floating slot')
+assert(scriptPanel.parent == floatScriptSlot and floatScriptSlot.visible and
+    not workspace.visible,
+    'the script editor must reflow into the narrow floating Cavebot')
 assert(not detachButton.visible and not widgets.helperButton.on)
 assert(movementBindings.binds == 1 and movementBindings.unbinds == 0,
     'Detach must enable movement keys in the focused floating window')
@@ -116,8 +133,9 @@ assert(movementBindings.binds == 1 and movementBindings.unbinds == 0,
 closeDetachedCavebot()
 assert(panel.parent == cavebotPage and not floating.visible and not helper.visible,
     'X must close the floating window and restore Cavebot without opening Helper')
-assert(panel.width == 260 and #panel.anchors == 3,
-    'reattaching must restore the panel width and anchors')
+assert(#panel.anchors == 4 and scriptPanel.parent == scriptHome and
+    workspace.visible and not floatScriptSlot.visible,
+    'reattaching must restore the full workspace and its script editor')
 assert(panel.anchors[1][1] == AnchorLeft,
     'reattaching must return Cavebot to the left edge of its own page')
 assert(detachButton.visible)

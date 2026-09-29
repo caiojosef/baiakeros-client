@@ -276,6 +276,10 @@ local function renderWaypoints()
     window:recursiveGetChildById('v2CavebotEmptyWaypoints'):setVisible(#waypoints == 0)
     window:recursiveGetChildById('v2CavebotWaypointScroll'):setVisible(
         #waypoints * 22 > list:getHeight())
+    if selectedWaypoint and waypointRows[selectedWaypoint] and
+        list.ensureChildVisible then
+        list:ensureChildVisible(waypointRows[selectedWaypoint])
+    end
 end
 
 local function formatTime(milliseconds)
@@ -319,8 +323,6 @@ render = function()
     local showDistance = options.huntStyle == 'lure'
     window:recursiveGetChildById('v2CavebotLureDistanceLabel'):setVisible(showDistance)
     window:recursiveGetChildById('v2CavebotLureDistanceIcon'):setVisible(showDistance)
-    window:recursiveGetChildById('v2CavebotWaypointTitle'):
-        setMarginTop(showDistance and 38 or 8)
     local distanceBox = window:recursiveGetChildById('v2CavebotLureDistanceBox')
     distanceBox:setVisible(showDistance)
     distanceBox:setEnabled(showDistance and g_game.isOnline())
@@ -1506,15 +1508,17 @@ function BaiakHelperExplorerV2.init(helperWindow)
             render()
             return
         end
-        waypoints[#waypoints + 1] = {
+        local insertAt = selectedWaypoint and
+            math.min(selectedWaypoint + 1, #waypoints + 1) or #waypoints + 1
+        table.insert(waypoints, insertAt, {
             kind = kind, x = position.x, y = position.y, z = position.z,
             direction = direction.value,
             targetX = position.x + direction.x,
             targetY = position.y + direction.y,
             targetZ = position.z
-        }
-        selectedWaypoint = #waypoints
-        if #waypoints == 1 then waypointIndex = 1 end
+        })
+        selectedWaypoint = insertAt
+        waypointIndex = insertAt
         save()
         renderWaypoints()
         render()
