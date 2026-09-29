@@ -1,0 +1,458 @@
+HelperV2RegenStep < UIButton
+  image-source: /images/ui/button
+  image-clip: 0 0 22 23
+  image-border: 3
+  font: verdana-11px-antialised
+  color: #cfcfcf
+
+  $hover:
+    color: #ffffff
+
+  $pressed:
+    image-clip: 0 46 22 23
+    text-offset: 1 1
+
+HelperV2RegenSlot < UIWidget
+  size: 176 42
+
+  UIButton
+    id: assignButton
+    size: 40 40
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 22
+    image-source: /images/game/actionbar/actionbarslot
+
+  UIWidget
+    id: spellIcon
+    anchors.fill: assignButton
+    visible: false
+    phantom: true
+
+  UIItem
+    id: itemIcon
+    anchors.fill: assignButton
+    visible: false
+    virtual: true
+    phantom: true
+
+  HelperV2RegenStep
+    id: decreaseButton
+    text: <
+    size: 18 26
+    anchors.left: assignButton.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+
+  UIWidget
+    id: thresholdPanel
+    size: 52 26
+    anchors.left: decreaseButton.right
+    anchors.verticalCenter: parent.verticalCenter
+    background-color: #0b0b0b5c
+    border-width: 1
+    border-color: #4c4c4c
+
+    Label
+      id: thresholdLabel
+      text: 90%
+      anchors.fill: parent
+      text-align: center
+      color: #eeeeee
+      font: verdana-11px-antialised
+
+  HelperV2RegenStep
+    id: increaseButton
+    text: >
+    size: 18 26
+    anchors.left: thresholdPanel.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  UIButton
+    id: resourceButton
+    text: H
+    size: 16 16
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    text-align: center
+    color: #ed6464
+    border-width: 1
+    border-color: #b83c3c
+    visible: false
+
+HelperV2PercentComboBoxPopupScrollMenuButton < UIButton
+  height: 22
+  font: verdana-11px-antialised
+  text-align: center
+  color: #e2e2e2
+  background-color: #242424
+  margin: 0
+
+  $hover !disabled:
+    color: #ffffff
+    background-color: #355d89
+
+  $disabled:
+    color: #777777
+    background-color: #242424
+
+HelperV2PercentComboBoxPopupScrollMenu < UIPopupScrollMenu
+  background-color: #242424
+  border-width: 1
+  border-color: #595959
+  padding: 2
+
+HelperV2PercentComboBox < QtComboBox
+
+HelperV2SioSlot < UIWidget
+  height: 32
+
+  QtButton
+    id: addButton
+    text: +
+    size: 32 32
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 3
+    !tooltip: tr('Assign the selected party member.')
+
+  UICreature
+    id: outfit
+    size: 32 32
+    anchors.fill: addButton
+    visible: false
+    phantom: true
+
+  HelperV2PercentComboBox
+    id: thresholdBox
+    size: 58 22
+    anchors.left: addButton.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    mouse-scroll: false
+    menu-scroll: true
+    menu-height: 190
+    menu-scroll-step: 20
+    !tooltip: tr('Heal this party member at or below this health percentage.')
+
+  Label
+    id: nameLabel
+    text: Empty slot
+    width: 56
+    anchors.left: thresholdBox.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    color: #cfcfcf
+    !tooltip: tr('Assigned party member.')
+
+  QtCheckBox
+    id: enableBox
+    size: 18 18
+    anchors.left: nameLabel.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 3
+    !tooltip: tr('Enable Sio for this party member.')
+
+  QtButton
+    id: clearButton
+    text: x
+    size: 19 22
+    anchors.left: enableBox.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 4
+    visible: false
+
+HelperV2PartyMemberRow < UIButton
+  height: 24
+  text-align: left
+  font: verdana-11px-antialised
+
+  $hover:
+    background-color: #ffffff0d
+
+  $on:
+    background-color: #426f9938
+    border-width: 1
+    border-color: #527da3
+
+  Label
+    id: nameLabel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 6
+    margin-right: 11
+    color: #e0e0e0
+    phantom: true
+
+HelperV2HealingPanel < UIWidget
+  width: 418
+  height: 260
+
+  UIWidget
+    id: configurationPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 260
+    image-source: /images/ui/window
+    image-border: 6
+    image-border-top: 27
+
+    Label
+      id: healingTitle
+      text: Auto Healing Helper
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 7
+      font: verdana-11px-antialised
+      color: #dfdfdf
+
+    UIWidget
+      id: presetControls
+      size: 249 22
+      anchors.left: parent.left
+      anchors.top: healingTitle.bottom
+      margin-left: 69
+      margin-top: 7
+
+      Label
+        text: Preset
+        width: 42
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        color: #cfcfcf
+
+      QtComboBox
+        id: v2HealingPresetBox
+        size: 86 22
+        anchors.left: prev.right
+        anchors.verticalCenter: prev.verticalCenter
+        margin-left: 5
+        mouse-scroll: false
+
+      QtButton
+        id: v2HealingPresetAddButton
+        text: +
+        size: 22 20
+        anchors.left: prev.right
+        anchors.verticalCenter: prev.verticalCenter
+        margin-left: 5
+        !tooltip: tr('Create a new Helper preset.')
+
+      QtButton
+        id: v2HealingPresetDeleteButton
+        text: x
+        size: 22 20
+        anchors.left: prev.right
+        anchors.verticalCenter: prev.verticalCenter
+        margin-left: 4
+        !tooltip: tr('Delete the selected Helper preset.')
+
+      QtButton
+        id: v2HealingPresetHotkeyButton
+        text: Set Hotkey
+        size: 58 20
+        anchors.left: prev.right
+        anchors.verticalCenter: prev.verticalCenter
+        margin-left: 5
+
+    UIWidget
+      id: spellColumn
+      width: 176
+      anchors.left: parent.left
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      margin-left: 9
+
+      Label
+        text: Spell Healing
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        margin-top: 59
+        font: verdana-11px-antialised
+        color: #e5e5e5
+
+      HelperV2RegenSlot
+        id: spellSlot1
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 5
+
+      HelperV2RegenSlot
+        id: spellSlot2
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 1
+
+      HelperV2RegenSlot
+        id: spellSlot3
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 1
+
+    UIWidget
+      id: potionColumn
+      width: 176
+      anchors.left: spellColumn.right
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      margin-left: 9
+
+      Label
+        text: Potion Healing
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        margin-top: 59
+        font: verdana-11px-antialised
+        color: #e5e5e5
+
+      HelperV2RegenSlot
+        id: potionSlot1
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 5
+
+      HelperV2RegenSlot
+        id: potionSlot2
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 1
+
+      HelperV2RegenSlot
+        id: potionSlot3
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 1
+
+    HorizontalSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: v2HealingToggleHotkeyButton.top
+      margin-left: 8
+      margin-right: 8
+      margin-bottom: 10
+
+    QtCheckBox
+      id: v2HealingEnabledBox
+      text: Enable Healing Helper
+      size: 138 14
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-left: 115
+      margin-bottom: 14
+      text-offset: 18 0
+
+    QtButton
+      id: v2HealingToggleHotkeyButton
+      text: Set Hotkey
+      size: 64 20
+      anchors.left: v2HealingEnabledBox.right
+      anchors.verticalCenter: v2HealingEnabledBox.verticalCenter
+      margin-left: 14
+
+HelperV2SioPanel < UIWidget
+  width: 418
+  image-source: /images/ui/window
+  image-border: 6
+  image-border-top: 27
+
+  Label
+    text: Sio
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    margin-top: 7
+    color: #e5e5e5
+
+  Label
+    text: Select a Party Member
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 15
+    margin-top: 31
+    color: #cfcfcf
+
+  QtPanel
+    id: v2SioMemberPanel
+    anchors.left: parent.left
+    anchors.top: prev.bottom
+    anchors.bottom: parent.bottom
+    width: 175
+    margin-left: 15
+    margin-top: 4
+    margin-bottom: 9
+
+    UIScrollArea
+      id: v2SioMemberList
+      anchors.fill: parent
+      vertical-scrollbar: v2SioMemberScroll
+      layout:
+        type: verticalBox
+
+    VerticalScrollBar
+      id: v2SioMemberScroll
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      anchors.right: parent.right
+      step: 24
+      pixels-scroll: true
+
+    Label
+      id: v2SioEmptyPartyLabel
+      text: No party members
+      anchors.centerIn: parent
+      color: #888888
+      phantom: true
+
+  VerticalSeparator
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 196
+    margin-top: 31
+    margin-bottom: 10
+
+  Label
+    text: Friend Healing
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 203
+    margin-top: 31
+    color: #cfcfcf
+
+  HelperV2SioSlot
+    id: v2FriendSlot1
+    anchors.left: prev.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-right: 6
+    margin-top: 2
+
+  HelperV2SioSlot
+    id: v2FriendSlot2
+    anchors.left: v2FriendSlot1.left
+    anchors.right: v2FriendSlot1.right
+    anchors.top: v2FriendSlot1.bottom
+    margin-top: 1
+
+  Label
+    id: v2MassSioLabel
+    text: Exura Gran Sio
+    anchors.left: v2FriendSlot1.left
+    anchors.top: v2FriendSlot2.bottom
+    margin-top: 8
+    color: #cfcfcf
+
+  HelperV2SioSlot
+    id: v2MassFriendSlot1
+    anchors.left: v2FriendSlot1.left
+    anchors.right: v2FriendSlot1.right
+    anchors.top: v2MassSioLabel.bottom
+    margin-top: 2
+
+  HelperV2SioSlot
+    id: v2MassFriendSlot2
+    anchors.left: v2FriendSlot1.left
+    anchors.right: v2FriendSlot1.right
+    anchors.top: v2MassFriendSlot1.bottom
+    margin-top: 1

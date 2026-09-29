@@ -122,6 +122,9 @@ void Application::registerLuaFunctions()
     g_lua.bindSingletonFunction("g_platform", "copyFile", &Platform::copyFile, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "fileExists", &Platform::fileExists, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "removeFile", &Platform::removeFile, &g_platform);
+    g_lua.bindSingletonFunction("g_platform", "chooseJsonFile", &Platform::chooseJsonFile, &g_platform);
+    g_lua.bindSingletonFunction("g_platform", "readUserFile", &Platform::readUserFile, &g_platform);
+    g_lua.bindSingletonFunction("g_platform", "writeUserFile", &Platform::writeUserFile, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "killProcess", &Platform::killProcess, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "getTempPath", &Platform::getTempPath, &g_platform);
     g_lua.bindSingletonFunction("g_platform", "openUrl", &Platform::openUrl, &g_platform);

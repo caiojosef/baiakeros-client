@@ -1,17 +1,125 @@
 helperV2Window = nil
-helperV2Button = nil
 
 local selectedTab = 'healing'
+local cavebotFloatWindow
+local cavebotPanel
+local cavebotHomeParent
+local cavebotDetached = false
+
+local function explorerActive()
+    return BaiakHelperExplorerV2 and BaiakHelperExplorerV2.isAutoExplorerActive and
+        BaiakHelperExplorerV2.isAutoExplorerActive()
+end
+
+local function setCavebotCompact(compact)
+    if not cavebotFloatWindow or not cavebotDetached then return end
+    cavebotFloatWindow:setHeight(compact and 154 or 570)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot'):setVisible(not compact)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):setVisible(compact)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotReturnButton'):setVisible(not compact)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatCloseButton'):setVisible(not compact)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotMinimizeButton'):setVisible(not compact)
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotExpandButton'):setVisible(compact)
+end
+
+function minimizeCavebot()
+    setCavebotCompact(true)
+end
+
+function expandCavebot()
+    setCavebotCompact(false)
+end
+
+function updateCavebotCompact(time, percent, color, active)
+    if not cavebotFloatWindow then return end
+    local get = function(id) return cavebotFloatWindow:recursiveGetChildById(id) end
+    get('v2CavebotCompactTime'):setText(time)
+    local percentLabel = get('v2CavebotCompactPercent')
+    percentLabel:setText(percent .. '%')
+    percentLabel:setColor(color)
+    local progress = get('v2CavebotCompactProgress')
+    progress:setPercent(percent)
+    progress:setBackgroundColor(color)
+    get('v2CavebotCompactStopButton'):setVisible(active)
+    get('v2CavebotReturnButton'):setText(active and 'Open Helper' or 'Back to Helper')
+end
+
+function stopFromCompactCavebot()
+    if not explorerActive() then return end
+    cavebotPanel:recursiveGetChildById('v2CavebotAutoExploringButton').onClick()
+end
+
+local function setHelperButtonOn(enabled)
+    local helper = modules.game_baiakeros_helper
+    if helper and helper.setHelperButtonOn then
+        helper.setHelperButtonOn(enabled)
+    end
+end
+
+local function attachCavebot(force)
+    if not cavebotDetached or not cavebotPanel then return false end
+    if explorerActive() and not force then return false end
+    setCavebotCompact(false)
+    modules.game_walk.unbindMovementKeysFromWidget(cavebotFloatWindow)
+    cavebotPanel:setParent(cavebotHomeParent)
+    cavebotPanel:breakAnchors()
+    cavebotPanel:setWidth(260)
+    cavebotPanel:addAnchor(AnchorRight, 'parent', AnchorRight)
+    cavebotPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
+    cavebotPanel:addAnchor(AnchorBottom, 'parent', AnchorBottom)
+    cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):show()
+    cavebotDetached = false
+    cavebotFloatWindow:hide()
+    if g_game.isOnline() then modules.game_interface.getRootPanel():focus() end
+    return true
+end
+
+function detachCavebot()
+    if cavebotDetached or not cavebotFloatWindow or not g_game.isOnline() then return end
+    local slot = cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot')
+    cavebotPanel:setParent(slot)
+    cavebotPanel:breakAnchors()
+    cavebotPanel:fill('parent')
+    cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):hide()
+    cavebotDetached = true
+    setCavebotCompact(false)
+    helperV2Window:hide()
+    setHelperButtonOn(false)
+    cavebotFloatWindow:show()
+    cavebotFloatWindow:raise()
+    modules.game_walk.bindMovementKeysToWidget(cavebotFloatWindow)
+    cavebotFloatWindow:focus()
+end
+
+function closeDetachedCavebot()
+    if explorerActive() then
+        minimizeCavebot()
+    else
+        attachCavebot()
+    end
+end
+
+function returnCavebotToHelper()
+    if not explorerActive() and not attachCavebot() then return end
+    showHelperV2Tab('attack')
+    show()
+end
+
 function showHelperV2Tab(tabName)
     if not helperV2Window then return end
     local healingSelected = tabName ~= 'attack'
     selectedTab = healingSelected and 'healing' or 'attack'
+    helperV2Window:setText('Baiakeros Helper')
     local healingPage = helperV2Window:recursiveGetChildById('healingToolsPage')
     local attackPage = helperV2Window:recursiveGetChildById('attackPage')
     local healingTab = helperV2Window:recursiveGetChildById('healingToolsTab')
     local attackTab = helperV2Window:recursiveGetChildById('attackTab')
     healingPage:setVisible(healingSelected)
     attackPage:setVisible(not healingSelected)
+    healingTab:setWidth(healingSelected and 162 or 34)
+    healingTab:setText(healingSelected and 'Healing & Tools' or '')
+    attackTab:setWidth(healingSelected and 34 or 116)
+    attackTab:setText(healingSelected and '' or 'Attack')
     healingTab:setOn(healingSelected)
     healingTab:setEnabled(not healingSelected)
     attackTab:setOn(not healingSelected)
@@ -20,16 +128,31 @@ end
 
 function show()
     if not helperV2Window or not g_game.isOnline() then return end
+    if cavebotDetached and not explorerActive() then attachCavebot() end
     showHelperV2Tab(selectedTab)
     helperV2Window:show()
     helperV2Window:raise()
     helperV2Window:focus()
-    if helperV2Button then helperV2Button:setOn(true) end
+    setHelperButtonOn(true)
 end
 
 function hide()
+    if explorerActive() and not cavebotDetached then detachCavebot() end
     if helperV2Window then helperV2Window:hide() end
-    if helperV2Button then helperV2Button:setOn(false) end
+    setHelperButtonOn(false)
+end
+
+local shouldRestoreAfterHealingAssignment = false
+
+function hideForHealingAssignment()
+    shouldRestoreAfterHealingAssignment = helperV2Window and helperV2Window:isVisible() or false
+    if shouldRestoreAfterHealingAssignment then hide() end
+end
+
+function restoreAfterHealingAssignment()
+    if not shouldRestoreAfterHealingAssignment then return end
+    shouldRestoreAfterHealingAssignment = false
+    show()
 end
 
 function toggle()
@@ -38,30 +161,32 @@ function toggle()
 end
 
 local function onGameStart()
-    if helperV2Button then return end
-    helperV2Button = modules.game_mainpanel.addToggleButton(
-        'baiakerosHelperV2Button',
-        tr('New BaiakEros Helper (Preview)'),
-        '/images/options/button_spells',
-        toggle,
-        false,
-        31
-    )
-    helperV2Button:setOn(false)
+    BaiakHelperExplorerV2.onGameStart()
 end
 
 local function onGameEnd()
+    BaiakHelperExplorerV2.onGameEnd()
+    attachCavebot(true)
     hide()
+    shouldRestoreAfterHealingAssignment = false
 end
 
 function init()
+    g_ui.importStyle('healing')
     g_ui.importStyle('helper_v2')
     helperV2Window = g_ui.createWidget('BaiakerosHelperV2Window', rootWidget)
+    cavebotFloatWindow = g_ui.createWidget('BaiakerosCavebotFloatWindow', rootWidget)
+    cavebotPanel = helperV2Window:recursiveGetChildById('cavebotPanel')
+    cavebotHomeParent = cavebotPanel:getParent()
+    cavebotPanel:recursiveGetChildById('v2CavebotDetachButton').onClick = detachCavebot
+    cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):hide()
     showHelperV2Tab('healing')
 
     BaiakHelperHealingV2.init(helperV2Window)
+    BaiakHelperTrainingV2.init(helperV2Window)
     BaiakHelperToolsV2.init(helperV2Window)
     BaiakHelperAttackV2.init(helperV2Window)
+    BaiakHelperExplorerV2.init(helperV2Window)
 
     connect(g_game, {
         onGameStart = onGameStart,
@@ -72,17 +197,27 @@ function init()
 end
 
 function terminate()
+    shouldRestoreAfterHealingAssignment = false
+    attachCavebot(true)
     disconnect(g_game, {
         onGameStart = onGameStart,
         onGameEnd = onGameEnd
     })
 
     BaiakHelperHealingV2.terminate()
+    BaiakHelperTrainingV2.terminate()
+    BaiakHelperToolsV2.terminate()
+    BaiakHelperAttackV2.terminate()
+    BaiakHelperExplorerV2.terminate()
 
-    if helperV2Button then
-        helperV2Button:destroy()
-        helperV2Button = nil
+    if cavebotFloatWindow then
+        cavebotFloatWindow:destroy()
+        cavebotFloatWindow = nil
     end
+    cavebotPanel = nil
+    cavebotHomeParent = nil
+
+    setHelperButtonOn(false)
     if helperV2Window then
         helperV2Window:destroy()
         helperV2Window = nil

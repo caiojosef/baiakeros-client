@@ -68,6 +68,7 @@ local AUTO_HASTE = {
     retryInterval = 1000,
     spellNames = { 'Haste', 'Strong Haste', 'Charge', 'Swift Foot' }
 }
+local CLEARED_HASTE_SPELL = '__none__'
 local MANA_TRAINING = {
     event = nil,
     nextAt = 0,
@@ -181,6 +182,12 @@ local ATTACK_RUNE_SLOT_COUNTS = {
     sorcerer = 2,
     druid = 2,
     monk = 1
+}
+
+local LURE_SPELL_NAMES = {
+    knight = { 'Chivalrous Challenge', 'Challenge' },
+    paladin = { 'Divine Dazzle' },
+    monk = { 'Balanced Brawl' }
 }
 
 local ATTACK_RUNE_WIDGET_COUNT = 2
@@ -323,6 +330,7 @@ local ATTACK_SPELL_AREAS = {
     ['exevo gran mas vis'] = { shape = 'circle', radius = 6, manhattan = 6 },
     ['exevo ulus frigo'] = { shape = 'ring', radius = 4, manhattan = 5, innerRadius = 1 },
     ['exevo ulus tera'] = { shape = 'ring', radius = 4, manhattan = 5, innerRadius = 1 },
+    ['exevo mort ora'] = { shape = 'targetSquare', castRange = 7, radius = 2 },
     ['exori amp vis'] = { shape = 'chain', range = 7, chainRange = 4, maxTargets = 3 },
     ['exevo fur frigo'] = { shape = 'chain', range = 7, chainRange = 4, maxTargets = 7 },
     ['exevo fur tera'] = { shape = 'chain', range = 7, chainRange = 4, maxTargets = 6 },
@@ -758,15 +766,6 @@ local function restoreAttackPostures()
         local saved = g_settings.getString(attackPostureConfigKey(kind), '')
         selectedAttackPostures[kind] = findAttackPostureOption(kind, saved) and
             saved or nil
-        if not selectedAttackPostures[kind] and modules.game_actionbar and
-            modules.game_actionbar.isActiveStanceSpellId then
-            for _, option in ipairs(getAttackPostureOptions()[kind] or {}) do
-                if modules.game_actionbar.isActiveStanceSpellId(option.spellId) then
-                    selectedAttackPostures[kind] = option.id
-                    break
-                end
-            end
-        end
     end
     updateAttackPostureControls()
 end
@@ -913,6 +912,43 @@ local function isSpellAvailable(spell, player, vocation)
         not spellRequiresPromotion(spell, vocation)
 end
 
+-- Cavebot uses the same server-reported support cooldowns as healing and haste.
+-- Keeping the cast here prevents an independent timer from racing those spells.
+local nextExplorerTurnAt = 0
+function tryCastExplorerLureSpell(spellName, direction)
+    if not g_game.isOnline() then return false end
+    local player = g_game.getLocalPlayer()
+    local vocation = detectVocation()
+    local spell = getSelectedExplorerLureSpell()
+    if not player or not vocation or not spell or player:isDead() or
+        spell.name ~= spellName or
+        player:hasState(PlayerStates.Pz) or
+        (spell.level or 0) > player:getLevel() or
+        (spell.premium and not player:isPremium()) or
+        not spellHasVocation(spell, vocation.promoted and
+            vocation.promotedSpellVocation or vocation.baseSpellVocation) or
+        player:getHealthPercent() < 35 or
+        player:getMana() < (spell.mana or 0) then
+        return false
+    end
+    local now = g_clock.millis()
+    if not isSpellCooldownReady(spell, now) then return false end
+    if direction and player:getDirection() ~= direction then
+        if now >= nextExplorerTurnAt then
+            g_game.turn(direction)
+            nextExplorerTurnAt = now + 250
+        end
+        return false
+    end
+    g_game.talk(spell.words)
+    guardSpellCommand(spell, 3, now)
+    -- The server's packet remains authoritative; this only prevents a cast
+    -- from being repeated before that packet arrives.
+    spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
+    spellGroupCooldownsById[3] = now + (spell.group[3] or 2000)
+    return true
+end
+
 local function getAvailableHealingSpells()
     local player = g_game.getLocalPlayer()
     local vocation = detectVocation()
@@ -1027,6 +1063,44 @@ local function getAvailableAttackSpells()
         return (first.level or 0) < (second.level or 0)
     end)
     return spells
+end
+
+function getAvailableExplorerLureSpells()
+    local player = g_game.getLocalPlayer()
+    local vocation = detectVocation()
+    local profile = getVocationProfile()
+    if not player or not vocation or not profile then return {} end
+    local spells = {}
+    for _, name in ipairs(LURE_SPELL_NAMES[profile.key] or {}) do
+        local spell = SpellInfo.Default[name]
+        if isHasteSpellAvailable(spell, player, vocation) then
+            table.insert(spells, spell)
+        end
+    end
+    return spells
+end
+
+function getSelectedExplorerLureSpell()
+    local name = g_settings.getString(attackConfigKey('lureSpell'), '')
+    for _, spell in ipairs(getAvailableExplorerLureSpells()) do
+        if spell.name == name then return spell end
+    end
+    return nil
+end
+
+function setExplorerLureSpell(name)
+    if name and name ~= '' then
+        local available = false
+        for _, spell in ipairs(getAvailableExplorerLureSpells()) do
+            if spell.name == name then available = true break end
+        end
+        if not available then return false end
+        g_settings.set(attackConfigKey('lureSpell'), name)
+    else
+        g_settings.remove(attackConfigKey('lureSpell'))
+    end
+    g_settings.save()
+    return true
 end
 
 local function findSavedAttackSpell(savedId, vocation, storedName, savedWords)
@@ -1217,6 +1291,35 @@ function togglePotionResource(slotId)
     saveSelection(slot, 'potion', potion.id)
 end
 
+-- The second Helper window presents this state without reading or copying
+-- widgets from the original window. Healing still runs in one place.
+function getHealingState()
+    local state = {
+        enabled = healingEnabled,
+        supported = currentVocation ~= nil,
+        preset = helperPreset,
+        presetNames = helperPresetNames,
+        slots = {}
+    }
+    if not helperWindow then return state end
+    for index = 1, 3 do
+        for _, kind in ipairs({ 'spell', 'potion' }) do
+            local slotId = kind .. 'Slot' .. index
+            local slot = helperWindow:recursiveGetChildById(slotId)
+            if slot then
+                state.slots[slotId] = {
+                    threshold = slot.threshold or DEFAULT_THRESHOLDS[index],
+                    resource = slot.resource or 'health',
+                    spell = slot.assignedSpell,
+                    potion = slot.assignedPotion,
+                    available = slot.assignButton:isEnabled()
+                }
+            end
+        end
+    end
+    return state
+end
+
 local function getVisiblePartyMembers()
     local player = g_game.getLocalPlayer()
     if not player or not player:isPartyMember() then return {} end
@@ -1240,6 +1343,33 @@ local function findVisiblePartyMember(name)
         if creature:getName():lower() == name:lower() then return creature end
     end
     return nil
+end
+
+local function getPartyMemberNames()
+    local player = g_game.getLocalPlayer()
+    if not player or not player:isPartyMember() then return {} end
+    local names, seen = {}, {}
+    local function addName(name)
+        if type(name) ~= 'string' or name == '' or
+            name:lower() == player:getName():lower() or seen[name:lower()] then
+            return
+        end
+        seen[name:lower()] = true
+        table.insert(names, name)
+    end
+    local analyzer = modules.game_analyser and modules.game_analyser.PartyHuntAnalyser
+    if analyzer and analyzer.membersName and analyzer.membersData then
+        for memberId, name in pairs(analyzer.membersName) do
+            if analyzer.membersData[memberId] then addName(name) end
+        end
+    end
+    for _, creature in ipairs(getVisiblePartyMembers()) do
+        addName(creature:getName())
+    end
+    table.sort(names, function(first, second)
+        return first:lower() < second:lower()
+    end)
+    return names
 end
 
 local function refreshPartySelection()
@@ -1367,7 +1497,9 @@ local function assignPartyMemberToSlot(slotId, selectedMember)
     slot.friendName = selectedMember.name
     slot.friendEnabled = true
     slot.friendThreshold = normalizeFriendThreshold(slot.friendThreshold)
-    slot:recursiveGetChildById('outfit'):setOutfit(selectedMember.outfit)
+    if selectedMember.outfit then
+        slot:recursiveGetChildById('outfit'):setOutfit(selectedMember.outfit)
+    end
     saveFriendSlot(slot)
     refreshFriendSlot(slot)
 end
@@ -1378,6 +1510,55 @@ end
 
 function assignMassFriendSlot(slotId)
     assignPartyMemberToSlot(slotId, selectedMassPartyMember)
+end
+
+-- Expose the existing party-healing state to Helper V2. V2 uses the same
+-- configured slots and the same casting loop; sorcerer UH is intentionally
+-- excluded from its Sio interface.
+function getSioState()
+    local profile = getVocationProfile()
+    local available = profile and (profile.key == 'druid' or profile.key == 'monk')
+    local state = { available = available == true,
+        massAvailable = available and profile.massFriendHealing or false,
+        members = {}, slots = {} }
+    if not helperWindow then return state end
+    state.members = getPartyMemberNames()
+    if not available then return state end
+    for _, prefix in ipairs({ 'friendSlot', 'massFriendSlot' }) do
+        if prefix == 'friendSlot' or state.massAvailable then
+            for index = 1, 2 do
+                local slotId = prefix .. index
+                local slot = helperWindow:recursiveGetChildById(slotId)
+                if slot then
+                    local creature = findVisiblePartyMember(slot.friendName)
+                    state.slots[slotId] = {
+                        name = slot.friendName,
+                        enabled = slot.friendEnabled ~= false,
+                        threshold = slot.friendThreshold or 80,
+                        outfit = creature and creature:getOutfit() or nil
+                    }
+                end
+            end
+        end
+    end
+    return state
+end
+
+function assignSioSlot(slotId, memberName)
+    local state = getSioState()
+    if not state.available or not state.slots[slotId] then return end
+    local listed = false
+    for _, name in ipairs(state.members) do
+        if name == memberName then listed = true break end
+    end
+    if not listed then
+        modules.game_textmessage.displayFailureMessage('Select a party member first.')
+        return
+    end
+    local creature = findVisiblePartyMember(memberName)
+    assignPartyMemberToSlot(slotId, {
+        name = memberName, outfit = creature and creature:getOutfit() or nil
+    })
 end
 
 function clearFriendSlot(slotId)
@@ -1400,7 +1581,7 @@ end
 
 function setFriendThreshold(slotId, value)
     local slot = helperWindow and helperWindow:recursiveGetChildById(slotId)
-    if not slot or not slot.friendName then return end
+    if not slot then return end
     slot.friendThreshold = normalizeFriendThreshold(value)
     slot:recursiveGetChildById('thresholdBox'):setCurrentOptionByData(
         slot.friendThreshold, true)
@@ -1468,21 +1649,20 @@ local function updatePartySession()
 end
 
 local function showHelperAfterAssignment()
-    if restoreHelperAfterAssignment and helperWindow and g_game.isOnline() then
-        helperWindow:show()
-        helperWindow:raise()
-        helperWindow:focus()
-        if helperButton then helperButton:setOn(true) end
-    end
     restoreHelperAfterAssignment = false
+    local helperV2 = modules.game_baiakeros_helper_v2
+    if helperV2 and helperV2.restoreAfterHealingAssignment then
+        helperV2.restoreAfterHealingAssignment()
+    end
 end
 
 local function hideHelperForAssignment()
-    restoreHelperAfterAssignment = helperWindow and helperWindow:isVisible() or false
-    if restoreHelperAfterAssignment then
-        helperWindow:hide()
-        if helperButton then helperButton:setOn(false) end
+    local helperV2 = modules.game_baiakeros_helper_v2
+    if helperV2 and helperV2.hideForHealingAssignment then
+        helperV2.hideForHealingAssignment()
     end
+    restoreHelperAfterAssignment = false
+    if helperWindow then helperWindow:hide() end
 end
 
 local function startSpellAssignment(slot)
@@ -1735,6 +1915,37 @@ function showAttackRuneSlotMenu(slotId, mousePosition, mouseButton)
     return true
 end
 
+function showExplorerLureSpellMenu(mousePosition, mouseButton)
+    if mouseButton ~= MouseRightButton then return false end
+    local menu = g_ui.createWidget('PopupMenu')
+    menu:setGameMenu(true)
+    menu:addOption('Assign Lure Spell', function()
+        hideHelperForAssignment()
+        local actionbar = modules.game_actionbar
+        if not actionbar or not actionbar.openFilteredSpellSelector then
+            showHelperAfterAssignment()
+            modules.game_textmessage.displayFailureMessage('The spell selector is not available.')
+            return
+        end
+        actionbar.openFilteredSpellSelector({
+            title = 'Assign Lure Spell',
+            spells = getAvailableExplorerLureSpells(),
+            preselected = getSelectedExplorerLureSpell(),
+            onConfirm = function(spell)
+                if spell then setExplorerLureSpell(spell.name) end
+                showHelperAfterAssignment()
+            end,
+            onCancel = function() showHelperAfterAssignment() end
+        })
+    end)
+    if getSelectedExplorerLureSpell() then
+        menu:addSeparator()
+        menu:addOption('Clear', function() setExplorerLureSpell(nil) end)
+    end
+    menu:display(mousePosition)
+    return true
+end
+
 function setAttackSlotEnabled(slotId, enabled)
     if restoringAttackSlots then return end
     local slot = helperWindow and helperWindow:recursiveGetChildById(slotId)
@@ -1901,6 +2112,66 @@ function setAttackPreset(preset)
     refreshAttackPresetBox()
     showHelperNotification('Attack Preset: ' ..
         (findPresetName(attackPresetNames, attackPreset) or 'Default'), true)
+end
+
+function getAttackState()
+    local profile = getVocationProfile()
+    local spellCount = profile and ATTACK_SPELL_SLOT_COUNTS[profile.key] or 0
+    local runeCount = profile and ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
+    local slots = {}
+    if helperWindow then
+        for _, entry in ipairs({
+            { kind = 'spell', prefix = 'attackSpellSlot', count = 5 },
+            { kind = 'rune', prefix = 'attackRuneSlot', count = ATTACK_RUNE_WIDGET_COUNT }
+        }) do
+            for index = 1, entry.count do
+                local id = entry.prefix .. index
+                local slot = helperWindow:recursiveGetChildById(id)
+                if slot then
+                    slots[id] = {
+                        spell = slot.assignedAttackSpell,
+                        rune = slot.assignedAttackRune,
+                        enabled = slot.attackEnabled ~= false,
+                        minMana = slot.attackMinMana or 0,
+                        minEnemies = slot.attackMinEnemies or 1,
+                        allowMultiple = slot.attackAllowMultiple == true,
+                        singleTarget = isSingleTargetAttackSpell(slot.assignedAttackSpell),
+                        priority = slot.attackPriority or index,
+                        visible = index <= (entry.kind == 'spell' and spellCount or runeCount)
+                    }
+                end
+            end
+        end
+    end
+
+    local postures = {}
+    local options = getAttackPostureOptions()
+    for _, kind in ipairs({ 'stance', 'passive' }) do
+        postures[kind] = {}
+        for index, option in ipairs(options[kind] or {}) do
+            postures[kind][index] = {
+                name = option.name,
+                words = option.words,
+                clientId = option.clientId,
+                selected = selectedAttackPostures[kind] == option.id,
+                cooldownExpiry = getAttackPostureCooldownExpiry(kind, option)
+            }
+        end
+    end
+
+    return {
+        preset = attackPreset,
+        presetNames = attackPresetNames,
+        spellCount = spellCount,
+        runeCount = runeCount,
+        lureSlotVisible = profile and LURE_SPELL_NAMES[profile.key] ~= nil or false,
+        lureSpell = getSelectedExplorerLureSpell(),
+        slots = slots,
+        postures = postures,
+        autoTarget = autoAttackEnabled,
+        shooter = attackRotationEnabled,
+        autoTargetMode = autoAttackMode
+    }
 end
 
 local function restoreAssignmentCursor()
@@ -2115,6 +2386,16 @@ function setManaTrainingEnabled(enabled)
     updateExtrasControls()
 end
 
+function getTrainingState()
+    return {
+        exerciseWeaponId = EXERCISE_TRAINING.selectedWeaponId,
+        exerciseEnabled = EXERCISE_TRAINING.enabled == true,
+        manaSpell = MANA_TRAINING.selectedSpell,
+        manaEnabled = MANA_TRAINING.enabled == true,
+        manaThreshold = MANA_TRAINING.threshold or 90
+    }
+end
+
 function clearManaTrainingSpell()
     MANA_TRAINING.selectedSpell = nil
     MANA_TRAINING.enabled = false
@@ -2139,13 +2420,6 @@ function startManaTrainingSpellAssignment()
             MANA_TRAINING.nextAt = 0
         end
         showHelperAfterAssignment()
-        if helperWindow and g_game.isOnline() then
-            showHelperTab('extras')
-            helperWindow:show()
-            helperWindow:raise()
-            helperWindow:focus()
-            if helperButton then helperButton:setOn(true) end
-        end
         updateManaTrainingControls()
     end
 
@@ -2320,19 +2594,13 @@ function finishExerciseWeaponAssignment(mousePosition, mouseButton)
     if exerciseHelperRestoreEvent then removeEvent(exerciseHelperRestoreEvent) end
     exerciseHelperRestoreEvent = scheduleEvent(function()
         exerciseHelperRestoreEvent = nil
-        if not helperWindow or not g_game.isOnline() then return end
-        showHelperTab('extras')
-        helperWindow:setVisible(true)
-        helperWindow:show()
-        helperWindow:raise()
-        helperWindow:focus()
-        if helperButton then helperButton:setOn(true) end
+        if not g_game.isOnline() then return end
+        showHelperAfterAssignment()
         if modules.game_textmessage.clearMessages then
             modules.game_textmessage.clearMessages()
         end
         modules.game_textmessage.displayStatusMessage(confirmation)
     end, 100)
-    restoreHelperAfterAssignment = false
     return true
 end
 
@@ -2685,11 +2953,14 @@ updateExtrasControls = function()
             hasteSpellBox:addOption(spell.words, spell.name)
             if spell.name == savedHasteName then chosenHasteSpell = spell end
         end
-        chosenHasteSpell = chosenHasteSpell or availableHasteSpells[1]
+        if savedHasteName ~= CLEARED_HASTE_SPELL then
+            chosenHasteSpell = chosenHasteSpell or availableHasteSpells[1]
+        end
         if chosenHasteSpell then
             hasteSpellBox:setCurrentOptionByData(chosenHasteSpell.name, true)
         else
-            hasteSpellBox:addOption('No haste available', '')
+            hasteSpellBox:addOption(#availableHasteSpells > 0 and
+                'No haste selected' or 'No haste available', '')
             hasteSpellBox:setCurrentOptionByData('', true)
         end
         hasteSpellBox:setEnabled(chosenHasteSpell ~= nil)
@@ -2798,6 +3069,33 @@ function openLootPouchStore()
     end, 500)
 end
 
+function getToolsState()
+    local hasteSpells = {}
+    for _, spell in ipairs(getAvailableHasteSpells()) do
+        hasteSpells[#hasteSpells + 1] = {
+            name = spell.name,
+            words = spell.words,
+            clientId = spell.clientId,
+            level = spell.level,
+            mana = spell.mana
+        }
+    end
+    local hasLootPouch = g_settings.getBoolean(lootPouchKnownConfigKey(), false)
+    return {
+        autoReconnect = g_settings.getBoolean(autoReconnectConfigKey(), false),
+        autoEatFood = g_settings.getBoolean(autoEatConfigKey(), false),
+        autoHaste = g_settings.getBoolean(autoHasteEnabledConfigKey(), false),
+        autoHasteSpell = AUTO_HASTE.selectedSpell and AUTO_HASTE.selectedSpell.name or '',
+        autoHasteInPz = g_settings.getBoolean(autoHasteInProtectionZoneConfigKey(), false),
+        changeGold = g_settings.getBoolean(changeGoldEnabledConfigKey(), false),
+        flaskRemover = g_settings.getBoolean(commandEnabledConfigKey('flask'), false),
+        autoloot = hasLootPouch and g_settings.getBoolean(
+            commandEnabledConfigKey('autoloot'), false),
+        hasLootPouch = hasLootPouch,
+        hasteSpells = hasteSpells
+    }
+end
+
 function setAutoReconnectEnabled(enabled)
     if updatingExtrasControls then return end
     g_settings.set(autoReconnectConfigKey(), enabled == true)
@@ -2839,6 +3137,15 @@ function setAutoHasteSpell(spellName)
     g_settings.set(autoHasteSpellConfigKey(), spell.name)
     g_settings.save()
     AUTO_HASTE.nextAt = 0
+end
+
+function clearAutoHasteSpell()
+    AUTO_HASTE.selectedSpell = nil
+    AUTO_HASTE.nextAt = 0
+    g_settings.set(autoHasteSpellConfigKey(), CLEARED_HASTE_SPELL)
+    g_settings.set(autoHasteEnabledConfigKey(), false)
+    g_settings.save()
+    updateExtrasControls()
 end
 
 function setAutoHasteInProtectionZone(enabled)
@@ -3040,20 +3347,16 @@ end
 
 local function tryFriendHealing(now)
     local profile = getVocationProfile()
-    if not profile or not profile.friendHealing then return false end
+    if not profile or not profile.friendHealing or profile.friendKind == 'uh' then
+        return false
+    end
     local selected = getFriendHealingCandidate()
     if not selected then return false end
 
-    if profile.friendKind == 'uh' then
-        if now < nextFriendHealingAt then return false end
-        g_game.useInventoryItemWith(3160, selected.creature, -1)
-        nextFriendHealingAt = now + FRIEND_HEALING_COOLDOWN
-    else
-        if not isCooldownReady(spellGroupCooldownsById, 2, now) then return false end
-        local words = profile.friendKind == 'monkSio' and 'exura tio sio' or 'exura sio'
-        g_game.talk(string.format('%s "%s', words, selected.creature:getName()))
-        guardSpellCommand(nil, 2, now)
-    end
+    if not isCooldownReady(spellGroupCooldownsById, 2, now) then return false end
+    local words = profile.friendKind == 'monkSio' and 'exura tio sio' or 'exura sio'
+    g_game.talk(string.format('%s "%s', words, selected.creature:getName()))
+    guardSpellCommand(nil, 2, now)
     setStatus(string.format('%d%%  healing %s', selected.healthPercent,
         selected.creature:getName()), '#78d878')
     return true
@@ -3274,7 +3577,7 @@ local function getSpellAffectedMonsters(spell, monsters, player, playerPosition,
 
     if profile then
         local center = playerPosition
-        if profile.shape == 'targetCircle' then
+        if profile.shape == 'targetCircle' or profile.shape == 'targetSquare' then
             if not target or not isValidAutoAttackTarget(target, playerPosition) or
                 tileDistance(playerPosition, target:getPosition()) > (profile.castRange or 1) then
                 return affected
@@ -3284,7 +3587,7 @@ local function getSpellAffectedMonsters(spell, monsters, player, playerPosition,
         for _, monster in ipairs(monsters) do
             local monsterPosition = monster:getPosition()
             local inArea = false
-            if profile.shape == 'square' then
+            if profile.shape == 'square' or profile.shape == 'targetSquare' then
                 inArea = tileDistance(center, monsterPosition) <= (profile.radius or 1)
             elseif profile.shape == 'circle' or profile.shape == 'targetCircle' then
                 inArea = isInCircle(center, monsterPosition,
@@ -3429,6 +3732,15 @@ local function checkAutoAttack()
 
     local monsters = getVisibleMonsters(playerPosition)
     local currentTarget = g_game.getAttackingCreature()
+    local explorer = modules.game_baiakeros_helper_v2
+    if explorer and explorer.isSingleTargetExplorerHunt and
+        explorer.isSingleTargetExplorerHunt() and
+        containsCreature(monsters, currentTarget) then
+        -- Chase keeps the current monster until it dies or leaves the screen.
+        -- Re-evaluating distance priorities every tick would switch targets
+        -- while the client is trying to pursue the first one.
+        return
+    end
     local adjacent = getAdjacentMonsters(monsters, playerPosition)
     local candidates
     if autoAttackMode == 'A' or autoAttackMode == 'F' or autoAttackMode == 'G' then
@@ -3487,6 +3799,8 @@ local function checkAutoAttack()
 end
 
 local function checkAttackRotation()
+    local explorer = modules.game_baiakeros_helper_v2
+    if explorer and explorer.shouldHoldExplorerAttack and explorer.shouldHoldExplorerAttack() then return end
     if not attackRotationEnabled or not g_game.isOnline() then return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() then return end
@@ -3495,6 +3809,10 @@ local function checkAttackRotation()
     if not playerPosition then return end
     local monsters = getVisibleMonsters(playerPosition)
     if #monsters == 0 then return end
+    local preferArea = #monsters > 1 and explorer and
+        explorer.preferAreaExplorerAttack and explorer.preferAreaExplorerAttack()
+    local singleTargetOnly = explorer and explorer.isSingleTargetExplorerHunt and
+        explorer.isSingleTargetExplorerHunt()
     local now = g_clock.millis()
     if not isCooldownReady(spellGroupCooldownsById, 1, now) then return end
     local manaPercent = getManaPercent(player)
@@ -3509,6 +3827,13 @@ local function checkAttackRotation()
         end
     end
     table.sort(orderedSpellSlots, function(a, b)
+        if preferArea then
+            local aArea = a.slot.assignedAttackSpell ~= nil and
+                not isSingleTargetAttackSpell(a.slot.assignedAttackSpell)
+            local bArea = b.slot.assignedAttackSpell ~= nil and
+                not isSingleTargetAttackSpell(b.slot.assignedAttackSpell)
+            if aArea ~= bArea then return aArea == true end
+        end
         local aPriority = a.slot.attackPriority or a.index
         local bPriority = b.slot.attackPriority or b.index
         if aPriority ~= bPriority then return aPriority < bPriority end
@@ -3516,7 +3841,7 @@ local function checkAttackRotation()
     end)
 
     local orderedSpellCount = #orderedSpellSlots
-    local spellStartIndex = orderedSpellCount > 0 and
+    local spellStartIndex = preferArea and 1 or orderedSpellCount > 0 and
         math.max(1, math.min(orderedSpellCount, nextAttackSpellIndex or 1)) or 1
     for offset = 0, orderedSpellCount - 1 do
         local orderedIndex = ((spellStartIndex + offset - 1) % orderedSpellCount) + 1
@@ -3531,9 +3856,11 @@ local function checkAttackRotation()
             local monstersInRange = singleTarget and
                 getSingleTargetRangeMonsterCount(spell, monsters, playerPosition) or 0
             local singleTargetCondition = not singleTarget or
+                (singleTargetOnly and monstersInRange >= 1) or
                 (slot.attackAllowMultiple == true and monstersInRange >= 1) or
                 (slot.attackAllowMultiple ~= true and monstersInRange == 1)
-            if spell and #affectedMonsters >= (slot.attackMinEnemies or 1) and
+            if spell and (not singleTargetOnly or singleTarget) and
+                #affectedMonsters >= (slot.attackMinEnemies or 1) and
                 singleTargetCondition and
                 isAttackSpellAvailable(spell, player, currentVocation) and
                 hasRequiredAttackSpellHarmony(spell, player) and
@@ -3566,20 +3893,26 @@ local function checkAttackRotation()
         end
     end
 
-    local runeSlotCount = profile and ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
+    local runeSlotCount = profile and not LURE_SPELL_NAMES[profile.key] and
+        ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
     local orderedRuneSlots = {}
     for i = 1, runeSlotCount do
         local slot = helperWindow:recursiveGetChildById('attackRuneSlot' .. i)
         if slot then table.insert(orderedRuneSlots, { slot = slot, index = i }) end
     end
     table.sort(orderedRuneSlots, function(a, b)
+        if preferArea then
+            local aArea = a.slot.assignedAttackRune ~= nil and a.slot.assignedAttackRune.area == true
+            local bArea = b.slot.assignedAttackRune ~= nil and b.slot.assignedAttackRune.area == true
+            if aArea ~= bArea then return aArea == true end
+        end
         local aPriority = a.slot.attackPriority or a.index
         local bPriority = b.slot.attackPriority or b.index
         if aPriority ~= bPriority then return aPriority < bPriority end
         return a.index < b.index
     end)
     local orderedRuneCount = #orderedRuneSlots
-    local runeStartIndex = orderedRuneCount > 0 and
+    local runeStartIndex = preferArea and 1 or orderedRuneCount > 0 and
         math.max(1, math.min(orderedRuneCount, nextAttackRuneIndex or 1)) or 1
     for offset = 0, orderedRuneCount - 1 do
         local orderedIndex = ((runeStartIndex + offset - 1) % orderedRuneCount) + 1
@@ -3590,7 +3923,8 @@ local function checkAttackRotation()
             local rune = slot.assignedAttackRune
             local affectedMonsters = getRuneAffectedMonsters(
                 rune, monsters, playerPosition, target)
-            if rune and #affectedMonsters >= (slot.attackMinEnemies or 1) and target then
+            if rune and (not singleTargetOnly or not rune.area) and
+                #affectedMonsters >= (slot.attackMinEnemies or 1) and target then
                 g_game.useInventoryItemWith(rune.id, target, -1)
                 guardSpellCommand(nil, 1, now)
                 nextAttackRuneIndex = (orderedIndex % orderedRuneCount) + 1
@@ -3672,6 +4006,12 @@ end
 function checkAttackAfkTimeout()
     if (not autoAttackEnabled and not attackRotationEnabled) or not g_game.isOnline() then
         ATTACK_AFK.trackingSince = 0
+        return false
+    end
+
+    local explorer = modules.game_baiakeros_helper_v2
+    if explorer and explorer.isAutoExplorerActive and explorer.isAutoExplorerActive() then
+        ATTACK_AFK.trackingSince = g_clock.millis()
         return false
     end
 
@@ -3866,6 +4206,7 @@ function removeAttackPresetData(selectedAttackPreset, selectedHelperPreset)
     end
     g_settings.remove(attackPostureConfigKey('stance'))
     g_settings.remove(attackPostureConfigKey('passive'))
+    g_settings.remove(attackConfigKey('lureSpell'))
     helperPreset = previousHelperPreset
     attackPreset = previousAttackPreset
 end
@@ -4340,32 +4681,35 @@ local function offline()
 end
 
 function show()
-    if not g_game.isOnline() then return end
-    refreshCharacterState()
-    restoreSlots()
-    restoreFriendSlots()
-    restoreAttackSlots()
-    updateEnabledCheckBox()
-    showHelperTab('healing')
-    helperWindow:show()
-    helperWindow:raise()
-    helperWindow:focus()
-    helperButton:setOn(true)
+    local helperV2 = modules.game_baiakeros_helper_v2
+    if helperV2 and helperV2.show then helperV2.show() end
 end
 
 function hide()
     closeSelector()
     helperWindow:hide()
-    if helperButton then helperButton:setOn(false) end
+    local helperV2 = modules.game_baiakeros_helper_v2
+    if helperV2 and helperV2.hide then helperV2.hide() end
+    setHelperButtonOn(false)
 end
 
 function toggle()
-    if helperWindow:isVisible() then hide() else show() end
+    local helperV2 = modules.game_baiakeros_helper_v2
+    if helperV2 and helperV2.toggle then helperV2.toggle() end
+end
+
+function setHelperButtonOn(enabled)
+    if helperButton then helperButton:setOn(enabled) end
 end
 
 function init()
     g_ui.importStyle('helper')
     helperWindow = g_ui.createWidget('BaiakerosHelperWindow', rootWidget)
+    -- Keep the old window for comparison while V2 owns all configuration input.
+    local readOnlyOverlay = helperWindow:recursiveGetChildById('legacyReadOnlyOverlay')
+    readOnlyOverlay.onMousePress = function() return true end
+    readOnlyOverlay.onMouseRelease = function() return true end
+    readOnlyOverlay.onMouseWheel = function() return true end
     local notificationParent = modules.game_interface.getMapPanel() or rootWidget
     helperNotification = g_ui.createWidget(
         'HelperToggleNotification', notificationParent)
@@ -4687,7 +5031,7 @@ function init()
     showHelperTab('healing')
 
     helperButton = modules.game_mainpanel.addCompactStoreButton('baiakerosHelperButton',
-        tr('BaiakEros Helper'), '/images/options/blue_large', toggle, 1,
+        tr('Baiakeros Helper'), '/images/options/blue_large', toggle, 1,
         tr('Helper'), '/images/topbuttons/bot')
     helperButton:show()
     helperButton:setOn(false)

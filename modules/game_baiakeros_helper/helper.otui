@@ -621,7 +621,7 @@ HelperRuneAttackSlot < UIWidget
 
 BaiakerosHelperWindow < MainWindow
   id: baiakerosHelperWindow
-  !text: tr('BaiakEros Helper')
+  !text: tr('BaiakEros Helper V1 - View Only')
   size: 430 520
   anchors.centerIn: parent
   visible: false
@@ -1864,3 +1864,12 @@ BaiakerosHelperWindow < MainWindow
     margin-right: 0
     margin-bottom: -8
     @onClick: modules.game_baiakeros_helper.hide()
+
+  UIWidget
+    id: legacyReadOnlyOverlay
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: tabBar.bottom
+    anchors.bottom: footerSeparator.top
+    focusable: false
+    !tooltip: tr('Helper V1 is view-only. Configure the Helper V2 instead.')
