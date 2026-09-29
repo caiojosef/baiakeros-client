@@ -27,10 +27,63 @@
 #include <framework/core/eventdispatcher.h>
 
 #include <psapi.h>
+#include <commdlg.h>
 #include <windows.h>
 #include <shellapi.h>
 
 #pragma comment(lib, "psapi.lib")
+#pragma comment(lib, "comdlg32.lib")
+
+std::string Platform::chooseJsonFile(bool save)
+{
+    wchar_t path[32768] = {};
+    OPENFILENAMEW dialog = {};
+    dialog.lStructSize = sizeof(dialog);
+    dialog.hwndOwner = GetActiveWindow();
+    dialog.lpstrFilter = L"Cavebot route (*.json)\0*.json\0All files (*.*)\0*.*\0\0";
+    dialog.lpstrFile = path;
+    dialog.nMaxFile = static_cast<DWORD>(std::size(path));
+    dialog.lpstrDefExt = L"json";
+    dialog.lpstrTitle = save ? L"Save Cavebot route" : L"Load Cavebot route";
+    dialog.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR |
+        (save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST);
+    if (!(save ? GetSaveFileNameW(&dialog) : GetOpenFileNameW(&dialog)))
+        return {};
+    return stdext::utf16_to_utf8(path);
+}
+
+std::string Platform::readUserFile(std::string path)
+{
+    const auto widePath = stdext::utf8_to_utf16(path);
+    const HANDLE file = CreateFileW(widePath.c_str(), GENERIC_READ, FILE_SHARE_READ,
+        nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) return {};
+    LARGE_INTEGER size = {};
+    if (!GetFileSizeEx(file, &size) || size.QuadPart <= 0 || size.QuadPart > 1024 * 1024) {
+        CloseHandle(file);
+        return {};
+    }
+    std::string contents(static_cast<size_t>(size.QuadPart), '\0');
+    DWORD read = 0;
+    const bool ok = ReadFile(file, contents.data(), static_cast<DWORD>(contents.size()),
+        &read, nullptr) && read == contents.size();
+    CloseHandle(file);
+    return ok ? contents : std::string{};
+}
+
+bool Platform::writeUserFile(std::string path, std::string contents)
+{
+    if (contents.size() > 1024 * 1024) return false;
+    const auto widePath = stdext::utf8_to_utf16(path);
+    const HANDLE file = CreateFileW(widePath.c_str(), GENERIC_WRITE, 0, nullptr,
+        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) return false;
+    DWORD written = 0;
+    const bool ok = WriteFile(file, contents.data(), static_cast<DWORD>(contents.size()),
+            &written, nullptr) && written == contents.size();
+    CloseHandle(file);
+    return ok;
+}
 
 void Platform::init(std::vector<std::string>& args)
 {

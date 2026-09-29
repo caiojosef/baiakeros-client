@@ -1,14 +1,15 @@
 Module
   name: game_baiakeros_helper_v2
-  description: BaiakEros Helper wide two-tab preview
+  description: Baiakeros Helper
   author: BaiakEros
   autoload: true
   sandboxed: true
   dependencies:
     - game_interface
+    - game_walk
     - game_mainpanel
     - game_baiakeros_helper
-  scripts: [ healing_slots, healing, tools, attack, helper_v2 ]
+  scripts: [ healing_slots, sio, healing, training, tools, attack, explorer, helper_v2 ]
   @onLoad: init()
   @onUnload: terminate()
 

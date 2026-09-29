@@ -288,8 +288,8 @@ function WalkController:onGameEnd()
 end
 
 --- Utility functions for binding and unbinding keys.
-function bindWalkKey(key, dir)
-    local gameRootPanel = modules.game_interface.getRootPanel()
+function bindWalkKey(key, dir, panel)
+    local gameRootPanel = panel or modules.game_interface.getRootPanel()
 
     g_keyboard.bindKeyDown(key, function()
         g_keyboard.setKeyDelay(key, 1)
@@ -304,8 +304,8 @@ function bindWalkKey(key, dir)
     g_keyboard.bindKeyPress(key, function() smartWalk(dir) end, gameRootPanel)
 end
 
-function bindTurnKey(key, dir)
-    local gameRootPanel = modules.game_interface.getRootPanel()
+function bindTurnKey(key, dir, panel)
+    local gameRootPanel = panel or modules.game_interface.getRootPanel()
 
     g_keyboard.bindKeyDown(key, function() turn(dir, false) end, gameRootPanel)
     g_keyboard.bindKeyPress(key, function() turn(dir, true) end, gameRootPanel)
@@ -315,16 +315,29 @@ function bindTurnKey(key, dir)
     end, gameRootPanel)
 end
 
-function unbindWalkKey(key)
-    local gameRootPanel = modules.game_interface.getRootPanel()
+function unbindWalkKey(key, panel)
+    local gameRootPanel = panel or modules.game_interface.getRootPanel()
     g_keyboard.unbindKeyDown(key, gameRootPanel)
     g_keyboard.unbindKeyUp(key, gameRootPanel)
     g_keyboard.unbindKeyPress(key, gameRootPanel)
 end
 
-function unbindTurnKey(key)
-    local gameRootPanel = modules.game_interface.getRootPanel()
+function unbindTurnKey(key, panel)
+    local gameRootPanel = panel or modules.game_interface.getRootPanel()
     g_keyboard.unbindKeyDown(key, gameRootPanel)
     g_keyboard.unbindKeyPress(key, gameRootPanel)
     g_keyboard.unbindKeyUp(key, gameRootPanel)
+end
+
+-- Keep the regular movement bindings available while a detached game window
+-- has focus. The normal game panel bindings remain active independently.
+function bindMovementKeysToWidget(widget)
+    widget:setAutoRepeatDelay(200)
+    for _, keyDir in ipairs(keys) do bindWalkKey(keyDir[1], keyDir[2], widget) end
+    for _, keyDir in ipairs(turnKeys) do bindTurnKey(keyDir[1], keyDir[2], widget) end
+end
+
+function unbindMovementKeysFromWidget(widget)
+    for _, keyDir in ipairs(keys) do unbindWalkKey(keyDir[1], widget) end
+    for _, keyDir in ipairs(turnKeys) do unbindTurnKey(keyDir[1], widget) end
 end

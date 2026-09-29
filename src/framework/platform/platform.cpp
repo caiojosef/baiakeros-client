@@ -24,6 +24,12 @@
 
 Platform g_platform;
 
+#ifndef WIN32
+std::string Platform::chooseJsonFile(bool) { return {}; }
+std::string Platform::readUserFile(std::string) { return {}; }
+bool Platform::writeUserFile(std::string, std::string) { return false; }
+#endif
+
 std::unordered_map<DeviceType, std::string> Platform::m_deviceShortNames = {
     {Desktop, "desktop"},
     {Mobile,  "mobile"},

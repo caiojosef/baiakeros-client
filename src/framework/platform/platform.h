@@ -46,6 +46,9 @@ public:
     bool copyFile(std::string from, std::string to);
     bool fileExists(std::string file);
     bool removeFile(std::string file);
+    std::string chooseJsonFile(bool save);
+    std::string readUserFile(std::string path);
+    bool writeUserFile(std::string path, std::string contents);
     ticks_t getFileModificationTime(std::string file);
     bool openUrl(std::string url, bool now = false);
     bool openDir(std::string path, bool now = false);

@@ -1,9 +1,5 @@
 BaiakHelperHealingSlotsV2 = {}
 
-local function copyVisible(target, source)
-    if target and source then target:setVisible(source:isVisible()) end
-end
-
 local function bindThresholdButton(button, slotId, delta)
     button.onClick = nil
     g_mouse.bindAutoPress(button, function()
@@ -13,58 +9,57 @@ local function bindThresholdButton(button, slotId, delta)
     end, 350, MouseLeftButton, 80)
 end
 
-local function syncSlot(window, sourceWindow, slotId)
-    local source = sourceWindow:recursiveGetChildById(slotId)
-    local target = window:recursiveGetChildById(slotId)
-    if not source or not target then return end
+local function renderSlot(slot, state)
+    if not slot or not state then return end
 
-    target.threshold = source.threshold
-    target.resource = source.resource
-    target.assignedSpell = source.assignedSpell
-    target.assignedPotion = source.assignedPotion
+    local assign = slot:recursiveGetChildById('assignButton')
+    local spellIcon = slot:recursiveGetChildById('spellIcon')
+    local itemIcon = slot:recursiveGetChildById('itemIcon')
+    local resourceButton = slot:recursiveGetChildById('resourceButton')
+    local thresholdLabel = slot:recursiveGetChildById('thresholdLabel')
+    local spell, potion = state.spell, state.potion
 
-    local sourceSpell = source:recursiveGetChildById('spellIcon')
-    local targetSpell = target:recursiveGetChildById('spellIcon')
-    if sourceSpell and targetSpell then
-        targetSpell:setImageSource(sourceSpell:getImageSource())
-        targetSpell:setImageClip(sourceSpell:getImageClip())
-        copyVisible(targetSpell, sourceSpell)
+    thresholdLabel:setText(tostring(state.threshold) .. '%')
+    assign:setEnabled(state.available)
+    spellIcon:setVisible(spell ~= nil)
+    itemIcon:setVisible(potion ~= nil)
+
+    if spell then
+        spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+        spellIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
+        assign:setTooltip(string.format('%s\n%s\nLevel %d | Mana %d',
+            spell.name, spell.words, spell.level or 0, spell.mana or 0))
+    elseif potion then
+        itemIcon:setItemId(potion.id)
+        assign:setTooltip(potion.name .. '\nRight-click to change or clear')
+    else
+        assign:setTooltip(slot:getId():sub(1, 6) == 'potion' and
+            'Right-click to assign a healing potion' or
+            'Right-click to assign a healing spell')
     end
 
-    local sourceItem = source:recursiveGetChildById('itemIcon')
-    local targetItem = target:recursiveGetChildById('itemIcon')
-    if sourceItem and targetItem then
-        targetItem:setItemId(sourceItem:getItemId())
-        copyVisible(targetItem, sourceItem)
+    local resource = state.resource or 'health'
+    assign:setBorderWidth(potion and 1 or 0)
+    assign:setBorderColor(potion and
+        (resource == 'mana' and '#2e7fd0' or '#b83c3c') or 'alpha')
+    if potion then
+        resourceButton:setText(resource == 'mana' and 'M' or 'H')
+        resourceButton:setColor(resource == 'mana' and '#57a8ff' or '#ed6464')
+        resourceButton:setBorderColor(resource == 'mana' and '#2e7fd0' or '#b83c3c')
+        resourceButton:setTooltip(resource == 'mana' and
+            'Mana mode: trigger using mana percentage' or
+            'Health mode: trigger using health percentage')
     end
-
-    local sourceLabel = source:recursiveGetChildById('thresholdLabel')
-    local targetLabel = target:recursiveGetChildById('thresholdLabel')
-    if sourceLabel and targetLabel then targetLabel:setText(sourceLabel:getText()) end
-
-    local sourceResource = source:recursiveGetChildById('resourceButton')
-    local targetResource = target:recursiveGetChildById('resourceButton')
-    if sourceResource and targetResource then
-        targetResource:setText(sourceResource:getText())
-        targetResource:setColor(sourceResource:getColor())
-        targetResource:setTooltip(sourceResource:getTooltip())
-        copyVisible(targetResource, sourceResource)
-    end
-
-    local sourceAssign = source:recursiveGetChildById('assignButton')
-    local targetAssign = target:recursiveGetChildById('assignButton')
-    if sourceAssign and targetAssign then
-        targetAssign:setTooltip(sourceAssign:getTooltip())
-        targetAssign:setBorderWidth(source.assignedPotion and 1 or 0)
-        targetAssign:setBorderColor(source.assignedPotion and
-            (source.resource == 'mana' and '#2e7fd0' or '#b83c3c') or 'alpha')
-    end
+    resourceButton:setVisible(potion ~= nil and
+        potion.resources.health and potion.resources.mana or false)
 end
 
-function BaiakHelperHealingSlotsV2.sync(window, sourceWindow)
+function BaiakHelperHealingSlotsV2.render(window, states)
     for index = 1, 3 do
-        syncSlot(window, sourceWindow, 'spellSlot' .. index)
-        syncSlot(window, sourceWindow, 'potionSlot' .. index)
+        for _, kind in ipairs({ 'spell', 'potion' }) do
+            local slotId = kind .. 'Slot' .. index
+            renderSlot(window:recursiveGetChildById(slotId), states[slotId])
+        end
     end
 end
 
@@ -79,19 +74,22 @@ function BaiakHelperHealingSlotsV2.bind(window)
             local resource = slot:recursiveGetChildById('resourceButton')
 
             assign.onMouseRelease = function(_, position, button)
-                local module = modules.game_baiakeros_helper
+                local helper = modules.game_baiakeros_helper
                 if kind == 'spell' then
-                    return module.showSpellMenu(slotId, position, button)
+                    return helper.showSpellMenu(slotId, position, button)
                 end
-                return module.showPotionMenu(slotId, position, button)
+                return helper.showPotionMenu(slotId, position, button)
             end
-            bindThresholdButton(decrease, slotId, -1)
-            bindThresholdButton(increase, slotId, 1)
             if kind == 'potion' then
+                local itemIcon = slot:recursiveGetChildById('itemIcon')
+                itemIcon:setPhantom(false)
+                itemIcon.onMouseRelease = assign.onMouseRelease
                 resource.onClick = function()
                     modules.game_baiakeros_helper.togglePotionResource(slotId)
                 end
             end
+            bindThresholdButton(decrease, slotId, -1)
+            bindThresholdButton(increase, slotId, 1)
         end
     end
 end

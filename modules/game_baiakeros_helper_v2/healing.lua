@@ -8,18 +8,14 @@ local function legacy()
     return modules.game_baiakeros_helper
 end
 
-local function syncPreset(sourceWindow)
-    local source = sourceWindow:recursiveGetChildById('helperPresetBox')
+local function syncPreset(state)
     local target = window:recursiveGetChildById('v2HealingPresetBox')
-    if not source or not target then return end
-
-    local sourceOptions = source.options or {}
-    local targetOptions = target.options or {}
-    local changed = #targetOptions ~= #sourceOptions
+    local names = state.presetNames or {}
+    local options = target.options or {}
+    local changed = #options ~= #names
     if not changed then
-        for index, option in ipairs(sourceOptions) do
-            local current = targetOptions[index]
-            if not current or current.text ~= option.text or current.data ~= option.data then
+        for index, name in ipairs(names) do
+            if not options[index] or options[index].text ~= name then
                 changed = true
                 break
             end
@@ -29,12 +25,11 @@ local function syncPreset(sourceWindow)
     updating = true
     if changed then
         target:clearOptions()
-        for _, option in ipairs(sourceOptions) do
-            target:addOption(option.text, option.data)
+        for _, name in ipairs(names) do
+            target:addOption(name, legacy().presetId(name))
         end
     end
-    local selected = source:getCurrentOption()
-    if selected then target:setCurrentOptionByData(selected.data, true) end
+    target:setCurrentOptionByData(state.preset, true)
     updating = false
 end
 
@@ -46,19 +41,16 @@ end
 function BaiakHelperHealingV2.sync()
     if not window then return end
     local module = legacy()
-    local sourceWindow = module and module.helperWindow
-    if sourceWindow then
-        if window:isVisible() and sourceWindow:isVisible() then
-            sourceWindow:hide()
-        end
-        syncPreset(sourceWindow)
-        BaiakHelperHealingSlotsV2.sync(window, sourceWindow)
+    if module and module.getHealingState then
+        local state = module.getHealingState()
+        syncPreset(state)
+        BaiakHelperHealingSlotsV2.render(window, state.slots)
+        BaiakHelperSioV2.sync()
 
-        local source = sourceWindow:recursiveGetChildById('healingEnabledBox')
-        local target = window:recursiveGetChildById('v2HealingEnabledBox')
-        if source and target and source:isChecked() ~= target:isChecked() then
+        local enabled = window:recursiveGetChildById('v2HealingEnabledBox')
+        if enabled:isChecked() ~= state.enabled then
             updating = true
-            target:setChecked(source:isChecked())
+            enabled:setChecked(state.enabled)
             updating = false
         end
     end
@@ -94,11 +86,13 @@ function BaiakHelperHealingV2.init(helperWindow)
     end)
 
     BaiakHelperHealingSlotsV2.bind(window)
+    BaiakHelperSioV2.init(window)
     BaiakHelperHealingV2.sync()
 end
 
 function BaiakHelperHealingV2.terminate()
     if syncEvent then removeEvent(syncEvent) end
     syncEvent = nil
+    BaiakHelperSioV2.terminate()
     window = nil
 end

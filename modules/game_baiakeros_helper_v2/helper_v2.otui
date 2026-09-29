@@ -1,23 +1,3 @@
-HelperV2HealingStepButton < UIButton
-  color: #cfcfcf
-  image-source: /images/ui/button
-  image-clip: 0 0 22 23
-  image-border: 3
-  text-offset: 0 0
-  font: verdana-11px-antialised
-
-  $hover:
-    color: #ffffff
-
-  $pressed:
-    color: #ffffff
-    image-clip: 0 46 22 23
-    text-offset: 1 1
-
-  $disabled:
-    color: #555555
-    opacity: 0.65
-
 HelperV2TabButton < UIButton
   image-source: /images/ui/button
   image-clip: 0 0 22 23
@@ -35,95 +15,65 @@ HelperV2TabButton < UIButton
   $pressed:
     image-clip: 0 46 22 23
 
-HelperV2HealingValuePanel < UIWidget
-  background-color: #0b0b0b5c
-  border-width: 1
-  border-color: #4c4c4c
-  font: verdana-11px-antialised
-
-HelperV2HealingSlot < UIWidget
-  size: 176 42
-
-  UIButton
-    id: assignButton
-    size: 38 38
-    anchors.left: parent.left
-    anchors.verticalCenter: parent.verticalCenter
-    margin-left: 18
-    image-source: /images/ui/button
-    image-clip: 0 0 22 23
-    image-border: 3
-    text: ''
-    font: verdana-11px-antialised
-
-  UIWidget
-    id: spellIcon
-    size: 32 32
-    anchors.centerIn: assignButton
-    visible: false
-    phantom: true
-
-  UIItem
-    id: itemIcon
-    size: 32 32
-    anchors.centerIn: assignButton
-    visible: false
-    virtual: true
-    phantom: true
-
-  Label
-    id: assignedName
-    visible: false
-
-  HelperV2HealingStepButton
-    id: decreaseButton
-    text: <
-    size: 18 26
-    anchors.left: assignButton.right
-    anchors.verticalCenter: parent.verticalCenter
-    margin-left: 8
-
-  HelperV2HealingValuePanel
-    id: thresholdPanel
-    size: 52 26
-    anchors.left: decreaseButton.right
-    anchors.verticalCenter: parent.verticalCenter
-
-    Label
-      id: thresholdLabel
-      text: 90%
-      anchors.fill: parent
-      text-align: center
-      color: #eeeeee
-      font: verdana-11px-antialised
-
-  HelperV2HealingStepButton
-    id: increaseButton
-    text: >
-    size: 18 26
-    anchors.left: thresholdPanel.right
-    anchors.verticalCenter: parent.verticalCenter
-
-  UIButton
-    id: resourceButton
-    text: H
-    size: 16 16
-    anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
-    margin-right: 0
-    text-align: center
-    color: #ed6464
-    border-width: 1
-    border-color: #b83c3c
-    visible: false
-    !tooltip: tr('Hybrid potion resource.')
 HelperV2Section < UIWidget
   image-source: /images/ui/window
   image-border: 6
   image-border-top: 27
 
+HelperV2AttackValuePanel < UIWidget
+  background-color: #0b0b0b5c
+  border-width: 1
+  border-color: #4c4c4c
+
+HelperV2WaypointRow < UIButton
+  height: 22
+  text-align: left
+  font: verdana-11px-antialised
+  color: #ffffff
+
+  SmallButton
+    id: removeWaypoint
+    text: X
+    color: #ffffff
+    size: 20 18
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 24
+    !tooltip: tr('Delete this waypoint.')
+
+  $hover:
+    background-color: #ffffff0d
+
+  $on:
+    background-color: #426f9938
+    border-width: 1
+    border-color: #527da3
+
+HelperV2PostureButton < UIButton
+  size: 38 38
+  image-source: /images/game/actionbar/actionbarslot
+
+  UIProgressRect
+    id: cooldown
+    background: #101010aa
+    percent: 100
+    focusable: false
+    phantom: true
+    anchors.fill: parent
+    font: verdana-11px-rounded
+    color: white
+    border-color: #9fa0a0
+
+  Panel
+    id: activeSpell
+    anchors.fill: parent
+    margin: 1 1 1 1
+    image-source: /images/game/actionbar/border_activespell
+    phantom: true
+    visible: false
+
 HelperV2AttackRow < UIWidget
-  height: 40
+  height: 36
   background-color: #ffffff03
 
   UIButton
@@ -134,59 +84,79 @@ HelperV2AttackRow < UIWidget
     margin-left: 8
     image-source: /images/game/actionbar/actionbarslot
 
-    UIWidget
-      size: 24 7
-      anchors.centerIn: parent
-      background-color: #252727
-      phantom: true
+  UIWidget
+    id: spellIcon
+    anchors.fill: assignButton
+    visible: false
+    phantom: true
 
-  SmallButton
+  UIItem
+    id: itemIcon
+    anchors.fill: assignButton
+    visible: false
+    virtual: true
+    phantom: true
+
+  QtCheckBox
+    id: allowMultipleBox
+    size: 18 18
+    anchors.left: assignButton.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 3
+    visible: false
+    !tooltip: tr('Cast if have +1 creatures')
+
+  HelperV2RegenStep
+    id: manaDecrease
     text: <
     size: 14 24
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-left: 73
+    margin-left: 70
 
-  UIWidget
+  HelperV2AttackValuePanel
+    id: manaPanel
     size: 46 24
     anchors.left: prev.right
     anchors.verticalCenter: parent.verticalCenter
-    image-source: /images/ui/button
-    image-border: 3
 
     Label
+      id: manaLabel
       text: 0%
       anchors.fill: parent
       text-align: center
       color: #eeeeee
 
-  SmallButton
+  HelperV2RegenStep
+    id: manaIncrease
     text: >
     size: 14 24
     anchors.left: prev.right
     anchors.verticalCenter: parent.verticalCenter
 
-  SmallButton
+  HelperV2RegenStep
+    id: enemiesDecrease
     text: <
     size: 14 24
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-left: 176
+    margin-left: 153
 
-  UIWidget
+  HelperV2AttackValuePanel
+    id: enemiesPanel
     size: 36 24
     anchors.left: prev.right
     anchors.verticalCenter: parent.verticalCenter
-    image-source: /images/ui/button
-    image-border: 3
 
     Label
+      id: enemiesLabel
       text: 1
       anchors.fill: parent
       text-align: center
       color: #eeeeee
 
-  SmallButton
+  HelperV2RegenStep
+    id: enemiesIncrease
     text: >
     size: 14 24
     anchors.left: prev.right
@@ -197,13 +167,67 @@ HelperV2AttackRow < UIWidget
     size: 70 24
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    margin-left: 280
+    margin-left: 228
+    mouse-scroll: false
+
+HelperV2RuneRow < UIWidget
+  height: 36
+
+  UIButton
+    id: assignButton
+    size: 34 34
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    image-source: /images/game/actionbar/actionbarslot
+
+  UIItem
+    id: itemIcon
+    anchors.fill: assignButton
+    visible: false
+    virtual: true
+    phantom: true
+
+  HelperV2RegenStep
+    id: enemiesDecrease
+    text: <
+    size: 14 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 54
+
+  HelperV2AttackValuePanel
+    id: enemiesPanel
+    size: 36 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+
+    Label
+      id: enemiesLabel
+      text: 1
+      anchors.fill: parent
+      text-align: center
+      color: #eeeeee
+
+  HelperV2RegenStep
+    id: enemiesIncrease
+    text: >
+    size: 14 24
+    anchors.left: prev.right
+    anchors.verticalCenter: parent.verticalCenter
+
+  QtComboBox
+    id: priorityBox
+    size: 70 24
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 130
     mouse-scroll: false
 
 BaiakerosHelperV2Window < MainWindow
   id: baiakerosHelperV2Window
-  !text: tr('BaiakEros Helper V2 - Healing')
-  size: 840 610
+  !text: tr('Baiakeros Helper')
+  size: 900 610
   anchors.centerIn: parent
   visible: false
   @onEscape: modules.game_baiakeros_helper_v2.hide()
@@ -229,17 +253,18 @@ BaiakerosHelperV2Window < MainWindow
       anchors.top: parent.top
       anchors.left: parent.left
       margin-left: 1
-      size: 162 34
+      size: 162 36
       text: Healing & Tools
+      !tooltip: tr('Healing & Tools')
       @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('healing')
 
       UIWidget
-        size: 26 26
+        size: 24 24
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         margin-left: 5
-        image-source: /images/baiakeros/helper-tab-healing
-        image-fixed-ratio: true
+        image-source: /images/baiakeros/helper_v2_healing
+        image-smooth: true
         phantom: true
 
     HelperV2TabButton
@@ -247,17 +272,18 @@ BaiakerosHelperV2Window < MainWindow
       anchors.top: prev.top
       anchors.left: prev.right
       margin-left: 1
-      size: 116 34
-      text: Attack
+      size: 34 36
+      text: ''
+      !tooltip: tr('Attack')
       @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('attack')
 
       UIWidget
-        size: 26 26
+        size: 24 24
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         margin-left: 5
-        image-source: /images/baiakeros/helper-tab-attack
-        image-fixed-ratio: true
+        image-source: /images/baiakeros/helper_v2_attack
+        image-smooth: true
         phantom: true
   UIWidget
     id: contentContainer
@@ -272,174 +298,19 @@ BaiakerosHelperV2Window < MainWindow
       id: healingToolsPage
       anchors.fill: parent
 
-      HelperV2Section
+      HelperV2HealingPanel
         id: healingSection
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        width: 398
         margin-left: 6
 
-        Label
-          text: Healing
-          anchors.horizontalCenter: parent.horizontalCenter
-          anchors.top: parent.top
-          margin-top: 6
-          font: verdana-11px-antialised
-          color: #dfdfdf
-
-        UIWidget
-          id: healingPresetPanel
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: parent.top
-          height: 27
-          margin-left: 10
-          margin-right: 10
-          margin-top: 29
-
-          Label
-            text: Preset
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            color: #cfcfcf
-
-          QtComboBox
-            id: v2HealingPresetBox
-            size: 108 22
-            anchors.left: prev.right
-            anchors.verticalCenter: parent.verticalCenter
-            margin-left: 6
-            mouse-scroll: false
-
-          SmallButton
-            id: v2HealingPresetAddButton
-            text: +
-            size: 22 20
-            anchors.left: prev.right
-            anchors.verticalCenter: parent.verticalCenter
-            margin-left: 5
-
-          SmallButton
-            id: v2HealingPresetDeleteButton
-            text: x
-            size: 22 20
-            anchors.left: prev.right
-            anchors.verticalCenter: parent.verticalCenter
-            margin-left: 4
-
-          SmallButton
-            id: v2HealingPresetHotkeyButton
-            text: Set Hotkey
-            size: 70 20
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-
-        VerticalSeparator
-          anchors.horizontalCenter: parent.horizontalCenter
-          anchors.top: healingPresetPanel.bottom
-          anchors.bottom: healingBottomPanel.top
-          margin-top: 10
-          margin-bottom: 8
-
-        UIWidget
-          id: spellHealingColumn
-          width: 186
-          anchors.left: parent.left
-          anchors.top: healingPresetPanel.bottom
-          anchors.bottom: healingBottomPanel.top
-          margin-left: 8
-          margin-top: 7
-
-          Label
-            text: Spell Healing
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            color: #e5e5e5
-
-          HelperV2HealingSlot
-            id: spellSlot1
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-            margin-top: 7
-
-          HelperV2HealingSlot
-            id: spellSlot2
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-
-          HelperV2HealingSlot
-            id: spellSlot3
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-
-        UIWidget
-          id: potionHealingColumn
-          width: 186
-          anchors.right: parent.right
-          anchors.top: spellHealingColumn.top
-          anchors.bottom: healingBottomPanel.top
-          margin-right: 8
-
-          Label
-            text: Potion Healing
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            color: #e5e5e5
-
-          HelperV2HealingSlot
-            id: potionSlot1
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-            margin-top: 7
-
-          HelperV2HealingSlot
-            id: potionSlot2
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-
-          HelperV2HealingSlot
-            id: potionSlot3
-            anchors.left: parent.left
-            anchors.top: prev.bottom
-
-        UIWidget
-          id: healingBottomPanel
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.bottom: parent.bottom
-          height: 76
-          margin-left: 10
-          margin-right: 10
-          margin-bottom: 8
-
-          HorizontalSeparator
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-
-          QtCheckBox
-            id: v2HealingEnabledBox
-            text: Enable Healing Helper
-            anchors.left: parent.left
-            anchors.top: parent.top
-            margin-top: 15
-            size: 165 16
-            text-offset: 18 0
-
-          SmallButton
-            id: v2HealingToggleHotkeyButton
-            text: Set Hotkey
-            size: 72 20
-            anchors.left: prev.right
-            anchors.verticalCenter: prev.verticalCenter
-            margin-left: 8
-
-          Label
-            text: Right-click a slot to assign a spell or potion.
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            color: #888888
+      HelperV2SioPanel
+        id: v2SioPanel
+        anchors.left: healingSection.left
+        anchors.right: healingSection.right
+        anchors.top: healingSection.bottom
+        anchors.bottom: parent.bottom
+        margin-top: 7
 
       HelperV2Section
         id: toolsSection
@@ -458,13 +329,167 @@ BaiakerosHelperV2Window < MainWindow
           font: verdana-11px-antialised
           color: #dfdfdf
 
-        QtCheckBox
-          id: v2AutoReconnectBox
-          text: Auto Reconnect
+        Label
+          id: v2AutoHasteLabel
+          text: Auto Haste
           anchors.left: parent.left
           anchors.top: parent.top
           margin-left: 22
-          margin-top: 42
+          margin-top: 39
+          color: #dcdcdc
+
+        UIButton
+          id: v2AutoHasteSpellSlot
+          size: 40 40
+          anchors.left: v2AutoHasteLabel.left
+          anchors.top: v2AutoHasteLabel.bottom
+          margin-top: 7
+          image-source: /images/game/actionbar/actionbarslot
+
+        QtCheckBox
+          id: v2AutoHasteInPzBox
+          text: Cast in PZ
+          size: 120 18
+          anchors.left: v2AutoHasteSpellSlot.right
+          anchors.top: v2AutoHasteSpellSlot.top
+          margin-left: 10
+          text-offset: 18 0
+          !tooltip: tr('Allow Auto Haste inside a Protection Zone.')
+
+        QtComboBox
+          id: v2AutoHasteModeBox
+          size: 108 22
+          anchors.left: v2AutoHasteInPzBox.left
+          anchors.top: v2AutoHasteInPzBox.bottom
+          margin-top: 2
+          mouse-scroll: false
+
+        UIWidget
+          id: v2AutoHasteSpellIcon
+          anchors.fill: v2AutoHasteSpellSlot
+          visible: false
+          phantom: true
+
+        HorizontalSeparator
+          id: v2HasteSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2AutoHasteSpellSlot.bottom
+          margin-left: 12
+          margin-right: 12
+          margin-top: 18
+
+        Label
+          id: v2TrainingTitle
+          text: Training
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: v2HasteSeparator.bottom
+          margin-top: 11
+          color: #f0d48a
+
+        Label
+          text: Exercise Weapon
+          anchors.left: parent.left
+          anchors.top: v2TrainingTitle.bottom
+          margin-left: 22
+          margin-top: 6
+          color: #dcdcdc
+
+        UIButton
+          id: v2ExerciseWeaponSlot
+          size: 40 40
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 4
+          image-source: /images/game/actionbar/actionbarslot
+
+        UIItem
+          id: v2ExerciseWeaponIcon
+          anchors.fill: v2ExerciseWeaponSlot
+          visible: false
+          virtual: true
+
+        QtComboBox
+          id: v2ExerciseModeBox
+          size: 100 22
+          anchors.left: v2ExerciseWeaponSlot.right
+          anchors.verticalCenter: v2ExerciseWeaponSlot.verticalCenter
+          margin-left: 9
+          mouse-scroll: false
+
+        Label
+          text: Mana Training
+          anchors.left: v2ExerciseWeaponSlot.left
+          anchors.top: v2ExerciseWeaponSlot.bottom
+          margin-top: 7
+          color: #dcdcdc
+
+        UIButton
+          id: v2ManaTrainingSlot
+          size: 40 40
+          anchors.left: prev.left
+          anchors.top: prev.bottom
+          margin-top: 4
+          image-source: /images/game/actionbar/actionbarslot
+
+        UIWidget
+          id: v2ManaTrainingIcon
+          anchors.fill: v2ManaTrainingSlot
+          visible: false
+
+        HelperV2RegenStep
+          id: v2ManaTrainingDecrease
+          text: <
+          size: 18 26
+          anchors.left: v2ManaTrainingSlot.right
+          anchors.verticalCenter: v2ManaTrainingSlot.verticalCenter
+          margin-left: 8
+
+        UIWidget
+          size: 52 26
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          background-color: #0b0b0b5c
+          border-width: 1
+          border-color: #4c4c4c
+
+          Label
+            id: v2ManaTrainingPercentLabel
+            text: 90%
+            anchors.fill: parent
+            text-align: center
+            color: #eeeeee
+            font: verdana-11px-antialised
+
+        HelperV2RegenStep
+          id: v2ManaTrainingIncrease
+          text: >
+          size: 18 26
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+
+        QtCheckBox
+          id: v2ManaTrainingEnabledBox
+          size: 18 18
+          anchors.left: prev.right
+          anchors.verticalCenter: prev.verticalCenter
+          margin-left: 7
+
+        HorizontalSeparator
+          id: v2TrainingSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2ManaTrainingSlot.bottom
+          margin-left: 12
+          margin-right: 12
+          margin-top: 14
+
+        QtCheckBox
+          id: v2AutoReconnectBox
+          text: Auto Reconnect
+          anchors.left: v2AutoHasteSpellSlot.left
+          anchors.top: v2TrainingSeparator.bottom
+          margin-top: 12
           size: 160 16
           text-offset: 18 0
 
@@ -473,41 +498,16 @@ BaiakerosHelperV2Window < MainWindow
           text: Auto Eat Food
           anchors.left: prev.left
           anchors.top: prev.bottom
-          margin-top: 18
+          margin-top: 14
           size: 160 16
           text-offset: 18 0
-
-        QtCheckBox
-          id: v2AutoHasteBox
-          text: Auto Haste
-          anchors.left: prev.left
-          anchors.top: prev.bottom
-          margin-top: 18
-          size: 112 16
-          text-offset: 18 0
-
-        QtComboBox
-          id: v2AutoHasteSpellBox
-          size: 166 22
-          anchors.left: v2AutoHasteBox.right
-          anchors.verticalCenter: v2AutoHasteBox.verticalCenter
-          margin-left: 5
-          mouse-scroll: false
-
-        QtCheckBox
-          id: v2AutoHasteInPzBox
-          size: 18 18
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 5
-          !tooltip: tr('Allow Auto Haste inside a Protection Zone.')
 
         QtCheckBox
           id: v2ChangeGoldBox
           text: Change Gold
           anchors.left: v2AutoReconnectBox.left
-          anchors.top: v2AutoHasteBox.bottom
-          margin-top: 18
+          anchors.top: v2AutoEatFoodBox.bottom
+          margin-top: 14
           size: 160 16
           text-offset: 18 0
 
@@ -516,7 +516,7 @@ BaiakerosHelperV2Window < MainWindow
           text: Flask Remover
           anchors.left: prev.left
           anchors.top: prev.bottom
-          margin-top: 18
+          margin-top: 14
           size: 160 16
           text-offset: 18 0
 
@@ -525,100 +525,14 @@ BaiakerosHelperV2Window < MainWindow
           text: Autoloot
           anchors.left: prev.left
           anchors.top: prev.bottom
-          margin-top: 18
+          margin-top: 14
           size: 100 16
           text-offset: 18 0
 
         SmallButton
           text: Store
+          id: v2LootPouchStoreButton
           size: 48 18
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 7
-
-        HorizontalSeparator
-          id: toolsTrainingSeparator
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: v2AutolootBox.bottom
-          margin-left: 15
-          margin-right: 15
-          margin-top: 20
-
-        Label
-          text: Training
-          anchors.horizontalCenter: parent.horizontalCenter
-          anchors.top: toolsTrainingSeparator.bottom
-          margin-top: 12
-          color: #f0d48a
-
-        Label
-          text: Exercise Weapon
-          anchors.left: parent.left
-          anchors.top: prev.bottom
-          margin-left: 22
-          margin-top: 18
-          color: #dcdcdc
-
-        UIButton
-          id: v2ExerciseWeaponSlot
-          size: 40 40
-          anchors.left: prev.left
-          anchors.top: prev.bottom
-          margin-top: 7
-          image-source: /images/game/actionbar/actionbarslot
-
-        QtComboBox
-          id: v2ExerciseModeBox
-          size: 100 22
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 9
-          mouse-scroll: false
-
-        Label
-          text: Mana Training
-          anchors.left: parent.left
-          anchors.top: v2ExerciseWeaponSlot.bottom
-          margin-left: 22
-          margin-top: 21
-          color: #dcdcdc
-
-        UIButton
-          id: v2ManaTrainingSlot
-          size: 40 40
-          anchors.left: prev.left
-          anchors.top: prev.bottom
-          margin-top: 7
-          image-source: /images/game/actionbar/actionbarslot
-
-        SmallButton
-          text: <
-          size: 16 22
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 8
-
-        UIWidget
-          size: 44 22
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          image-source: /images/ui/button
-          image-border: 3
-
-          Label
-            text: 90%
-            anchors.fill: parent
-            text-align: center
-
-        SmallButton
-          text: >
-          size: 16 22
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-
-        QtCheckBox
-          size: 18 18
           anchors.left: prev.right
           anchors.verticalCenter: prev.verticalCenter
           margin-left: 7
@@ -631,203 +545,604 @@ BaiakerosHelperV2Window < MainWindow
       HelperV2Section
         id: attackConfiguration
         anchors.left: parent.left
-        anchors.right: combatStylePanel.left
+        anchors.right: cavebotPanel.left
         anchors.top: parent.top
-        anchors.bottom: attackControls.bottom
+        height: 345
         margin-left: 6
         margin-right: 7
 
         Label
-          text: Attack
+          text: Spell & Rune Shooter Helper
           anchors.horizontalCenter: parent.horizontalCenter
           anchors.top: parent.top
           margin-top: 6
           color: #dfdfdf
 
         Label
-          text: Spell
+          id: v2AttackPresetLabel
+          text: Attack Preset
           anchors.left: parent.left
           anchors.top: parent.top
+          margin-left: 15
+          margin-top: 30
+          color: #cfcfcf
+
+        QtComboBox
+          id: v2AttackPresetBox
+          size: 110 22
+          anchors.left: v2AttackPresetLabel.right
+          anchors.verticalCenter: v2AttackPresetLabel.verticalCenter
+          margin-left: 7
+          mouse-scroll: false
+
+        QtButton
+          id: v2AttackPresetAddButton
+          text: +
+          size: 22 20
+          anchors.left: v2AttackPresetBox.right
+          anchors.verticalCenter: v2AttackPresetBox.verticalCenter
+          margin-left: 5
+          !tooltip: tr('Create a new Attack preset.')
+
+        QtButton
+          id: v2AttackPresetDeleteButton
+          text: x
+          size: 22 20
+          anchors.left: v2AttackPresetAddButton.right
+          anchors.verticalCenter: v2AttackPresetAddButton.verticalCenter
+          margin-left: 4
+          !tooltip: tr('Delete the selected Attack preset.')
+
+        QtButton
+          id: v2AttackPresetHotkeyButton
+          text: Set Hotkey
+          size: 64 20
+          anchors.left: v2AttackPresetDeleteButton.right
+          anchors.verticalCenter: v2AttackPresetDeleteButton.verticalCenter
+          margin-left: 5
+
+        HorizontalSeparator
+          id: v2AttackPresetSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2AttackPresetBox.bottom
+          margin-left: 10
+          margin-right: 10
+          margin-top: 6
+
+        UIWidget
+          id: v2CombatStyleBlock
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2AttackPresetSeparator.bottom
+          height: 59
+          margin-top: 3
+
+          Label
+            text: Combat Style
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 15
+            margin-top: 6
+            color: #cfcfcf
+
+          Label
+            id: v2StanceTitle
+            text: Stance
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 155
+            margin-top: 2
+            color: #aaaaaa
+
+          HelperV2PostureButton
+            id: v2StanceButton1
+            anchors.left: v2StanceTitle.left
+            anchors.top: v2StanceTitle.bottom
+            margin-top: 2
+            visible: false
+
+          HelperV2PostureButton
+            id: v2StanceButton2
+            anchors.left: v2StanceButton1.right
+            anchors.top: v2StanceButton1.top
+            margin-left: 7
+            visible: false
+
+          HelperV2PostureButton
+            id: v2StanceButton3
+            anchors.left: v2StanceButton2.right
+            anchors.top: v2StanceButton2.top
+            margin-left: 7
+            visible: false
+
+          Label
+            id: v2PassiveTitle
+            text: Passive
+            anchors.left: parent.left
+            anchors.top: v2StanceTitle.top
+            margin-left: 380
+            color: #aaaaaa
+
+          HelperV2PostureButton
+            id: v2PassiveButton1
+            anchors.left: v2PassiveTitle.left
+            anchors.top: v2StanceButton1.top
+            visible: false
+
+          HelperV2PostureButton
+            id: v2PassiveButton2
+            anchors.left: v2PassiveButton1.right
+            anchors.top: v2PassiveButton1.top
+            margin-left: 7
+            visible: false
+
+        HorizontalSeparator
+          id: v2CombatStyleSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2CombatStyleBlock.bottom
+          margin-left: 10
+          margin-right: 10
+          margin-top: 1
+
+        Label
+          id: v2SpellColumnLabel
+          text: Spell
+          anchors.left: parent.left
+          anchors.top: v2CombatStyleSeparator.bottom
           margin-left: 16
-          margin-top: 36
+          margin-top: 5
           color: #aaaaaa
 
         Label
           text: Mana %
           anchors.left: parent.left
           anchors.verticalCenter: prev.verticalCenter
-          margin-left: 91
+          margin-left: 79
           color: #aaaaaa
 
         Label
           text: Creatures
           anchors.left: parent.left
           anchors.verticalCenter: prev.verticalCenter
-          margin-left: 185
+          margin-left: 162
           color: #aaaaaa
 
         Label
           text: Priority
           anchors.left: parent.left
           anchors.verticalCenter: prev.verticalCenter
-          margin-left: 290
+          margin-left: 238
           color: #aaaaaa
 
         UIWidget
           id: v2SpellRows
           anchors.left: parent.left
-          anchors.right: parent.right
+          anchors.right: v2RuneBlock.left
           anchors.top: prev.bottom
-          height: 200
+          height: 180
+          margin-right: 12
           margin-top: 4
           layout:
             type: verticalBox
 
           HelperV2AttackRow
             id: v2SpellSlot1
-            QtComboBox
-              id: v2SpellPriority1
-              anchors.fill: priorityBox
 
           HelperV2AttackRow
             id: v2SpellSlot2
-            QtComboBox
-              id: v2SpellPriority2
-              anchors.fill: priorityBox
 
           HelperV2AttackRow
             id: v2SpellSlot3
-            QtComboBox
-              id: v2SpellPriority3
-              anchors.fill: priorityBox
 
           HelperV2AttackRow
             id: v2SpellSlot4
-            QtComboBox
-              id: v2SpellPriority4
-              anchors.fill: priorityBox
 
           HelperV2AttackRow
             id: v2SpellSlot5
-            QtComboBox
-              id: v2SpellPriority5
-              anchors.fill: priorityBox
 
-        HorizontalSeparator
-          id: runeSeparator
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.top: v2SpellRows.bottom
-          margin-left: 10
-          margin-right: 10
-          margin-top: 9
-
-        Label
-          text: Rune Shooter
-          anchors.left: parent.left
-          anchors.top: runeSeparator.bottom
-          margin-left: 15
-          margin-top: 9
-          color: #f0d48a
+        VerticalSeparator
+          id: v2RuneDivider
+          anchors.left: v2RuneBlock.left
+          anchors.top: v2RuneBlock.top
+          anchors.bottom: parent.bottom
+          margin-left: -7
+          margin-bottom: 12
 
         UIWidget
-          id: v2RuneRows
+          id: v2RuneBlock
           anchors.left: parent.left
           anchors.right: parent.right
-          anchors.top: prev.bottom
-          height: 80
-          margin-top: 4
-          layout:
-            type: verticalBox
+          anchors.top: v2CombatStyleSeparator.bottom
+          anchors.bottom: parent.bottom
+          margin-left: 320
+          margin-top: 5
 
-          HelperV2AttackRow
-            id: v2RuneSlot1
-            QtComboBox
-              id: v2RunePriority1
-              anchors.fill: priorityBox
+          Label
+            id: v2RuneColumnLabel
+            text: Rune
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 16
+            color: #aaaaaa
 
-          HelperV2AttackRow
-            id: v2RuneSlot2
-            QtComboBox
-              id: v2RunePriority2
-              anchors.fill: priorityBox
+          Label
+            id: v2RuneCreaturesLabel
+            text: Creatures
+            anchors.left: parent.left
+            anchors.verticalCenter: v2RuneColumnLabel.verticalCenter
+            margin-left: 63
+            color: #aaaaaa
+
+          Label
+            id: v2RunePriorityLabel
+            text: Priority
+            anchors.left: parent.left
+            anchors.verticalCenter: v2RuneColumnLabel.verticalCenter
+            margin-left: 140
+            color: #aaaaaa
+
+          UIWidget
+            id: v2RuneRows
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2RuneColumnLabel.bottom
+            height: 72
+            margin-top: 4
+            layout:
+              type: verticalBox
+
+            HelperV2RuneRow
+              id: v2RuneSlot1
+
+            HelperV2RuneRow
+              id: v2RuneSlot2
+
+          UIWidget
+            id: v2LureSpellArea
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: 72
+            visible: false
+
+            Label
+              id: v2LureSpellLabel
+              text: Lure Spell
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 16
+              color: #aaaaaa
+
+            UIButton
+              id: v2LureSpellButton
+              size: 34 34
+              anchors.left: parent.left
+              anchors.top: v2LureSpellLabel.bottom
+              margin-left: 8
+              margin-top: 4
+              image-source: /images/game/actionbar/actionbarslot
+
+            UIWidget
+              id: v2LureSpellIcon
+              anchors.fill: v2LureSpellButton
+              visible: false
+              phantom: true
 
       HelperV2Section
-        id: combatStylePanel
+        id: cavebotPanel
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.bottom: attackControls.top
-        width: 146
+        anchors.bottom: parent.bottom
+        width: 260
         margin-right: 6
-        margin-bottom: 7
 
         Label
-          text: Combat Style
+          id: v2CavebotTitle
+          text: Cavebot
           anchors.horizontalCenter: parent.horizontalCenter
           anchors.top: parent.top
           margin-top: 6
-          color: #dfdfdf
+          color: #ffffff
 
-        Label
-          text: Stance
+        SmallButton
+          id: v2CavebotDetachButton
+          text: Float
+          color: #ffffff
+          size: 42 20
           anchors.left: parent.left
           anchors.top: parent.top
-          margin-left: 13
-          margin-top: 43
-          color: #aaaaaa
-
-        UIButton
-          size: 38 38
-          anchors.left: prev.left
-          anchors.top: prev.bottom
-          margin-top: 7
-          image-source: /images/game/actionbar/actionbarslot
-
-        UIButton
-          size: 38 38
-          anchors.left: prev.right
-          anchors.top: prev.top
           margin-left: 7
-          image-source: /images/game/actionbar/actionbarslot
-
-        UIButton
-          size: 38 38
-          anchors.left: parent.left
-          anchors.top: prev.bottom
-          margin-left: 13
-          margin-top: 7
-          image-source: /images/game/actionbar/actionbarslot
+          margin-top: 3
+          !tooltip: tr('Open Cavebot in a floating window.')
 
         Label
-          text: Passive
-          anchors.left: parent.left
-          anchors.top: prev.bottom
+          id: v2CavebotTimerTitle
+          text: ''
+          visible: false
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: v2CavebotTitle.bottom
+          margin-top: 8
+          color: #ffffff
+          !tooltip: tr('One hour per character per local calendar day. Only active exploring uses time.')
+
+        HelperV2AttackValuePanel
+          id: v2CavebotTimerPanel
+          size: 106 26
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: v2CavebotTitle.bottom
+          margin-top: 8
+
+          Label
+            id: v2CavebotTimerLabel
+            text: 01:00:00
+            anchors.fill: parent
+            text-align: center
+            color: #ffffff
+
+        Label
+          id: v2CavebotPercentLabel
+          text: 100%
+          anchors.left: v2CavebotTimerPanel.right
+          anchors.verticalCenter: v2CavebotTimerPanel.verticalCenter
           margin-left: 13
-          margin-top: 16
-          color: #aaaaaa
+          color: #63d897
 
-        UIButton
-          size: 38 38
-          anchors.left: prev.left
-          anchors.top: prev.bottom
+        UIWidget
+          id: v2CavebotProgressFrame
+          size: 210 20
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: v2CavebotTimerPanel.bottom
+          margin-top: 4
+          background-color: #13191b
+          border-width: 1
+          border-color: #9b814d
+
+          UIProgressBar
+            id: v2CavebotProgress
+            anchors.fill: parent
+            margin: 3 3 3 3
+            background-color: #63d897
+            phantom: true
+
+          UIWidget
+            size: 1 12
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 53
+            background-color: #284135
+            phantom: true
+
+          UIWidget
+            size: 1 12
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 105
+            background-color: #284135
+            phantom: true
+
+          UIWidget
+            size: 1 12
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            margin-left: 157
+            background-color: #284135
+            phantom: true
+
+        QtButton
+          id: v2CavebotAutoExploringButton
+          text: Start
+          color: #ffffff
+          size: 130 26
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: v2CavebotProgressFrame.bottom
           margin-top: 7
-          image-source: /images/game/actionbar/actionbarslot
 
-        UIButton
-          size: 38 38
-          anchors.left: prev.right
-          anchors.top: prev.top
-          margin-left: 7
-          image-source: /images/game/actionbar/actionbarslot
+        HorizontalSeparator
+          id: v2CavebotOptionsSeparator
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2CavebotWaypointPanel.bottom
+          margin-left: 12
+          margin-right: 12
+          margin-top: 8
+
+        QtCheckBox
+          id: v2CavebotEchoRaidsBox
+          text: Active Echo Raids
+          color: #ffffff
+          anchors.left: parent.left
+          anchors.top: v2CavebotOptionsSeparator.bottom
+          margin-left: 17
+          margin-top: 8
+          size: 200 18
+          text-offset: 18 0
+          !tooltip: tr('After a Stand fight, step on a nearby Echo Raid tile and wait for its monsters before continuing.')
+
+        QtCheckBox
+          id: v2CavebotHugWallBox
+          text: Hug Wall
+          color: #ffffff
+          anchors.left: v2CavebotEchoRaidsBox.left
+          anchors.top: v2CavebotEchoRaidsBox.bottom
+          margin-top: 8
+          size: 200 18
+          text-offset: 18 0
+          !tooltip: tr('At a Center Stand, move beside a nearby solid wall and face away from it.')
+
+        Label
+          id: v2CavebotHuntStyleLabel
+          text: Hunt Style
+          color: #ffffff
+          anchors.left: parent.left
+          anchors.top: v2CavebotAutoExploringButton.bottom
+          margin-left: 17
+          margin-top: 10
+
+        QtComboBox
+          id: v2CavebotHuntStyleBox
+          color: #ffffff
+          size: 134 22
+          anchors.right: parent.right
+          anchors.verticalCenter: v2CavebotHuntStyleLabel.verticalCenter
+          margin-right: 11
+          mouse-scroll: false
+          !tooltip: tr('Chase follows one target; Lure runs and attacks while keeping distance from its target; Lure and Stop gathers monsters for Stand; Stop waits for visible monsters to approach.')
+
+        Label
+          id: v2CavebotLureDistanceLabel
+          text: Distance
+          color: #ffffff
+          visible: false
+          anchors.left: v2CavebotHuntStyleLabel.left
+          anchors.top: v2CavebotHuntStyleBox.bottom
+          margin-top: 8
+
+        UIWidget
+          id: v2CavebotLureDistanceIcon
+          image-source: /images/icons/icon_distance
+          size: 16 16
+          visible: false
+          anchors.right: v2CavebotLureDistanceBox.left
+          anchors.verticalCenter: v2CavebotLureDistanceBox.verticalCenter
+          margin-right: 4
+          !tooltip: tr('Preferred distance from the current attack target while Lure is fighting.')
+
+        QtComboBox
+          id: v2CavebotLureDistanceBox
+          color: #ffffff
+          visible: false
+          size: 58 22
+          anchors.right: parent.right
+          anchors.verticalCenter: v2CavebotLureDistanceLabel.verticalCenter
+          margin-right: 11
+          mouse-scroll: false
+          !tooltip: tr('Lure distance: choose 1 to 4 SQMs from the current attack target. The bot may move closer when boxed in.')
+
+        Label
+          id: v2CavebotWaypointTitle
+          text: Waypoints
+          anchors.left: parent.left
+          anchors.top: v2CavebotHuntStyleBox.bottom
+          margin-left: 15
+          margin-top: 8
+          color: #ffffff
+
+        SmallButton
+          id: v2CavebotNodeButton
+          text: Node
+          color: #ffffff
+          size: 50 22
+          anchors.left: parent.left
+          anchors.top: v2CavebotWaypointTitle.bottom
+          margin-left: 13
+          margin-top: 4
+          !tooltip: tr('Record a path point. The explorer moves through Nodes toward the next Stand.')
+
+        SmallButton
+          id: v2CavebotStandButton
+          text: Stand
+          color: #ffffff
+          size: 50 22
+          anchors.left: v2CavebotNodeButton.right
+          anchors.verticalCenter: v2CavebotNodeButton.verticalCenter
+          margin-left: 4
+          !tooltip: tr('Stop here and fight every visible monster before continuing. A direction steps onto the adjacent tile after combat.')
+
+        SmallButton
+          id: v2CavebotUseButton
+          text: Use
+          color: #ffffff
+          size: 43 22
+          anchors.left: v2CavebotStandButton.right
+          anchors.verticalCenter: v2CavebotStandButton.verticalCenter
+          margin-left: 4
+          !tooltip: tr('Record the current position and use the map object in the selected direction.')
+
+        QtComboBox
+          id: v2CavebotDirectionBox
+          color: #ffffff
+          size: 76 22
+          anchors.left: v2CavebotUseButton.right
+          anchors.verticalCenter: v2CavebotStandButton.verticalCenter
+          margin-left: 4
+          mouse-scroll: false
+          !tooltip: tr('Direction from the recorded player position. Center records the same tile.')
+
+        SmallButton
+          id: v2CavebotSaveRouteButton
+          text: Save
+          color: #ffffff
+          size: 108 22
+          anchors.left: parent.left
+          anchors.top: v2CavebotNodeButton.bottom
+          margin-left: 13
+          margin-top: 6
+          !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
+
+        SmallButton
+          id: v2CavebotLoadRouteButton
+          text: Load
+          color: #ffffff
+          size: 108 22
+          anchors.left: v2CavebotSaveRouteButton.right
+          anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
+          margin-left: 4
+          !tooltip: tr('Choose a Cavebot JSON route in the Windows Open dialog.')
+
+        QtPanel
+          id: v2CavebotWaypointPanel
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: v2CavebotSaveRouteButton.bottom
+          height: 132
+          margin-left: 12
+          margin-right: 12
+          margin-top: 5
+
+          UIScrollArea
+            id: v2CavebotWaypointList
+            anchors.fill: parent
+            vertical-scrollbar: v2CavebotWaypointScroll
+            layout:
+              type: verticalBox
+
+          VerticalScrollBar
+            id: v2CavebotWaypointScroll
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            step: 22
+            pixels-scroll: true
+
+          Label
+            id: v2CavebotEmptyWaypoints
+            text: Add Node, Stand or Use
+            anchors.centerIn: parent
+            color: #ffffff
+            phantom: true
+
+        Label
+          id: v2CavebotStatus
+          text: Ready to explore
+          size: 230 30
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          margin-bottom: 6
+          text-wrap: true
+          text-align: center
+          color: #ffffff
 
       UIWidget
         id: attackControls
         anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        height: 104
+        anchors.right: cavebotPanel.left
+        anchors.top: attackConfiguration.bottom
+        height: 74
         margin-left: 6
-        margin-right: 6
+        margin-right: 7
+        margin-top: 7
         image-source: /images/ui/window_headless
         image-border: 5
 
@@ -837,11 +1152,12 @@ BaiakerosHelperV2Window < MainWindow
           anchors.left: parent.left
           anchors.top: parent.top
           margin-left: 14
-          margin-top: 13
+          margin-top: 6
           size: 102 16
           text-offset: 18 0
 
         SmallButton
+          id: v2AutoTargetHotkeyButton
           text: Set Hotkey
           size: 70 20
           anchors.left: prev.right
@@ -856,17 +1172,27 @@ BaiakerosHelperV2Window < MainWindow
           margin-left: 7
           mouse-scroll: false
 
+        UIWidget
+          id: v2AutoAttackModeInfo
+          image-source: /images/icons/show_gui_help_grey
+          size: 14 14
+          anchors.left: v2AutoAttackModeBox.right
+          anchors.verticalCenter: v2AutoAttackModeBox.verticalCenter
+          margin-left: 5
+          !tooltip: tr('A - Nearest target\nB - Farthest target\nC - Lowest health target\nD - Highest health target / Boss\nE - Best area target\nF - Nearest target with lowest health\nG - Nearest target with highest health\nH - Farthest target with lowest health\nI - Farthest target with highest health')
+
         QtCheckBox
           id: v2AttackRotationEnabledBox
           text: Enable Shooter Helper
           anchors.left: parent.left
           anchors.top: v2AutoAttackEnabledBox.bottom
           margin-left: 14
-          margin-top: 15
+          margin-top: 10
           size: 166 16
           text-offset: 18 0
 
         SmallButton
+          id: v2ShooterHotkeyButton
           text: Set Hotkey
           size: 70 20
           anchors.left: prev.right
@@ -874,28 +1200,31 @@ BaiakerosHelperV2Window < MainWindow
           margin-left: 7
 
         Label
+          id: v2AttackHelperStatusLabel
           text: Helper Status: Disabled
           anchors.left: parent.left
           anchors.top: prev.bottom
           margin-left: 14
-          margin-top: 9
+          margin-top: 4
           color: #999999
 
         Label
-          text: Spell Preset: Default
+          id: v2AttackPresetStatusLabel
+          text: Attack Preset: Default
           anchors.right: parent.right
           anchors.top: parent.top
           margin-right: 17
-          margin-top: 17
+          margin-top: 9
           color: #cfcfcf
 
         SmallButton
+          id: v2AttackBothHotkeyButton
           text: Set Hotkey (Both)
           size: 112 20
           anchors.right: parent.right
           anchors.bottom: parent.bottom
           margin-right: 14
-          margin-bottom: 12
+          margin-bottom: 8
 
   HorizontalSeparator
     id: bottomSeparator
@@ -905,7 +1234,7 @@ BaiakerosHelperV2Window < MainWindow
     margin-bottom: 10
 
   Label
-    text: V2 stage 2 - spell selection
+    text: Baiakeros Helper
     anchors.left: parent.left
     anchors.bottom: parent.bottom
     color: #888888
@@ -918,7 +1247,109 @@ BaiakerosHelperV2Window < MainWindow
     anchors.bottom: parent.bottom
     @onClick: modules.game_baiakeros_helper_v2.hide()
 
+BaiakerosCavebotFloatWindow < MainWindow
+  id: baiakerosCavebotFloatWindow
+  text: Baiakeros Cavebot
+  size: 286 570
+  anchors.centerIn: parent
+  visible: false
+  @onEscape: modules.game_baiakeros_helper_v2.closeDetachedCavebot()
 
+  SmallButton
+    id: v2CavebotReturnButton
+    text: Back to Helper
+    size: 112 22
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 8
+    margin-top: 4
+    @onClick: modules.game_baiakeros_helper_v2.returnCavebotToHelper()
 
+  SmallButton
+    id: v2CavebotFloatCloseButton
+    text: X
+    size: 22 22
+    anchors.right: parent.right
+    anchors.verticalCenter: v2CavebotReturnButton.verticalCenter
+    margin-right: 8
+    @onClick: modules.game_baiakeros_helper_v2.closeDetachedCavebot()
 
+  SmallButton
+    id: v2CavebotMinimizeButton
+    text: Minimize
+    size: 68 22
+    anchors.right: v2CavebotFloatCloseButton.left
+    anchors.verticalCenter: v2CavebotFloatCloseButton.verticalCenter
+    margin-right: 4
+    @onClick: modules.game_baiakeros_helper_v2.minimizeCavebot()
 
+  SmallButton
+    id: v2CavebotExpandButton
+    text: Expand
+    size: 65 22
+    visible: false
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-right: 8
+    margin-top: 4
+    @onClick: modules.game_baiakeros_helper_v2.expandCavebot()
+
+  UIWidget
+    id: v2CavebotCompactPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: v2CavebotExpandButton.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 3
+    visible: false
+
+    Label
+      id: v2CavebotCompactTime
+      text: 01:00:00
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 8
+
+    Label
+      id: v2CavebotCompactPercent
+      text: 100%
+      color: #63d897
+      anchors.right: parent.right
+      anchors.verticalCenter: v2CavebotCompactTime.verticalCenter
+      margin-right: 30
+
+    UIWidget
+      id: v2CavebotCompactProgressFrame
+      size: 210 20
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: v2CavebotCompactTime.bottom
+      margin-top: 6
+      background-color: #13191b
+      border-width: 1
+      border-color: #9b814d
+
+      UIProgressBar
+        id: v2CavebotCompactProgress
+        anchors.fill: parent
+        margin: 3 3 3 3
+        background-color: #63d897
+        phantom: true
+
+    QtButton
+      id: v2CavebotCompactStopButton
+      text: Stop
+      color: #ffffff
+      size: 130 26
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: v2CavebotCompactProgressFrame.bottom
+      margin-top: 6
+      @onClick: modules.game_baiakeros_helper_v2.stopFromCompactCavebot()
+
+  UIWidget
+    id: v2CavebotFloatSlot
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: v2CavebotReturnButton.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 5
