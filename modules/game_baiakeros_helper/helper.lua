@@ -181,7 +181,7 @@ local ATTACK_RUNE_SLOT_COUNTS = {
     paladin = 2,
     sorcerer = 2,
     druid = 2,
-    monk = 1
+    monk = 2
 }
 
 local LURE_SPELL_NAMES = {
@@ -912,8 +912,8 @@ local function isSpellAvailable(spell, player, vocation)
         not spellRequiresPromotion(spell, vocation)
 end
 
--- Cavebot uses the same server-reported support cooldowns as healing and haste.
--- Keeping the cast here prevents an independent timer from racing those spells.
+-- The Shooter owns support casts and shares the server-reported cooldowns
+-- with healing and haste, whether or not the Cavebot is running.
 local nextExplorerTurnAt = 0
 function tryCastExplorerLureSpell(spellName, direction)
     if not g_game.isOnline() then return false end
@@ -927,7 +927,6 @@ function tryCastExplorerLureSpell(spellName, direction)
         (spell.premium and not player:isPremium()) or
         not spellHasVocation(spell, vocation.promoted and
             vocation.promotedSpellVocation or vocation.baseSpellVocation) or
-        player:getHealthPercent() < 35 or
         player:getMana() < (spell.mana or 0) then
         return false
     end
@@ -944,6 +943,37 @@ function tryCastExplorerLureSpell(spellName, direction)
     guardSpellCommand(spell, 3, now)
     -- The server's packet remains authoritative; this only prevents a cast
     -- from being repeated before that packet arrives.
+    spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
+    spellGroupCooldownsById[3] = now + (spell.group[3] or 2000)
+    return true
+end
+
+function tryCastExplorerLevitate(level, direction)
+    if level ~= 'up' and level ~= 'down' or not direction or
+        not g_game.isOnline() then return false end
+    local player = g_game.getLocalPlayer()
+    local vocation = detectVocation()
+    local spell = SpellInfo.Default and SpellInfo.Default.Levitate
+    if not player or not vocation or not spell or player:isDead() or
+        player:hasState(PlayerStates.Pz) or
+        player:getLevel() < (spell.level or 0) or
+        (spell.premium and not player:isPremium()) or
+        player:getMana() < (spell.mana or 0) or
+        not spellHasVocation(spell, vocation.promoted and
+            vocation.promotedSpellVocation or vocation.baseSpellVocation) then
+        return false
+    end
+    local now = g_clock.millis()
+    if not isSpellCooldownReady(spell, now) then return false end
+    if player:getDirection() ~= direction then
+        if now >= nextExplorerTurnAt then
+            g_game.turn(direction)
+            nextExplorerTurnAt = now + 250
+        end
+        return false
+    end
+    g_game.talk(string.format('%s "%s"', spell.words, level))
+    guardSpellCommand(spell, 3, now)
     spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
     spellGroupCooldownsById[3] = now + (spell.group[3] or 2000)
     return true
@@ -3457,6 +3487,55 @@ local function getVisibleMonsters(playerPosition)
     return monsters
 end
 
+local nextShooterLureAt = 0
+local function checkShooterLureSpell(player, monsters, playerPosition)
+    local spell = getSelectedExplorerLureSpell()
+    if not spell or g_clock.millis() < nextShooterLureAt then return false end
+
+    local adjacent, distant, closestPosition, closestDistance = false, false
+    for _, monster in ipairs(monsters) do
+        local position = monster:getPosition()
+        local range = math.max(math.abs(position.x - playerPosition.x),
+            math.abs(position.y - playerPosition.y))
+        if range <= 1 then adjacent = true end
+        if range >= 2 and range <= 7 then distant = true end
+        if not closestDistance or range < closestDistance then
+            closestPosition, closestDistance = position, range
+        end
+    end
+    if spell.name == 'Challenge' then
+        if not adjacent then return false end
+    elseif not distant then
+        return false
+    end
+    if spell.name == 'Chivalrous Challenge' then
+        local freeAdjacent = false
+        for _, offset in ipairs({ { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 },
+                { 1, -1 }, { 1, 1 }, { -1, 1 }, { -1, -1 } }) do
+            local tile = g_map.getTile({
+                x = playerPosition.x + offset[1],
+                y = playerPosition.y + offset[2], z = playerPosition.z
+            })
+            if tile and tile:getGround() and tile:isWalkable() then
+                freeAdjacent = true
+                break
+            end
+        end
+        if not freeAdjacent then return false end
+    end
+
+    local direction
+    if spell.name == 'Balanced Brawl' and closestPosition then
+        local dx = closestPosition.x - playerPosition.x
+        local dy = closestPosition.y - playerPosition.y
+        direction = math.abs(dx) > math.abs(dy) and
+            (dx > 0 and East or West) or (dy > 0 and South or North)
+    end
+    if not tryCastExplorerLureSpell(spell.name, direction) then return false end
+    nextShooterLureAt = g_clock.millis() + 250
+    return true
+end
+
 local function rotateNorthOffset(dx, dy, direction)
     if direction == East or direction == SouthEast or direction == NorthEast then
         return -dy, dx
@@ -3799,8 +3878,6 @@ local function checkAutoAttack()
 end
 
 local function checkAttackRotation()
-    local explorer = modules.game_baiakeros_helper_v2
-    if explorer and explorer.shouldHoldExplorerAttack and explorer.shouldHoldExplorerAttack() then return end
     if not attackRotationEnabled or not g_game.isOnline() then return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() then return end
@@ -3809,6 +3886,9 @@ local function checkAttackRotation()
     if not playerPosition then return end
     local monsters = getVisibleMonsters(playerPosition)
     if #monsters == 0 then return end
+    -- Support lure spells belong to the Shooter, not to Cavebot movement.
+    if checkShooterLureSpell(player, monsters, playerPosition) then return end
+    local explorer = modules.game_baiakeros_helper_v2
     local preferArea = #monsters > 1 and explorer and
         explorer.preferAreaExplorerAttack and explorer.preferAreaExplorerAttack()
     local singleTargetOnly = explorer and explorer.isSingleTargetExplorerHunt and
@@ -3893,8 +3973,7 @@ local function checkAttackRotation()
         end
     end
 
-    local runeSlotCount = profile and not LURE_SPELL_NAMES[profile.key] and
-        ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
+    local runeSlotCount = profile and ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
     local orderedRuneSlots = {}
     for i = 1, runeSlotCount do
         local slot = helperWindow:recursiveGetChildById('attackRuneSlot' .. i)
