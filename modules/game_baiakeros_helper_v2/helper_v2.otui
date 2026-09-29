@@ -855,92 +855,176 @@ BaiakerosHelperV2Window < MainWindow
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: attackConfiguration.bottom
-        height: 74
+        height: 86
         margin-left: 6
         margin-right: 7
         margin-top: 7
         image-source: /images/ui/window_headless
         image-border: 5
 
-        QtCheckBox
-          id: v2AutoAttackEnabledBox
-          text: Auto Target
+        HorizontalSeparator
+          id: v2AttackControlHeaderSeparator
           anchors.left: parent.left
+          anchors.right: parent.right
           anchors.top: parent.top
-          margin-left: 14
-          margin-top: 6
-          size: 102 16
-          text-offset: 18 0
-
-        SmallButton
-          id: v2AutoTargetHotkeyButton
-          text: Set Hotkey
-          size: 70 20
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 7
-
-        QtComboBox
-          id: v2AutoAttackModeBox
-          size: 44 22
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 7
-          mouse-scroll: false
+          margin-left: 10
+          margin-right: 10
+          margin-top: 25
 
         UIWidget
-          id: v2AutoAttackModeInfo
-          image-source: /images/icons/show_gui_help_grey
-          size: 14 14
-          anchors.left: v2AutoAttackModeBox.right
-          anchors.verticalCenter: v2AutoAttackModeBox.verticalCenter
-          margin-left: 5
-          !tooltip: tr('A - Nearest target\nB - Farthest target\nC - Lowest health target\nD - Highest health target / Boss\nE - Best area target\nF - Nearest target with lowest health\nG - Nearest target with highest health\nH - Farthest target with lowest health\nI - Farthest target with highest health')
-
-        QtCheckBox
-          id: v2AttackRotationEnabledBox
-          text: Enable Shooter Helper
+          id: v2TargetControls
           anchors.left: parent.left
-          anchors.top: v2AutoAttackEnabledBox.bottom
-          margin-left: 14
-          margin-top: 10
-          size: 166 16
-          text-offset: 18 0
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 275
 
-        SmallButton
-          id: v2ShooterHotkeyButton
-          text: Set Hotkey
-          size: 70 20
-          anchors.left: prev.right
-          anchors.verticalCenter: prev.verticalCenter
-          margin-left: 7
+          Label
+            text: Targeting
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 6
+            color: #cfcfcf
 
-        Label
-          id: v2AttackHelperStatusLabel
-          text: Helper Status: Disabled
-          anchors.left: parent.left
-          anchors.top: prev.bottom
-          margin-left: 14
-          margin-top: 4
-          color: #999999
+          QtCheckBox
+            id: v2AutoAttackEnabledBox
+            text: Auto Target
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 35
+            size: 102 16
+            text-offset: 18 0
 
-        Label
-          id: v2AttackPresetStatusLabel
-          text: Attack Preset: Default
+          SmallButton
+            id: v2AutoTargetHotkeyButton
+            text: Set Hotkey
+            size: 70 20
+            anchors.left: v2AutoAttackEnabledBox.right
+            anchors.verticalCenter: v2AutoAttackEnabledBox.verticalCenter
+            margin-left: 7
+
+          QtComboBox
+            id: v2AutoAttackModeBox
+            size: 44 22
+            anchors.left: v2AutoTargetHotkeyButton.right
+            anchors.verticalCenter: v2AutoAttackEnabledBox.verticalCenter
+            margin-left: 7
+            mouse-scroll: false
+
+          UIWidget
+            id: v2AutoAttackModeInfo
+            image-source: /images/icons/show_gui_help_grey
+            size: 14 14
+            anchors.left: v2AutoAttackModeBox.right
+            anchors.verticalCenter: v2AutoAttackModeBox.verticalCenter
+            margin-left: 5
+            !tooltip: tr('A - Nearest target\nB - Farthest target\nC - Lowest health target\nD - Highest health target / Boss\nE - Best area target\nF - Nearest target with lowest health\nG - Nearest target with highest health\nH - Farthest target with lowest health\nI - Farthest target with highest health')
+
+          Label
+            text: Target mode
+            anchors.left: v2AutoAttackModeBox.left
+            anchors.top: v2AutoAttackModeBox.bottom
+            margin-top: 2
+            color: #aaaaaa
+
+        VerticalSeparator
+          id: v2TargetShooterDivider
+          anchors.left: v2ShooterControls.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 7
+          margin-bottom: 7
+
+        UIWidget
+          id: v2ShooterControls
+          anchors.left: v2TargetControls.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          width: 285
+
+          Label
+            text: Shooter Helper
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 6
+            color: #cfcfcf
+
+          QtCheckBox
+            id: v2AttackRotationEnabledBox
+            text: Enable Shooter Helper
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 35
+            size: 166 16
+            text-offset: 18 0
+
+          SmallButton
+            id: v2ShooterHotkeyButton
+            text: Set Hotkey
+            size: 70 20
+            anchors.left: v2AttackRotationEnabledBox.right
+            anchors.verticalCenter: v2AttackRotationEnabledBox.verticalCenter
+            margin-left: 7
+
+          Label
+            id: v2AttackHelperStatusLabel
+            text: Helper Status: Disabled
+            anchors.left: parent.left
+            anchors.top: v2AttackRotationEnabledBox.bottom
+            margin-left: 14
+            margin-top: 7
+            color: #999999
+
+        VerticalSeparator
+          id: v2ShooterSharedDivider
+          anchors.left: v2SharedAttackControls.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-top: 7
+          margin-bottom: 7
+
+        UIWidget
+          id: v2SharedAttackControls
+          anchors.left: v2ShooterControls.right
           anchors.right: parent.right
           anchors.top: parent.top
-          margin-right: 17
-          margin-top: 9
-          color: #cfcfcf
-
-        SmallButton
-          id: v2AttackBothHotkeyButton
-          text: Set Hotkey (Both)
-          size: 112 20
-          anchors.right: parent.right
           anchors.bottom: parent.bottom
-          margin-right: 14
-          margin-bottom: 8
+
+          Label
+            text: Preset & Combined Hotkey
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 6
+            color: #cfcfcf
+
+          Label
+            id: v2AttackPresetStatusLabel
+            text: Attack Preset: Default
+            anchors.left: parent.left
+            anchors.top: parent.top
+            margin-left: 14
+            margin-top: 35
+            color: #cfcfcf
+
+          Label
+            text: Target + Shooter
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            margin-left: 14
+            margin-bottom: 10
+            color: #aaaaaa
+
+          SmallButton
+            id: v2AttackBothHotkeyButton
+            text: Set Hotkey
+            size: 78 20
+            anchors.left: prev.right
+            anchors.verticalCenter: prev.verticalCenter
+            margin-left: 8
 
     UIWidget
       id: cavebotPage
