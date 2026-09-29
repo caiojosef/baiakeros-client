@@ -602,8 +602,11 @@ local function recordPosition(position)
     if oldPosition and oldPosition.z ~= position.z then
         exploreGoal = nil
         if hasRoute() and not routeAction then
-            stop('Unexpected floor change; route stopped')
-            return
+            -- A hole or a manual floor change may bypass a scripted stair.
+            -- Keep the route active and look for its next waypoint on this floor.
+            routeStuckSince = nil
+            pendingStep = nil
+            setStatus('Floor changed: finding a waypoint on floor ' .. position.z)
         end
         if not hasRoute() and math.abs(position.z - originFloor) > options.maxFloors then
             stop('Floor limit reached; exploration stopped')
@@ -636,8 +639,11 @@ local function recordPosition(position)
 end
 
 local function advanceWaypoint()
+    setChaseEngaged(false)
     waypointIndex = waypointIndex % #waypoints + 1
     selectedWaypoint = waypointIndex
+    phase = 'gather'
+    fightEmptySince = nil
     routeAction = nil
     routeStuckSince = nil
     routeAttempts = 0
@@ -651,6 +657,31 @@ local function advanceWaypoint()
     visitedEchoesForStand = {}
     save()
     renderWaypoints()
+end
+
+local function skipWaypoint(reason, now)
+    local skipped = waypointIndex
+    advanceWaypoint()
+    nextMoveAt = now + 400
+    setStatus('Skipped waypoint ' .. skipped .. ': ' .. reason ..
+        '; next ' .. waypointIndex .. '/' .. #waypoints)
+end
+
+local function resumeWaypointOnFloor(floor, now)
+    for offset = 0, #waypoints - 1 do
+        local index = (waypointIndex + offset - 1) % #waypoints + 1
+        if waypoints[index].z == floor then
+            if index ~= waypointIndex then
+                waypointIndex = index - 1
+                advanceWaypoint()
+            end
+            setStatus('Resuming waypoint ' .. waypointIndex .. '/' .. #waypoints ..
+                ' on floor ' .. floor)
+            return
+        end
+    end
+    nextMoveAt = now + 600
+    setStatus('Waiting for a route waypoint on floor ' .. floor)
 end
 
 local function findVisibleEcho(position)
@@ -866,17 +897,17 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             if routeAction.wasWalkable or (tile and tile:isWalkable()) then
                 advanceWaypoint()
             elseif routeAction.attempts >= 3 then
-                stop('Use waypoint did not open the target tile')
+                skipWaypoint('Use did not open the tile', now)
             else
                 routeAction = nil
                 pendingStep = nil
             end
         elseif routeAction.kind == 'stair_approach' and elapsed >= 1800 then
-            stop('Stair waypoint did not change floor; route stopped')
+            skipWaypoint('stair did not change floor', now)
         elseif (routeAction.kind == 'stand' or routeAction.kind == 'hur') and
             elapsed >= 2600 then
             if routeAttempts >= 3 then
-                stop('Stair/Stand did not complete the floor change')
+                skipWaypoint('stair did not complete the floor change', now)
             else
                 routeAction = nil
                 pendingStep = nil
@@ -887,14 +918,15 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         return true
     end
     if position.z ~= waypoint.z then
-        stop('Waypoint is on another floor; add a stair Stand or Hur Up/Down')
+        resumeWaypointOnFloor(position.z, now)
         return true
     end
     local base = { x = waypoint.x, y = waypoint.y, z = waypoint.z }
     local standTile = waypoint.kind == 'stand' and g_map.getTile(base) or nil
     if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
         visibleCount > 0 and standTile and standTile:isWalkable(true) and
-        (distance(position, base) <= 4 or isOccupiedWalkableTile(standTile)) and
+        (kiteStandIndex == waypointIndex or distance(position, base) <= 4 or
+            isOccupiedWalkableTile(standTile)) and
         not echoTarget and not echoActivatedAt then
         if kiteStandIndex ~= waypointIndex then
             kiteStandIndex = waypointIndex
@@ -999,12 +1031,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             else
                 routeStuckSince = routeStuckSince or now
                 if now - routeStuckSince > 2000 then
-                    if combatCount > 0 then
-                        beginFight('Route blocked: clearing monsters')
-                        routeStuckSince = nil
-                    else
-                        stop('Waypoint unreachable; route stopped')
-                    end
+                    skipWaypoint('no accessible path', now)
                 else
                     setStatus('Finding route to waypoint ' .. waypointIndex)
                 end
@@ -1025,6 +1052,9 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     end
     if waypoint.kind == 'stand' or waypoint.kind == 'hur_up' or
         waypoint.kind == 'hur_down' then
+        if waypoint.kind == 'stand' then
+            setChaseEngaged(options.huntStyle == 'chase' and combatCount > 0)
+        end
         if combatCount > 0 then
             if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
                 not echoActivatedAt then
@@ -1041,6 +1071,11 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             end
             return true
         end
+        if waypoint.kind == 'stand' and options.huntStyle == 'stop' and
+            visibleCount > 0 then
+            setStatus('Stand: waiting for visible monsters to approach')
+            return true
+        end
         if waypoint.kind == 'stand' and options.echoRaids then
             -- Only an Echo that is visible now is actionable; do not wait
             -- for one to appear after the box has been cleared.
@@ -1053,7 +1088,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         if waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down' then
             local helper = modules.game_baiakeros_helper
             if not helper or not helper.tryCastExplorerLevitate then
-                stop('Levitate is unavailable')
+                skipWaypoint('Levitate is unavailable', now)
             elseif helper.tryCastExplorerLevitate(
                     waypoint.kind == 'hur_up' and 'up' or 'down', direction.walk) then
                 routeAttempts = routeAttempts + 1
@@ -1064,7 +1099,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             else
                 routeStuckSince = routeStuckSince or now
                 if now - routeStuckSince >= 20000 then
-                    stop('Levitate unavailable: check mana, level and cooldown')
+                    skipWaypoint('Levitate unavailable', now)
                 else
                     setStatus('Waiting to cast Hur ' ..
                         (waypoint.kind == 'hur_up' and 'Up' or 'Down'))
@@ -1087,7 +1122,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             if isOccupiedWalkableTile(tile) then
                 setStatus('Stand passage occupied: waiting for it to clear')
             else
-                stop('Stand direction tile is blocked')
+                skipWaypoint('Stand direction is blocked', now)
             end
             return true
         end
@@ -1101,7 +1136,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     end
     local used, wasWalkable = useWaypointThing(target)
     if not used then
-        stop('Use waypoint has no usable map item')
+        skipWaypoint('Use has no usable map item', now)
         return true
     end
     routeAttempts = routeAttempts + 1
@@ -1160,27 +1195,12 @@ local function tick()
                         end
                     end
                     local closeCount = nearbyCount(monsters, position, 2)
-                    if hasRoute() and options.huntStyle == 'chase' then
-                        setChaseEngaged(visibleCount > 0)
-                        if visibleCount > 0 and phase ~= 'fight' then
-                            beginFight('Chase: pursuing one monster')
-                        end
-                    end
-                    if hasRoute() and options.huntStyle == 'stop' and phase ~= 'fight' then
-                        if visibleCount == 0 then
-                            if phase == 'approach' then phase = 'gather' end
-                        elseif closeCount > 0 then
-                            beginFight('Stop: monster reached attack range')
-                        elseif phase ~= 'approach' then
-                            phase = 'approach'
-                            setStatus('Stop: waiting for a visible monster to approach')
-                        end
-                    end
                     local count = options.mode == 'wait' and visibleCount or
                         nearbyCount(monsters, position, 7)
-                    if options.huntStyle ~= 'lure' and options.mode ~= 'off' and
+                    if not hasRoute() and options.huntStyle ~= 'lure' and
+                        options.mode ~= 'off' and
                         phase ~= 'fight' and player:getHealthPercent() < 60 and
-                        (hasRoute() and routeCombatCount(monsters, position) or #monsters) > 0 then
+                        #monsters > 0 then
                         beginFight('Health low: fighting early')
                     elseif not hasRoute() and options.mode == 'wait' and phase == 'gather' and
                         closeCount >= options.waitCount then
@@ -1193,7 +1213,8 @@ local function tick()
                         approachProgressAt = now
                         approachCloseCount = closeCount
                         setStatus('Group found: waiting for monsters to approach')
-                    elseif options.mode == 'wait' and phase == 'approach' then
+                    elseif not hasRoute() and options.mode == 'wait' and
+                        phase == 'approach' then
                         if closeCount > approachCloseCount then
                             approachCloseCount = closeCount
                             approachProgressAt = now
@@ -1247,13 +1268,12 @@ local function tick()
                     if now >= nextMoveAt and not pendingStep then
                         local mobileFight = not hasRoute() and options.mode == 'wait' and phase == 'fight' and
                             visibleCount < options.waitCount
-                        if hasRoute() and options.huntStyle == 'stop' and phase == 'approach' then
-                            setStatus('Stop: waiting for a visible monster to approach')
+                        if hasRoute() and followWaypoint(player, position, monsters,
+                            visibleCount, now) then
+                            -- Nodes keep the recorded route moving; Stand owns
+                            -- the planned combat stop and resumes after it clears.
                         elseif options.mode == 'wait' and phase == 'approach' then
                             setStatus('Waiting for ' .. closeCount .. '/' .. options.waitCount .. ' to approach')
-                        elseif hasRoute() and options.huntStyle == 'lure' and
-                            phase == 'fight' and kiteStandIndex == waypointIndex then
-                            kiteAroundTarget(player, position, monsters)
                         elseif (phase == 'fight' and not mobileFight) or
                             (not hasRoute() and options.mode == 'off' and #monsters > 0) then
                             setStatus(echoActivatedAt and 'Echo Raid: fighting spawned monsters' or
@@ -1272,9 +1292,6 @@ local function tick()
                                     beginFight('Return blocked: fighting here')
                                 end
                             end
-                        elseif hasRoute() and followWaypoint(player, position, monsters,
-                            visibleCount, now) then
-                            -- The recorded route owns movement while it is active.
                         else
                             local minimumDistance = options.mode == 'moving' and
                                 (rangedVocation(player) and 3 or 2) or 1

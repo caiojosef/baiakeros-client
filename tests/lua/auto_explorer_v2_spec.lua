@@ -697,16 +697,20 @@ diagonalMap = false
 monsters = {}
 corridorMap = true
 
--- A permanent wall is still an unreachable route, not a temporary wait.
+-- A permanent wall skips the missed waypoint but leaves the route active.
 passageWall = true
 playerPosition = { x = 100, y = 100, z = 7 }
 widget('v2CavebotAutoExploringButton').onClick()
 advance(50)
 advance(2200)
-assert(not isAutoExplorerActive(), 'a permanent wall must still stop the route')
+assert(isAutoExplorerActive() and
+    widget('v2CavebotStatus').text:find('Skipped waypoint'),
+    'a permanent wall must skip the waypoint without stopping the loop')
+widget('v2CavebotAutoExploringButton').onClick()
+passageWall = false
 corridorMap = false
 
--- Hunt styles control combat during travel and at a Stand.
+-- Nodes only guide the route; Chase and Stop engage at the Stand.
 list = widget('v2CavebotWaypointList')
 list.children[1].removeButton.onClick()
 huntMap = true
@@ -730,18 +734,19 @@ assert(isSingleTargetExplorerHunt(), 'Chase must restrict the shooter to single-
 local walksBeforeChase = walks
 advance(50)
 advance(50)
-assert(walks == walksBeforeChase and chaseMode == ChaseOpponent,
-    'Chase must pause waypoints and enable the client follow-attack mode')
+assert(walks > walksBeforeChase and playerPosition.x == 101 and
+    chaseMode == DontChase,
+    'Chase must traverse the Node before engaging at the Stand')
 monsters = { monster(103, 100) }
 advance(50)
-assert(walks == walksBeforeChase and chaseMode == ChaseOpponent,
-    'Chase must stay engaged while another monster is visible')
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    chaseMode == ChaseOpponent,
+    'Chase must stop and follow-attack monsters at the Stand')
 monsters = {}
-advance(400)
-advance(350)
+advance(50)
 assert(chaseMode == DontChase and
-    settings.explorer_test_auto_explorer_v2.waypointIndex == 2,
-    'Chase must restore the prior combat mode and resume waypoints after the last kill')
+    settings.explorer_test_auto_explorer_v2.waypointIndex == 1,
+    'Chase must restore the prior combat mode and leave the Stand after the last kill')
 widget('v2CavebotAutoExploringButton').onClick()
 
 styleBox.onOptionChange(nil, nil, 'stop')
@@ -751,17 +756,21 @@ monsters = { monster(104, 100) }
 widget('v2CavebotAutoExploringButton').onClick()
 local walksBeforeStop = walks
 advance(50)
-assert(walks == walksBeforeStop and shouldHoldExplorerAttack(),
-    'Stop must wait when a monster is visible but still far away')
-monsters = { monster(101, 100) }
 advance(50)
-assert(not shouldHoldExplorerAttack() and walks == walksBeforeStop,
-    'Stop must fight only after the monster comes near')
-monsters = {}
-advance(400)
-advance(350)
+assert(walks > walksBeforeStop and playerPosition.x == 101,
+    'Stop must follow the Node despite a visible distant monster')
+advance(50)
 assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2,
-    'Stop must resume the route after clearing the monster')
+    'Stop must wait at the Stand for a visible distant monster')
+monsters = { monster(102, 100) }
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    not shouldHoldExplorerAttack(),
+    'Stop must fight when the monster reaches the Stand')
+monsters = {}
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 1,
+    'Stop must leave the Stand immediately after clearing the monster')
 widget('v2CavebotAutoExploringButton').onClick()
 
 styleBox.onOptionChange(nil, nil, 'lure')
@@ -974,5 +983,72 @@ assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 1 and
     'Hur Down must face West and wait for the lower-floor arrival')
 widget('v2CavebotAutoExploringButton').onClick()
 stairsOnly = false
+
+-- The selected route wraps after its last Stand. Falling to a floor without
+-- recorded waypoints must pause navigation, then resume when back on-route.
+clearRoute()
+huntMap = true
+styleBox.onOptionChange(nil, nil, 'lure_stop')
+widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'center')
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 101, y = 100, z = 7 }
+widget('v2CavebotStandButton').onClick()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotWaypointList').children[1].onClick()
+monsters = { monster(102, 100) }
+widget('v2CavebotAutoExploringButton').onClick()
+advance(50)
+advance(50)
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    playerPosition.x == 101,
+    'the Node must lead to the Stand without stopping for monsters')
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2,
+    'the Stand must keep its waypoint while monsters remain')
+monsters = {}
+advance(200)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 1,
+    'clearing the Stand must wrap to the first waypoint')
+advance(50)
+assert(playerPosition.x == 100 and isAutoExplorerActive(),
+    'the route must walk back toward its first Node and stay active')
+playerPosition = { x = 100, y = 100, z = 6 }
+advance(50)
+assert(isAutoExplorerActive() and
+    widget('v2CavebotStatus').text:find('Waiting for a route waypoint'),
+    'falling to an unrecorded floor must keep the script alive')
+playerPosition = { x = 100, y = 100, z = 7 }
+advance(650)
+assert(isAutoExplorerActive() and
+    settings.explorer_test_auto_explorer_v2.waypointIndex >= 1,
+    'the route must resume automatically when a recorded floor is reached')
+widget('v2CavebotAutoExploringButton').onClick()
+huntMap = false
+
+-- A missed waypoint advances to the next entry, and the final entry wraps.
+clearRoute()
+corridorMap = true
+passageWall = true
+playerPosition = { x = 102, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+widget('v2CavebotWaypointList').children[1].onClick()
+widget('v2CavebotAutoExploringButton').onClick()
+advance(50)
+advance(2200)
+assert(isAutoExplorerActive() and
+    settings.explorer_test_auto_explorer_v2.waypointIndex == 2,
+    'an unreachable Node must be skipped in favor of the following waypoint')
+advance(450)
+assert(isAutoExplorerActive() and
+    settings.explorer_test_auto_explorer_v2.waypointIndex == 1,
+    'the final Node must wrap to the first waypoint without stopping')
+widget('v2CavebotAutoExploringButton').onClick()
+corridorMap = false
+passageWall = false
+
 BaiakHelperExplorerV2.terminate()
 print('Auto Explorer V2 regression passed')
