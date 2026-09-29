@@ -132,7 +132,7 @@ function BaiakHelperAttackV2.sync()
         for index = 1, 5 do renderSlot('spell', index, state) end
         for index = 1, 2 do renderSlot('rune', index, state) end
         local showLure = state.lureSlotVisible == true
-        local showRunes = state.runeCount > 0 and not showLure
+        local showRunes = state.runeCount > 0
         window:recursiveGetChildById('v2RuneBlock'):setVisible(showRunes or showLure)
         window:recursiveGetChildById('v2RuneDivider'):setVisible(showRunes or showLure)
         for _, id in ipairs({ 'v2RuneColumnLabel', 'v2RuneCreaturesLabel',
@@ -140,7 +140,7 @@ function BaiakHelperAttackV2.sync()
             window:recursiveGetChildById(id):setVisible(showRunes)
         end
         local runeRows = window:recursiveGetChildById('v2RuneRows')
-        runeRows:setHeight(math.max(1, state.runeCount) * 36)
+        runeRows:setHeight(state.runeCount * 36)
         window:recursiveGetChildById('v2LureSpellArea'):setVisible(showLure)
         local lureButton = window:recursiveGetChildById('v2LureSpellButton')
         local lureIcon = window:recursiveGetChildById('v2LureSpellIcon')

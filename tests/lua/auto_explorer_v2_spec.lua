@@ -36,6 +36,7 @@ local echoPersistentFirst = false
 local vocation = 11
 local lureCasts = {}
 local lureDirections = {}
+local levitateCasts = {}
 local selectedLureSpell
 local noFreeAdjacent = false
 local detachedStarts = 0
@@ -112,6 +113,16 @@ modules = {
         tryCastExplorerLureSpell = function(name, direction)
             lureCasts[#lureCasts + 1] = name
             lureDirections[#lureDirections + 1] = direction
+            return true
+        end,
+        tryCastExplorerLevitate = function(level, direction)
+            if playerDirection ~= direction then
+                playerDirection = direction
+                return false
+            end
+            levitateCasts[#levitateCasts + 1] = { level = level, direction = direction }
+            playerPosition = { x = playerPosition.x, y = playerPosition.y,
+                z = level == 'up' and playerPosition.z - 1 or playerPosition.z + 1 }
             return true
         end
     }
@@ -349,6 +360,8 @@ assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2)
 widget('v2CavebotAutoExploringButton').onClick()
 assert(detachedStarts == 1 and widget('v2CavebotAutoExploringButton').text == 'Stop',
     'Start must open the compact Cavebot window with a Stop button')
+assert(not attacks.autoTarget and not attacks.shooter,
+    'starting Cavebot must not enable Auto Target or Shooter Helper')
 advance(50)
 assert(playerPosition.x == 101, 'Start must follow the selected second waypoint')
 advance(50)
@@ -403,6 +416,7 @@ assert(widget('v2CavebotAutoExploringButton').enabled == true,
     'loading a nonempty route must enable Start')
 
 -- Selecting a support spell in the shooter is the only lure control.
+attacks.shooter = true
 playerPosition = { x = 100, y = 100, z = 7 }
 monsters = { monster(105, 100) }
 widget('v2CavebotAutoExploringButton').onClick()
@@ -411,7 +425,7 @@ assert(#lureCasts == 0, 'an unassigned Lure Spell must never cast')
 selectedLureSpell = 'Chivalrous Challenge'
 advance(50)
 advance(50)
-assert(lureCasts[1] == 'Chivalrous Challenge')
+assert(#lureCasts == 0, 'Cavebot must never cast the selected Shooter lure spell')
 widget('v2CavebotAutoExploringButton').onClick()
 monsters = {}
 
@@ -422,9 +436,8 @@ monsters = { monster(105, 100) }
 widget('v2CavebotAutoExploringButton').onClick()
 advance(2200)
 advance(800)
-assert(lureCasts[#lureCasts] == 'Balanced Brawl' and
-    lureDirections[#lureDirections] == East,
-    'Monk lure spell must face the distant monster')
+assert(#lureCasts == 0,
+    'Monk lure spell must also be owned by Shooter Helper')
 widget('v2CavebotAutoExploringButton').onClick()
 monsters = {}
 vocation = 11
@@ -582,8 +595,8 @@ widget('v2CavebotWaypointList').children[1].onClick()
 monsters = { monster(101, 100) }
 widget('v2CavebotAutoExploringButton').onClick()
 advance(50)
-assert(lureCasts[#lureCasts] == 'Challenge',
-    'exeta res must cast when a monster is adjacent')
+assert(#lureCasts == 0,
+    'Cavebot must leave adjacent exeta res casts to Shooter Helper')
 widget('v2CavebotAutoExploringButton').onClick()
 
 -- exeta amp res pulls distant monsters only if a surrounding SQM is free.
@@ -602,11 +615,12 @@ noFreeAdjacent = false
 widget('v2CavebotWaypointList').children[1].onClick()
 widget('v2CavebotAutoExploringButton').onClick()
 advance(50)
-assert(lureCasts[#lureCasts] == 'Chivalrous Challenge' and
+assert(#lureCasts == 0 and
     settings.explorer_test_auto_explorer_v2.waypointIndex == 1,
-    'exeta amp res must cast and hold the Stand when a surrounding SQM opens')
+    'an assigned lure spell may hold the Stand, but Cavebot must not cast it')
 widget('v2CavebotAutoExploringButton').onClick()
 selectedLureSpell = nil
+assert(attacks.shooter, 'stopping Cavebot must not disable Shooter Helper')
 
 -- A Center Stand can move against a nearby wall and face away from it.
 wallMap = true
@@ -655,6 +669,7 @@ assert(widget('v2CavebotStatus').text:find('Passage occupied'),
 passageOccupied = false
 monsters = {}
 selectedLureSpell = nil
+attacks.shooter = false
 advance(50)
 assert(shouldHoldExplorerAttack(),
     'after the passage opens the shooter must return to route-gather mode')
@@ -811,8 +826,8 @@ playerPosition = { x = 101, y = 100, z = 7 }
 monsters = { monster(100, 100), monster(102, 100) }
 widget('v2CavebotAutoExploringButton').onClick()
 advance(50)
-assert(playerPosition.y ~= 100 and attacks.autoTarget and attacks.shooter,
-    'Lure must kite immediately from a crowded Stand while Helper combat stays active')
+assert(playerPosition.y ~= 100 and not attacks.autoTarget and not attacks.shooter,
+    'Lure must kite from a crowded Stand without changing Helper combat toggles')
 assert(not widget('v2CavebotStatus').text:find('no free SQM', 1, true),
     'a free adjacent SQM must not be rejected solely for being close to monsters')
 widget('v2CavebotAutoExploringButton').onClick()
@@ -828,8 +843,8 @@ local walksBeforeOccupiedStand = walks
 widget('v2CavebotAutoExploringButton').onClick()
 advance(50)
 assert(isAutoExplorerActive() and walks > walksBeforeOccupiedStand and
-    lastWalkDirection <= West and attacks.autoTarget and attacks.shooter,
-    'Lure must move around an occupied Stand with cardinal movement and keep attacking at low health')
+    lastWalkDirection <= West and not attacks.autoTarget and not attacks.shooter,
+    'Lure must move around an occupied Stand without forcing Helper combat on')
 advance(50)
 assert(isAutoExplorerActive() and walks > walksBeforeOccupiedStand + 1,
     'Lure must continue moving while the Stand stays occupied')
@@ -877,5 +892,87 @@ assert(settings.explorer_test_auto_explorer_v2.lureDistance == 2 and
     'loading a route must restore its Lure distance')
 huntMap = false
 monsters = {}
+
+-- A directed Stand must face the stair, step onto it and wait for a real
+-- floor transition before advancing to the waypoint on the upper floor.
+local function clearRoute()
+    local rows = widget('v2CavebotWaypointList').children
+    while rows and #rows > 0 do
+        rows[1].removeButton.onClick()
+        rows = widget('v2CavebotWaypointList').children
+    end
+end
+clearRoute()
+stairsOnly = true
+playerPosition = { x = 100, y = 100, z = 7 }
+playerDirection = North
+widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'east')
+widget('v2CavebotStandButton').onClick()
+playerPosition = { x = 101, y = 100, z = 6 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotWaypointList').children[1].onClick()
+widget('v2CavebotAutoExploringButton').onClick()
+advance(50)
+assert(playerDirection == East and playerPosition.z == 7,
+    'the directed Stand must face the stair before walking')
+advance(200)
+assert(playerPosition.x == 101 and playerPosition.z == 6,
+    'the directed Stand must walk onto the recorded stair')
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    isAutoExplorerActive(),
+    'a confirmed floor transition must advance to the upper-floor waypoint')
+widget('v2CavebotAutoExploringButton').onClick()
+
+-- If the recorded waypoint itself is a stair tile, the explicit goal is
+-- allowed even though automatic floor exploration is disabled.
+clearRoute()
+playerPosition = { x = 101, y = 100, z = 7 }
+widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'center')
+widget('v2CavebotStandButton').onClick()
+playerPosition = { x = 101, y = 100, z = 6 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotWaypointList').children[1].onClick()
+widget('v2CavebotAutoExploringButton').onClick()
+advance(50)
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    playerPosition.z == 6,
+    'an explicit stair waypoint must not be skipped or loop below the stairs')
+widget('v2CavebotAutoExploringButton').onClick()
+
+-- Hur Up/Down use the chosen cardinal facing after combat and only advance
+-- when the server reports the new floor.
+clearRoute()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotHurUpButton').onClick()
+assert(#settings.explorer_test_auto_explorer_v2.waypoints == 0,
+    'Hur Up must require a cardinal direction')
+widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'east')
+widget('v2CavebotHurUpButton').onClick()
+playerPosition = { x = 100, y = 100, z = 6 }
+widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'west')
+widget('v2CavebotHurDownButton').onClick()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotWaypointList').children[1].onClick()
+widget('v2CavebotAutoExploringButton').onClick()
+advance(50)
+advance(50)
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2 and
+    playerPosition.z == 6 and levitateCasts[1].level == 'up' and
+    levitateCasts[1].direction == East,
+    'Hur Up must face East and wait for the upper-floor arrival')
+advance(50)
+advance(50)
+advance(50)
+assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 1 and
+    playerPosition.z == 7 and levitateCasts[2].level == 'down' and
+    levitateCasts[2].direction == West,
+    'Hur Down must face West and wait for the lower-floor arrival')
+widget('v2CavebotAutoExploringButton').onClick()
+stairsOnly = false
 BaiakHelperExplorerV2.terminate()
 print('Auto Explorer V2 regression passed')

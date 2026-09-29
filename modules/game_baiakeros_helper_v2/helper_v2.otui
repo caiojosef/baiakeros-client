@@ -803,8 +803,9 @@ BaiakerosHelperV2Window < MainWindow
             id: v2LureSpellArea
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: parent.top
-            height: 72
+            anchors.top: v2RuneRows.bottom
+            margin-top: 4
+            height: 62
             visible: false
 
             Label
@@ -1071,12 +1072,33 @@ BaiakerosHelperV2Window < MainWindow
           !tooltip: tr('Direction from the recorded player position. Center records the same tile.')
 
         SmallButton
+          id: v2CavebotHurUpButton
+          text: Hur Up
+          color: #ffffff
+          size: 108 22
+          anchors.left: parent.left
+          anchors.top: v2CavebotNodeButton.bottom
+          margin-left: 13
+          margin-top: 5
+          !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Up after combat.')
+
+        SmallButton
+          id: v2CavebotHurDownButton
+          text: Hur Down
+          color: #ffffff
+          size: 108 22
+          anchors.left: v2CavebotHurUpButton.right
+          anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
+          margin-left: 4
+          !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
+
+        SmallButton
           id: v2CavebotSaveRouteButton
           text: Save
           color: #ffffff
           size: 108 22
           anchors.left: parent.left
-          anchors.top: v2CavebotNodeButton.bottom
+          anchors.top: v2CavebotHurUpButton.bottom
           margin-left: 13
           margin-top: 6
           !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
@@ -1096,7 +1118,7 @@ BaiakerosHelperV2Window < MainWindow
           anchors.left: parent.left
           anchors.right: parent.right
           anchors.top: v2CavebotSaveRouteButton.bottom
-          height: 132
+          height: 106
           margin-left: 12
           margin-right: 12
           margin-top: 5
@@ -1118,7 +1140,7 @@ BaiakerosHelperV2Window < MainWindow
 
           Label
             id: v2CavebotEmptyWaypoints
-            text: Add Node, Stand or Use
+            text: Add Node, Stand, Use or Hur
             anchors.centerIn: parent
             color: #ffffff
             phantom: true
