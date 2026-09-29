@@ -4,6 +4,12 @@ local selectedTab = 'healing'
 local cavebotFloatWindow
 local cavebotPanel
 local cavebotHomeParent
+local cavebotScriptPanel
+local cavebotScriptHome
+local cavebotFloatScriptSlot
+local cavebotWorkspace
+local cavebotDivider
+local selectedCavebotSection = 'scripts'
 local cavebotDetached = false
 
 local function explorerActive()
@@ -56,15 +62,35 @@ local function setHelperButtonOn(enabled)
     end
 end
 
+local function showCavebotSection(section)
+    selectedCavebotSection = section == 'highscore' and 'highscore' or 'scripts'
+    local scripts = selectedCavebotSection == 'scripts'
+    cavebotScriptHome:setVisible(scripts)
+    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScorePage'):
+        setVisible(not scripts)
+    local scriptsTab = cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab')
+    local highScoreTab = cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab')
+    scriptsTab:setOn(scripts)
+    highScoreTab:setOn(not scripts)
+    scriptsTab:setEnabled(not scripts)
+    highScoreTab:setEnabled(scripts)
+end
+
 local function attachCavebot(force)
     if not cavebotDetached or not cavebotPanel then return false end
     if explorerActive() and not force then return false end
     setCavebotCompact(false)
     modules.game_walk.unbindMovementKeysFromWidget(cavebotFloatWindow)
+    cavebotScriptPanel:setParent(cavebotScriptHome)
+    cavebotScriptPanel:breakAnchors()
+    cavebotScriptPanel:fill('parent')
+    cavebotFloatScriptSlot:hide()
+    cavebotWorkspace:show()
+    cavebotDivider:show()
     cavebotPanel:setParent(cavebotHomeParent)
     cavebotPanel:breakAnchors()
-    cavebotPanel:setWidth(260)
     cavebotPanel:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+    cavebotPanel:addAnchor(AnchorRight, 'parent', AnchorRight)
     cavebotPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
     cavebotPanel:addAnchor(AnchorBottom, 'parent', AnchorBottom)
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):show()
@@ -77,6 +103,12 @@ end
 function detachCavebot()
     if cavebotDetached or not cavebotFloatWindow or not g_game.isOnline() then return end
     local slot = cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot')
+    cavebotScriptPanel:setParent(cavebotFloatScriptSlot)
+    cavebotScriptPanel:breakAnchors()
+    cavebotScriptPanel:fill('parent')
+    cavebotFloatScriptSlot:show()
+    cavebotWorkspace:hide()
+    cavebotDivider:hide()
     cavebotPanel:setParent(slot)
     cavebotPanel:breakAnchors()
     cavebotPanel:fill('parent')
@@ -187,6 +219,19 @@ function init()
     cavebotFloatWindow = g_ui.createWidget('BaiakerosCavebotFloatWindow', rootWidget)
     cavebotPanel = helperV2Window:recursiveGetChildById('cavebotPanel')
     cavebotHomeParent = cavebotPanel:getParent()
+    cavebotScriptPanel = cavebotPanel:recursiveGetChildById('v2CavebotScriptPanel')
+    cavebotScriptHome = cavebotPanel:recursiveGetChildById('v2CavebotScriptHomeSlot')
+    cavebotFloatScriptSlot = cavebotPanel:recursiveGetChildById('v2CavebotFloatScriptSlot')
+    cavebotWorkspace = cavebotPanel:recursiveGetChildById('v2CavebotWorkspace')
+    cavebotDivider = cavebotPanel:recursiveGetChildById('v2CavebotMainDivider')
+    cavebotScriptPanel:setParent(cavebotScriptHome)
+    cavebotScriptPanel:breakAnchors()
+    cavebotScriptPanel:fill('parent')
+    cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab').onClick =
+        function() showCavebotSection('scripts') end
+    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab').onClick =
+        function() showCavebotSection('highscore') end
+    showCavebotSection('scripts')
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton').onClick = detachCavebot
     cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):hide()
     showHelperV2Tab('healing')
@@ -225,6 +270,11 @@ function terminate()
     end
     cavebotPanel = nil
     cavebotHomeParent = nil
+    cavebotScriptPanel = nil
+    cavebotScriptHome = nil
+    cavebotFloatScriptSlot = nil
+    cavebotWorkspace = nil
+    cavebotDivider = nil
 
     setHelperButtonOn(false)
     if helperV2Window then

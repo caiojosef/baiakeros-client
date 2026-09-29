@@ -721,8 +721,7 @@ widget('v2CavebotStandButton').onClick()
 local styleBox = widget('v2CavebotHuntStyleBox')
 styleBox.onOptionChange(nil, nil, 'chase')
 assert(settings.explorer_test_auto_explorer_v2.huntStyle == 'chase')
-assert(not widget('v2CavebotLureDistanceBox').visible and
-    widget('v2CavebotWaypointTitle').marginTop == 8,
+assert(not widget('v2CavebotLureDistanceBox').visible,
     'distance controls must stay hidden outside Lure')
 widget('v2CavebotWaypointList').children[1].onClick()
 playerPosition = { x = 100, y = 100, z = 7 }
@@ -776,7 +775,6 @@ widget('v2CavebotAutoExploringButton').onClick()
 styleBox.onOptionChange(nil, nil, 'lure')
 local lureDistanceBox = widget('v2CavebotLureDistanceBox')
 assert(lureDistanceBox.visible and lureDistanceBox.enabled and
-    widget('v2CavebotWaypointTitle').marginTop == 38 and
     #lureDistanceBox.options == 4,
     'Lure must expose a 1-4 SQM distance selector')
 lureDistanceBox.onOptionChange(nil, nil, 4)
@@ -1049,6 +1047,39 @@ assert(isAutoExplorerActive() and
 widget('v2CavebotAutoExploringButton').onClick()
 corridorMap = false
 passageWall = false
+
+-- Recording inserts below the selected row and keeps the new row selected.
+clearRoute()
+playerPosition = { x = 100, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 101, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+playerPosition = { x = 102, y = 100, z = 7 }
+widget('v2CavebotStandButton').onClick()
+widget('v2CavebotWaypointList').children[1].onClick()
+playerPosition = { x = 103, y = 100, z = 7 }
+widget('v2CavebotUseButton').onClick()
+local inserted = settings.explorer_test_auto_explorer_v2
+assert(#inserted.waypoints == 4 and inserted.waypoints[2].kind == 'use' and
+    inserted.waypoints[2].x == 103 and inserted.waypoints[3].x == 101 and
+    inserted.waypointIndex == 2 and
+    widget('v2CavebotWaypointList').children[2].on,
+    'new waypoints must appear directly below the clicked row and become selected')
+playerPosition = { x = 104, y = 100, z = 7 }
+widget('v2CavebotStandButton').onClick()
+inserted = settings.explorer_test_auto_explorer_v2
+assert(inserted.waypoints[3].x == 104 and inserted.waypoints[4].x == 101,
+    'subsequent recording must continue below the newly selected waypoint')
+widget('v2CavebotWaypointList').children[5].onClick()
+playerPosition = { x = 105, y = 100, z = 7 }
+widget('v2CavebotNodeButton').onClick()
+inserted = settings.explorer_test_auto_explorer_v2
+assert(#inserted.waypoints == 6 and inserted.waypoints[6].x == 105,
+    'clicking the final row must resume appending at the end')
+nextSavePath = 'C:\\Routes\\Inserted Waypoints.json'
+widget('v2CavebotSaveRouteButton').onClick()
+assert(json.decode(files['C:\\Routes\\Inserted Waypoints.json']).waypoints[2].x == 103,
+    'saving must keep the insertion order of waypoints')
 
 BaiakHelperExplorerV2.terminate()
 print('Auto Explorer V2 regression passed')
