@@ -35,14 +35,16 @@ end
 
 rootWidget = widget('root')
 tr = function(text) return text end
-AnchorRight, AnchorTop, AnchorBottom = 1, 2, 3
+AnchorLeft, AnchorRight, AnchorTop, AnchorBottom = 1, 2, 3, 4
 local helper = widget('helper', rootWidget)
 local floating = widget('floating', rootWidget)
 local attackPage = widget('attackPage', helper)
+local cavebotPage = widget('cavebotPage', helper)
 widget('healingToolsPage', helper)
 widget('healingToolsTab', helper)
 widget('attackTab', helper)
-local panel = widget('cavebotPanel', attackPage)
+widget('cavebotTab', helper)
+local panel = widget('cavebotPanel', cavebotPage)
 local detachButton = widget('v2CavebotDetachButton', panel)
 local floatSlot = widget('v2CavebotFloatSlot', floating)
 local gamePanel = widget('gamePanel', rootWidget)
@@ -93,6 +95,15 @@ dofile('modules/game_baiakeros_helper_v2/helper_v2.lua')
 init()
 show()
 assert(helper.visible and widgets.helperButton.on)
+assert(widgets.healingToolsPage.visible and not attackPage.visible and
+    not cavebotPage.visible)
+showHelperV2Tab('attack')
+assert(attackPage.visible and not cavebotPage.visible and
+    widgets.attackTab.width == 116)
+showHelperV2Tab('cavebot')
+assert(cavebotPage.visible and not attackPage.visible and
+    widgets.cavebotTab.width == 116 and widgets.cavebotTab.text == 'Cavebot',
+    'the Cavebot tab must own its full-size page and match Attack tab sizing')
 
 detachButton.onClick()
 assert(panel.parent == floatSlot and floating.visible and not helper.visible,
@@ -103,10 +114,12 @@ assert(movementBindings.binds == 1 and movementBindings.unbinds == 0,
     'Detach must enable movement keys in the focused floating window')
 
 closeDetachedCavebot()
-assert(panel.parent == attackPage and not floating.visible and not helper.visible,
+assert(panel.parent == cavebotPage and not floating.visible and not helper.visible,
     'X must close the floating window and restore Cavebot without opening Helper')
 assert(panel.width == 260 and #panel.anchors == 3,
     'reattaching must restore the panel width and anchors')
+assert(panel.anchors[1][1] == AnchorLeft,
+    'reattaching must return Cavebot to the left edge of its own page')
 assert(detachButton.visible)
 assert(movementBindings.unbinds == 1 and gamePanel.focused,
     'closing the floating window must restore normal movement focus')
@@ -114,14 +127,14 @@ assert(movementBindings.unbinds == 1 and gamePanel.focused,
 show()
 detachButton.onClick()
 returnCavebotToHelper()
-assert(panel.parent == attackPage and helper.visible and not floating.visible,
-    'Back must return Cavebot to the visible Attack tab')
-assert(attackPage.visible and widgets.helperButton.on)
+assert(panel.parent == cavebotPage and helper.visible and not floating.visible,
+    'Back must return Cavebot to its own tab')
+assert(cavebotPage.visible and widgets.helperButton.on)
 assert(movementBindings.binds == 2 and movementBindings.unbinds == 2)
 
 detachButton.onClick()
 toggle()
-assert(panel.parent == attackPage and helper.visible and not floating.visible,
+assert(panel.parent == cavebotPage and helper.visible and not floating.visible,
     'opening Helper while detached must reattach Cavebot')
 
 detachButton.onClick()
@@ -151,13 +164,13 @@ widget('v2CavebotAutoExploringButton').onClick = function() explorerActive = fal
 stopFromCompactCavebot()
 assert(not explorerActive, 'compact Stop must stop the explorer')
 gameEvents.onGameEnd()
-assert(panel.parent == attackPage and not floating.visible and not helper.visible,
+assert(panel.parent == cavebotPage and not floating.visible and not helper.visible,
     'disconnect must close the floating window safely')
 
 show()
 detachButton.onClick()
 terminate()
-assert(panel.parent == attackPage and floating.destroyed and helper.destroyed,
+assert(panel.parent == cavebotPage and floating.destroyed and helper.destroyed,
     'unload must restore Cavebot before destroying the floating window')
 assert(movementBindings.binds == movementBindings.unbinds,
     'unload must remove every detached movement binding')
