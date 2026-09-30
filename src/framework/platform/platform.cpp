@@ -26,6 +26,9 @@ Platform g_platform;
 
 #ifndef WIN32
 std::string Platform::chooseJsonFile(bool) { return {}; }
+bool Platform::startJsonFileDialog(bool) { return false; }
+bool Platform::isJsonFileDialogPending() { return false; }
+std::string Platform::takeJsonFileDialogResult() { return {}; }
 std::string Platform::readUserFile(std::string) { return {}; }
 bool Platform::writeUserFile(std::string, std::string) { return false; }
 #endif

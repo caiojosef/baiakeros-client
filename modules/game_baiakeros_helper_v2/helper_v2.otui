@@ -1148,87 +1148,6 @@ BaiakerosHelperV2Window < MainWindow
           anchors.top: v2CavebotProgressFrame.bottom
           margin-top: 7
 
-        HorizontalSeparator
-          id: v2CavebotOptionsSeparator
-          anchors.left: v2CavebotRuntimeColumn.left
-          anchors.right: v2CavebotRuntimeColumn.right
-          anchors.bottom: parent.bottom
-          margin-left: 12
-          margin-right: 12
-          margin-bottom: 119
-
-        QtCheckBox
-          id: v2CavebotEchoRaidsBox
-          text: Active Echo Raids
-          color: #ffffff
-          anchors.left: v2CavebotRuntimeColumn.horizontalCenter
-          anchors.top: v2CavebotOptionsSeparator.bottom
-          margin-left: -100
-          margin-top: 8
-          size: 200 18
-          text-offset: 18 0
-          !tooltip: tr('After a Stand fight, step on a nearby Echo Raid tile and wait for its monsters before continuing.')
-
-        QtCheckBox
-          id: v2CavebotHugWallBox
-          text: Hug Wall
-          color: #ffffff
-          anchors.left: v2CavebotEchoRaidsBox.left
-          anchors.top: v2CavebotEchoRaidsBox.bottom
-          margin-top: 8
-          size: 200 18
-          text-offset: 18 0
-          !tooltip: tr('At a Center Stand, move beside a nearby solid wall and face away from it.')
-
-        Label
-          id: v2CavebotHuntStyleLabel
-          text: Hunt Style
-          color: #ffffff
-          anchors.left: parent.left
-          anchors.top: v2CavebotAutoExploringButton.bottom
-          margin-left: 17
-          margin-top: 10
-
-        QtComboBox
-          id: v2CavebotHuntStyleBox
-          color: #ffffff
-          size: 134 22
-          anchors.right: v2CavebotRuntimeColumn.right
-          anchors.verticalCenter: v2CavebotHuntStyleLabel.verticalCenter
-          margin-right: 11
-          mouse-scroll: false
-          !tooltip: tr('Chase follows one target; Lure runs and attacks while keeping distance from its target; Lure and Stop gathers monsters for Stand; Stop waits for visible monsters to approach.')
-
-        Label
-          id: v2CavebotLureDistanceLabel
-          text: Distance
-          color: #ffffff
-          visible: false
-          anchors.left: v2CavebotHuntStyleLabel.left
-          anchors.top: v2CavebotHuntStyleBox.bottom
-          margin-top: 8
-
-        UIWidget
-          id: v2CavebotLureDistanceIcon
-          image-source: /images/icons/icon_distance
-          size: 16 16
-          visible: false
-          anchors.right: v2CavebotLureDistanceBox.left
-          anchors.verticalCenter: v2CavebotLureDistanceBox.verticalCenter
-          margin-right: 4
-          !tooltip: tr('Preferred distance from the current attack target while Lure is fighting.')
-
-        QtComboBox
-          id: v2CavebotLureDistanceBox
-          color: #ffffff
-          visible: false
-          size: 58 22
-          anchors.right: v2CavebotRuntimeColumn.right
-          anchors.verticalCenter: v2CavebotLureDistanceLabel.verticalCenter
-          margin-right: 11
-          mouse-scroll: false
-          !tooltip: tr('Lure distance: choose 1 to 4 SQMs from the current attack target. The bot may move closer when boxed in.')
-
         UIWidget
           id: v2CavebotScriptPanel
           anchors.fill: parent
@@ -1304,33 +1223,16 @@ BaiakerosHelperV2Window < MainWindow
             margin-left: 4
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
 
-          HorizontalSeparator
-            id: v2CavebotRouteFileSeparator
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: v2CavebotHurUpButton.bottom
-            margin-left: 13
-            margin-right: 13
-            margin-top: 5
-
-          Label
-            id: v2CavebotRouteFileTitle
-            text: Script Files
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: v2CavebotRouteFileSeparator.bottom
-            margin-top: 3
-            color: #ffffff
-
           SmallButton
             id: v2CavebotSaveRouteButton
             text: Save
             color: #ffffff
             size: 108 22
             anchors.left: parent.horizontalCenter
-            anchors.top: v2CavebotRouteFileTitle.bottom
+            anchors.bottom: parent.bottom
             margin-left: -110
-            margin-top: 4
-            !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
+            margin-bottom: 6
+            !tooltip: tr('Choose a JSON filename while the game continues running.')
 
           SmallButton
             id: v2CavebotLoadRouteButton
@@ -1340,18 +1242,18 @@ BaiakerosHelperV2Window < MainWindow
             anchors.left: v2CavebotSaveRouteButton.right
             anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
             margin-left: 4
-            !tooltip: tr('Choose a Cavebot JSON route in the Windows Open dialog.')
+            !tooltip: tr('Choose a Cavebot JSON route while the game continues running.')
 
           QtPanel
             id: v2CavebotWaypointPanel
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: v2CavebotSaveRouteButton.bottom
-            anchors.bottom: parent.bottom
+            anchors.top: v2CavebotHurUpButton.bottom
+            anchors.bottom: v2CavebotSaveRouteButton.top
             margin-left: 12
             margin-right: 12
-            margin-top: 5
-            margin-bottom: 8
+            margin-top: 8
+            margin-bottom: 7
 
             UIScrollArea
               id: v2CavebotWaypointList
@@ -1387,288 +1289,377 @@ BaiakerosHelperV2Window < MainWindow
           color: #ffffff
 
         UIWidget
-          id: v2CavebotFloatScriptSlot
+          id: v2CavebotScriptHomeSlot
           anchors.left: v2CavebotRuntimeColumn.left
           anchors.right: v2CavebotRuntimeColumn.right
-          anchors.top: parent.top
-          anchors.bottom: parent.bottom
-          margin-left: 4
-          margin-right: 4
-          margin-top: 161
-          margin-bottom: 141
-          visible: false
+          anchors.top: v2CavebotAutoExploringButton.bottom
+          anchors.bottom: v2CavebotStatus.top
+          margin-top: 13
+          margin-bottom: 7
 
         VerticalSeparator
           id: v2CavebotMainDivider
+          anchors.left: v2CavebotConfigColumn.left
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: -5
+          margin-top: 9
+          margin-bottom: 9
+
+        UIWidget
+          id: v2CavebotConfigColumn
+          anchors.left: v2CavebotRuntimeColumn.right
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          margin-left: 9
+          width: 248
+
+          Label
+            text: Bot Settings
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            margin-top: 6
+            color: #ffffff
+
+          HorizontalSeparator
+            id: v2CavebotConfigSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            margin-left: 10
+            margin-right: 10
+            margin-top: 31
+
+          Label
+            id: v2CavebotHuntStyleLabel
+            text: Hunt Style
+            color: #ffffff
+            anchors.left: parent.left
+            anchors.top: v2CavebotConfigSeparator.bottom
+            margin-left: 13
+            margin-top: 13
+
+          QtComboBox
+            id: v2CavebotHuntStyleBox
+            color: #ffffff
+            size: 134 22
+            anchors.right: parent.right
+            anchors.verticalCenter: v2CavebotHuntStyleLabel.verticalCenter
+            margin-right: 10
+            mouse-scroll: false
+            !tooltip: tr('Chase follows one target; Lure runs and attacks while keeping distance; Lure and Stop gathers monsters for Stand; Stop waits for them.')
+
+          Label
+            id: v2CavebotLureDistanceLabel
+            text: Distance
+            color: #ffffff
+            visible: false
+            anchors.left: v2CavebotHuntStyleLabel.left
+            anchors.top: v2CavebotHuntStyleBox.bottom
+            margin-top: 13
+
+          UIWidget
+            id: v2CavebotLureDistanceIcon
+            image-source: /images/icons/icon_distance
+            size: 16 16
+            visible: false
+            anchors.right: v2CavebotLureDistanceBox.left
+            anchors.verticalCenter: v2CavebotLureDistanceBox.verticalCenter
+            margin-right: 4
+            !tooltip: tr('Preferred distance from the current target while Lure is fighting.')
+
+          QtComboBox
+            id: v2CavebotLureDistanceBox
+            color: #ffffff
+            visible: false
+            size: 58 22
+            anchors.right: parent.right
+            anchors.verticalCenter: v2CavebotLureDistanceLabel.verticalCenter
+            margin-right: 10
+            mouse-scroll: false
+            !tooltip: tr('Choose 1 to 4 SQMs from the current target.')
+
+          HorizontalSeparator
+            id: v2CavebotOptionsSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotHuntStyleBox.bottom
+            margin-left: 10
+            margin-right: 10
+            margin-top: 51
+
+          Label
+            text: Hunting Options
+            anchors.left: parent.left
+            anchors.top: v2CavebotOptionsSeparator.bottom
+            margin-left: 13
+            margin-top: 9
+            color: #f3d284
+
+          QtCheckBox
+            id: v2CavebotEchoRaidsBox
+            text: Active Echo Raids
+            color: #ffffff
+            anchors.left: parent.left
+            anchors.top: v2CavebotOptionsSeparator.bottom
+            margin-left: 13
+            margin-top: 37
+            size: 200 18
+            text-offset: 18 0
+            !tooltip: tr('After a Stand fight, activate a visible Echo Raid and fight its monsters.')
+
+          QtCheckBox
+            id: v2CavebotHugWallBox
+            text: Hug Wall
+            color: #ffffff
+            anchors.left: v2CavebotEchoRaidsBox.left
+            anchors.top: v2CavebotEchoRaidsBox.bottom
+            margin-top: 13
+            size: 200 18
+            text-offset: 18 0
+            !tooltip: tr('At a Center Stand, move beside a solid wall and face away from it.')
+
+          HorizontalSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotHugWallBox.bottom
+            margin-left: 10
+            margin-right: 10
+            margin-top: 19
+
+          Label
+            text: Configure spells and auto target in Attack.
+            size: 220 40
+            anchors.left: parent.left
+            anchors.top: v2CavebotHugWallBox.bottom
+            margin-left: 13
+            margin-top: 32
+            text-wrap: true
+            color: #cfcfcf
+
+        VerticalSeparator
+          id: v2CavebotRankingDivider
           anchors.left: v2CavebotWorkspace.left
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          margin-left: -6
+          margin-left: -5
           margin-top: 9
           margin-bottom: 9
 
         UIWidget
           id: v2CavebotWorkspace
-          anchors.left: v2CavebotRuntimeColumn.right
+          anchors.left: v2CavebotConfigColumn.right
           anchors.right: parent.right
           anchors.top: parent.top
           anchors.bottom: parent.bottom
-          margin-left: 12
-          margin-right: 5
+          margin-left: 9
+          margin-right: 2
 
-          HelperV2TabButton
-            id: v2CavebotScriptsTab
-            text: Scripts
-            size: 108 27
-            anchors.left: parent.left
+          Label
+            text: Cavebot XP High Score
+            anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            margin-left: 4
-            margin-top: 4
-
-          HelperV2TabButton
-            id: v2CavebotHighScoreTab
-            text: High Score
-            size: 112 27
-            anchors.left: v2CavebotScriptsTab.right
-            anchors.verticalCenter: v2CavebotScriptsTab.verticalCenter
-            margin-left: 3
+            margin-top: 6
+            color: #ffffff
 
           HorizontalSeparator
-            id: v2CavebotWorkspaceSeparator
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: v2CavebotScriptsTab.bottom
-            margin-left: 4
-            margin-right: 4
-            margin-top: 4
-
-          UIWidget
-            id: v2CavebotScriptHomeSlot
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: v2CavebotWorkspaceSeparator.bottom
-            anchors.bottom: parent.bottom
-            margin-top: 5
+            anchors.top: parent.top
+            margin-left: 8
+            margin-right: 8
+            margin-top: 31
 
           UIWidget
             id: v2CavebotHighScorePage
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: v2CavebotWorkspaceSeparator.bottom
-            anchors.bottom: parent.bottom
-            margin-top: 5
-            visible: false
-
-            Label
-              text: Cavebot XP High Score
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-top: 8
-              color: #ffffff
-
-            Label
-              text: Time and daily XP reset at server save. Only active Cavebot XP counts.
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-top: 30
-              color: #cfcfcf
-
-            HorizontalSeparator
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.top: parent.top
-              margin-left: 12
-              margin-right: 12
-              margin-top: 55
-
-            VerticalSeparator
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.top: parent.top
-              anchors.bottom: parent.bottom
-              margin-top: 66
-              margin-bottom: 34
+            anchors.fill: parent
 
             Label
               text: TODAY  |  TOP 4
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 20
-              margin-top: 68
+              margin-left: 13
+              margin-top: 43
               color: #f3d284
-
-            Label
-              text: THIS MONTH  |  TOP 4
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 15
-              margin-top: 68
-              color: #f3d284
-
             Label
               id: v2CavebotDaily1
               text: 1. ---
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 20
-              margin-top: 100
+              margin-left: 13
+              margin-top: 64
               color: #ffffff
 
             Label
               text: Prize: Arcane Bag
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 34
-              margin-top: 120
+              margin-left: 25
+              margin-top: 82
               color: #bfc7be
 
             Label
               id: v2CavebotDaily2
               text: 2. ---
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 20
-              margin-top: 167
+              margin-left: 13
+              margin-top: 103
               color: #ffffff
 
             Label
               text: Prize: Mount Doll + Addon Doll
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 34
-              margin-top: 187
+              margin-left: 25
+              margin-top: 121
               color: #bfc7be
 
             Label
               id: v2CavebotDaily3
               text: 3. ---
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 20
-              margin-top: 234
+              margin-left: 13
+              margin-top: 142
               color: #ffffff
 
             Label
               text: Prize: Addon Doll
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 34
-              margin-top: 254
+              margin-left: 25
+              margin-top: 160
               color: #bfc7be
 
             Label
               id: v2CavebotDaily4
               text: 4. ---
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 20
-              margin-top: 301
+              margin-left: 13
+              margin-top: 181
               color: #ffffff
 
             Label
               text: Prize: Mount Doll
-              size: 240 18
+              size: 308 18
               anchors.left: parent.left
               anchors.top: parent.top
-              margin-left: 34
-              margin-top: 321
-              color: #bfc7be
-
-            Label
-              id: v2CavebotMonthly1
-              text: 1. ---
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 15
-              margin-top: 100
-              color: #ffffff
-
-            Label
-              text: Prize: Primal, Soul War, Arcane Bags
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 29
-              margin-top: 120
-              color: #bfc7be
-
-            Label
-              id: v2CavebotMonthly2
-              text: 2. ---
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 15
-              margin-top: 167
-              color: #ffffff
-
-            Label
-              text: Prize: Arcane Bag + Soul War Bag
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 29
-              margin-top: 187
-              color: #bfc7be
-
-            Label
-              id: v2CavebotMonthly3
-              text: 3. ---
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 15
-              margin-top: 234
-              color: #ffffff
-
-            Label
-              text: Prize: 2 Addon Dolls + 2 Mount Dolls
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 29
-              margin-top: 254
-              color: #bfc7be
-
-            Label
-              id: v2CavebotMonthly4
-              text: 4. ---
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 15
-              margin-top: 301
-              color: #ffffff
-
-            Label
-              text: Prize: Addon Doll + Mount Doll
-              size: 240 18
-              anchors.left: parent.horizontalCenter
-              anchors.top: parent.top
-              margin-left: 29
-              margin-top: 321
+              margin-left: 25
+              margin-top: 199
               color: #bfc7be
 
             HorizontalSeparator
               anchors.left: parent.left
               anchors.right: parent.right
-              anchors.bottom: parent.bottom
-              margin-left: 12
-              margin-right: 12
-              margin-bottom: 28
+              anchors.top: parent.top
+              margin-left: 8
+              margin-right: 8
+              margin-top: 227
 
             Label
-              text: Rewards arrive in Store Inbox, or Your Inbox when capacity is insufficient.
+              text: THIS MONTH  |  TOP 4
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 13
+              margin-top: 236
+              color: #f3d284
+            Label
+              id: v2CavebotMonthly1
+              text: 1. ---
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 13
+              margin-top: 257
+              color: #ffffff
+
+            Label
+              text: Prize: Primal + Soul War + Arcane Bags
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 25
+              margin-top: 275
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly2
+              text: 2. ---
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 13
+              margin-top: 296
+              color: #ffffff
+
+            Label
+              text: Prize: Arcane + Soul War Bags
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 25
+              margin-top: 314
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly3
+              text: 3. ---
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 13
+              margin-top: 335
+              color: #ffffff
+
+            Label
+              text: Prize: 2 Addon Dolls + 2 Mount Dolls
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 25
+              margin-top: 353
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly4
+              text: 4. ---
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 13
+              margin-top: 374
+              color: #ffffff
+
+            Label
+              text: Prize: Addon Doll + Mount Doll
+              size: 308 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 25
+              margin-top: 392
+              color: #bfc7be
+
+            Label
+              text: Server save resets the hour and daily XP.
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
-              margin-bottom: 8
+              margin-bottom: 28
+              color: #cfcfcf
+
+            Label
+              text: Rewards: Store Inbox; if full, Your Inbox.
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              margin-bottom: 9
               color: #cfcfcf
 
   HorizontalSeparator

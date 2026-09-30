@@ -39,6 +39,8 @@ local WAYPOINT_DIRECTIONS = {
 
 local window
 local tickEvent
+local dialogPollEvent
+local dialogBusy = false
 local characterKey
 local usedMs = 0
 local options = { floors = false, maxFloors = 1, mode = 'off', waitCount = 3, movingCount = 4,
@@ -304,18 +306,18 @@ render = function()
     end
     local button = window:recursiveGetChildById('v2CavebotAutoExploringButton')
     button:setText(running and 'Stop' or 'Start')
-    button:setEnabled(g_game.isOnline() and serverStatusReady and
+    button:setEnabled(g_game.isOnline() and serverStatusReady and not dialogBusy and
         (running or (remainingMs() > 0 and hasRoute())))
     window:recursiveGetChildById('v2CavebotStatus'):setText(statusText)
-    window:recursiveGetChildById('v2CavebotNodeButton'):setEnabled(not running and g_game.isOnline())
-    window:recursiveGetChildById('v2CavebotStandButton'):setEnabled(not running and g_game.isOnline())
-    window:recursiveGetChildById('v2CavebotUseButton'):setEnabled(not running and g_game.isOnline())
-    window:recursiveGetChildById('v2CavebotHurUpButton'):setEnabled(not running and g_game.isOnline())
-    window:recursiveGetChildById('v2CavebotHurDownButton'):setEnabled(not running and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotNodeButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotStandButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotUseButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotHurUpButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotHurDownButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotSaveRouteButton'):setEnabled(
-        not running and characterKey ~= nil and #waypoints > 0)
+        not running and not dialogBusy and characterKey ~= nil and #waypoints > 0)
     window:recursiveGetChildById('v2CavebotLoadRouteButton'):setEnabled(
-        not running and characterKey ~= nil)
+        not running and not dialogBusy and characterKey ~= nil)
     window:recursiveGetChildById('v2CavebotHuntStyleBox'):setEnabled(not running)
     local showDistance = options.huntStyle == 'lure'
     window:recursiveGetChildById('v2CavebotLureDistanceLabel'):setVisible(showDistance)
@@ -1375,6 +1377,7 @@ end
 
 local function start()
     if running then stop() return end
+    if dialogBusy then return end
     if not g_game.isOnline() then return end
     if not hasRoute() then
         setStatus('Add or load a waypoint before starting')
@@ -1490,6 +1493,7 @@ function BaiakHelperExplorerV2.onGameStart()
     setStatus('Waiting for server time')
     render()
     sendCavebotRequest('status')
+    BaiakHelperExplorerV2.requestRanking()
 end
 
 function BaiakHelperExplorerV2.onGameEnd()
@@ -1577,53 +1581,80 @@ function BaiakHelperExplorerV2.init(helperWindow)
     window:recursiveGetChildById('v2CavebotHurDownButton').onClick = function()
         addWaypoint('hur_down')
     end
-    window:recursiveGetChildById('v2CavebotSaveRouteButton').onClick = function()
-        if running or not characterKey or #waypoints == 0 then return end
-        local path = g_platform.chooseJsonFile(true)
-        if not path or path == '' then return end
-        local encoded, contents = pcall(json.encode,
-            { version = 1, waypoints = normalizedWaypoints(waypoints),
-                huntStyle = options.huntStyle,
-                lureDistance = options.lureDistance })
-        if not encoded or not g_platform.writeUserFile(path, contents) then
-            setStatus('Could not save route')
+    local function chooseRouteFile(saveDialog, onChosen)
+        if dialogBusy or not g_platform.startJsonFileDialog(saveDialog) then
+            setStatus('File dialog unavailable')
             return
         end
-        setStatus('Saved: ' .. (path:match('[^/\\]+$') or path))
+        dialogBusy = true
+        local openedFor = characterKey
+        setStatus(saveDialog and 'Choose a filename; game remains active' or
+            'Choose a route; game remains active')
+        render()
+        local function checkDialog()
+            dialogPollEvent = nil
+            if g_platform.isJsonFileDialogPending() then
+                dialogPollEvent = scheduleEvent(checkDialog, 100)
+                return
+            end
+            local path = g_platform.takeJsonFileDialogResult()
+            dialogBusy = false
+            if characterKey ~= openedFor or not window then return end
+            if path and path ~= '' then
+                onChosen(path)
+            else
+                setStatus('Route selection canceled')
+            end
+            render()
+        end
+        dialogPollEvent = scheduleEvent(checkDialog, 100)
+    end
+    window:recursiveGetChildById('v2CavebotSaveRouteButton').onClick = function()
+        if running or not characterKey or #waypoints == 0 then return end
+        chooseRouteFile(true, function(path)
+            local encoded, contents = pcall(json.encode,
+                { version = 1, waypoints = normalizedWaypoints(waypoints),
+                    huntStyle = options.huntStyle,
+                    lureDistance = options.lureDistance })
+            if not encoded or not g_platform.writeUserFile(path, contents) then
+                setStatus('Could not save route')
+                return
+            end
+            setStatus('Saved: ' .. (path:match('[^/\\]+$') or path))
+        end)
     end
     window:recursiveGetChildById('v2CavebotLoadRouteButton').onClick = function()
         if running or not characterKey then return end
-        local path = g_platform.chooseJsonFile(false)
-        if not path or path == '' then return end
-        local contents = g_platform.readUserFile(path)
-        local decoded, route = pcall(json.decode, contents)
-        if not decoded or type(route) ~= 'table' or route.version ~= 1 or
-            type(route.waypoints) ~= 'table' then
-            setStatus('Invalid Cavebot route file')
-            return
-        end
-        waypoints = normalizedWaypoints(route.waypoints)
-        if route.huntStyle then
-            options.huntStyle = validHuntStyle(route.huntStyle)
-            huntStyleBox:setCurrentOptionByData(options.huntStyle, true)
-        end
-        if route.lureDistance then
-            options.lureDistance = validLureDistance(route.lureDistance)
-            lureDistanceBox:setCurrentOptionByData(options.lureDistance, true)
-        end
-        selectedWaypoint = #waypoints > 0 and 1 or nil
-        waypointIndex = 1
-        routeAction = nil
-        blockedCombat = false
-        wallAnchor = nil
-        kiteStandIndex, lastKiteDirection = nil, nil
-        echoTarget, echoActivatedAt = nil, nil
-        echoActivationPosition, echoSpawned = nil, false
-        visitedEchoesForStand = {}
-        save()
-        renderWaypoints()
-        setStatus('Loaded: ' .. (path:match('[^/\\]+$') or path))
-        render()
+        chooseRouteFile(false, function(path)
+            local contents = g_platform.readUserFile(path)
+            local decoded, route = pcall(json.decode, contents)
+            if not decoded or type(route) ~= 'table' or route.version ~= 1 or
+                type(route.waypoints) ~= 'table' then
+                setStatus('Invalid Cavebot route file')
+                return
+            end
+            waypoints = normalizedWaypoints(route.waypoints)
+            if route.huntStyle then
+                options.huntStyle = validHuntStyle(route.huntStyle)
+                huntStyleBox:setCurrentOptionByData(options.huntStyle, true)
+            end
+            if route.lureDistance then
+                options.lureDistance = validLureDistance(route.lureDistance)
+                lureDistanceBox:setCurrentOptionByData(options.lureDistance, true)
+            end
+            selectedWaypoint = #waypoints > 0 and 1 or nil
+            waypointIndex = 1
+            routeAction = nil
+            blockedCombat = false
+            wallAnchor = nil
+            kiteStandIndex, lastKiteDirection = nil, nil
+            echoTarget, echoActivatedAt = nil, nil
+            echoActivationPosition, echoSpawned = nil, false
+            visitedEchoesForStand = {}
+            save()
+            renderWaypoints()
+            setStatus('Loaded: ' .. (path:match('[^/\\]+$') or path))
+        end)
     end
     window:recursiveGetChildById('v2CavebotAutoExploringButton').onClick = start
     window:recursiveGetChildById('v2CavebotEchoRaidsBox').onCheckChange = function(_, checked)
@@ -1641,6 +1672,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
 end
 
 function BaiakHelperExplorerV2.terminate()
+    if dialogPollEvent then removeEvent(dialogPollEvent) dialogPollEvent = nil end
     ProtocolGame.unregisterExtendedOpcode(CAVEBOT_OPCODE)
     if tickEvent then removeEvent(tickEvent) tickEvent = nil end
     stop()

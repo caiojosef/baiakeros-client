@@ -6,10 +6,10 @@ local cavebotPanel
 local cavebotHomeParent
 local cavebotScriptPanel
 local cavebotScriptHome
-local cavebotFloatScriptSlot
 local cavebotWorkspace
+local cavebotConfigColumn
 local cavebotDivider
-local selectedCavebotSection = 'scripts'
+local cavebotRankingDivider
 local cavebotDetached = false
 
 local function explorerActive()
@@ -62,23 +62,6 @@ local function setHelperButtonOn(enabled)
     end
 end
 
-local function showCavebotSection(section)
-    selectedCavebotSection = section == 'highscore' and 'highscore' or 'scripts'
-    local scripts = selectedCavebotSection == 'scripts'
-    cavebotScriptHome:setVisible(scripts)
-    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScorePage'):
-        setVisible(not scripts)
-    local scriptsTab = cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab')
-    local highScoreTab = cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab')
-    scriptsTab:setOn(scripts)
-    highScoreTab:setOn(not scripts)
-    scriptsTab:setEnabled(not scripts)
-    highScoreTab:setEnabled(scripts)
-    if not scripts and BaiakHelperExplorerV2 and BaiakHelperExplorerV2.requestRanking then
-        BaiakHelperExplorerV2.requestRanking()
-    end
-end
-
 local function shortExperience(value)
     local number = tonumber(value) or 0
     if number >= 1000000000 then return string.format('%.1fB XP', number / 1000000000) end
@@ -111,12 +94,10 @@ local function attachCavebot(force)
     if explorerActive() and not force then return false end
     setCavebotCompact(false)
     modules.game_walk.unbindMovementKeysFromWidget(cavebotFloatWindow)
-    cavebotScriptPanel:setParent(cavebotScriptHome)
-    cavebotScriptPanel:breakAnchors()
-    cavebotScriptPanel:fill('parent')
-    cavebotFloatScriptSlot:hide()
+    cavebotConfigColumn:show()
     cavebotWorkspace:show()
     cavebotDivider:show()
+    cavebotRankingDivider:show()
     cavebotPanel:setParent(cavebotHomeParent)
     cavebotPanel:breakAnchors()
     cavebotPanel:addAnchor(AnchorLeft, 'parent', AnchorLeft)
@@ -133,12 +114,10 @@ end
 function detachCavebot()
     if cavebotDetached or not cavebotFloatWindow or not g_game.isOnline() then return end
     local slot = cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot')
-    cavebotScriptPanel:setParent(cavebotFloatScriptSlot)
-    cavebotScriptPanel:breakAnchors()
-    cavebotScriptPanel:fill('parent')
-    cavebotFloatScriptSlot:show()
+    cavebotConfigColumn:hide()
     cavebotWorkspace:hide()
     cavebotDivider:hide()
+    cavebotRankingDivider:hide()
     cavebotPanel:setParent(slot)
     cavebotPanel:breakAnchors()
     cavebotPanel:fill('parent')
@@ -251,17 +230,13 @@ function init()
     cavebotHomeParent = cavebotPanel:getParent()
     cavebotScriptPanel = cavebotPanel:recursiveGetChildById('v2CavebotScriptPanel')
     cavebotScriptHome = cavebotPanel:recursiveGetChildById('v2CavebotScriptHomeSlot')
-    cavebotFloatScriptSlot = cavebotPanel:recursiveGetChildById('v2CavebotFloatScriptSlot')
     cavebotWorkspace = cavebotPanel:recursiveGetChildById('v2CavebotWorkspace')
+    cavebotConfigColumn = cavebotPanel:recursiveGetChildById('v2CavebotConfigColumn')
     cavebotDivider = cavebotPanel:recursiveGetChildById('v2CavebotMainDivider')
+    cavebotRankingDivider = cavebotPanel:recursiveGetChildById('v2CavebotRankingDivider')
     cavebotScriptPanel:setParent(cavebotScriptHome)
     cavebotScriptPanel:breakAnchors()
     cavebotScriptPanel:fill('parent')
-    cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab').onClick =
-        function() showCavebotSection('scripts') end
-    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab').onClick =
-        function() showCavebotSection('highscore') end
-    showCavebotSection('scripts')
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton').onClick = detachCavebot
     cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):hide()
     showHelperV2Tab('healing')
@@ -302,9 +277,10 @@ function terminate()
     cavebotHomeParent = nil
     cavebotScriptPanel = nil
     cavebotScriptHome = nil
-    cavebotFloatScriptSlot = nil
     cavebotWorkspace = nil
+    cavebotConfigColumn = nil
     cavebotDivider = nil
+    cavebotRankingDivider = nil
 
     setHelperButtonOn(false)
     if helperV2Window then
