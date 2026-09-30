@@ -41,6 +41,7 @@ local window
 local tickEvent
 local dialogPollEvent
 local dialogBusy = false
+local clearRouteWindow
 local characterKey
 local usedMs = 0
 local options = { floors = false, maxFloors = 1, mode = 'off', waitCount = 3, movingCount = 4,
@@ -342,6 +343,8 @@ render = function()
         not running and not dialogBusy and characterKey ~= nil and #waypoints > 0)
     window:recursiveGetChildById('v2CavebotLoadRouteButton'):setEnabled(
         not running and not dialogBusy and characterKey ~= nil)
+    window:recursiveGetChildById('v2CavebotClearRouteButton'):setEnabled(
+        not running and not dialogBusy and characterKey ~= nil and #waypoints > 0)
     window:recursiveGetChildById('v2CavebotHuntStyleBox'):setEnabled(not running)
     local showDistance = options.huntStyle == 'lure'
     window:recursiveGetChildById('v2CavebotLureDistanceLabel'):setVisible(showDistance)
@@ -731,6 +734,33 @@ local function skipWaypoint(reason, now)
     nextMoveAt = now + 400
     setStatus('Skipped waypoint ' .. skipped .. ': ' .. reason ..
         '; next ' .. waypointIndex .. '/' .. #waypoints)
+end
+
+local function closeClearRouteWindow()
+    if clearRouteWindow then
+        clearRouteWindow:destroy()
+        clearRouteWindow = nil
+    end
+end
+
+local function clearWaypoints()
+    if running or dialogBusy or not characterKey then return end
+    waypoints = {}
+    waypointIndex, selectedWaypoint = 1, nil
+    phase = 'gather'
+    pendingStep, routeAction, routeStuckSince = nil, nil, nil
+    routeAttempts = 0
+    fightEmptySince = nil
+    blockedCombat = false
+    wallAnchor, kiteStandIndex, lastKiteDirection = nil, nil, nil
+    echoTarget, echoActivatedAt, echoActivationPosition = nil, nil, nil
+    echoSpawned = false
+    visitedEchoesForStand = {}
+    resetWaypointDirection()
+    save()
+    renderWaypoints()
+    setStatus('Waypoints cleared: record or load a new route')
+    render()
 end
 
 local function resumeWaypointOnFloor(floor, now)
@@ -1547,6 +1577,7 @@ function BaiakHelperExplorerV2.onGameStart()
 end
 
 function BaiakHelperExplorerV2.onGameEnd()
+    closeClearRouteWindow()
     stop('Exploration stopped on disconnect')
     characterKey = nil
     serverStatusReady = false
@@ -1721,6 +1752,21 @@ function BaiakHelperExplorerV2.init(helperWindow)
             setStatus('Loaded: ' .. (path:match('[^/\\]+$') or path))
         end)
     end
+    window:recursiveGetChildById('v2CavebotClearRouteButton').onClick = function()
+        if running or dialogBusy or not characterKey or #waypoints == 0 then return end
+        closeClearRouteWindow()
+        local openedFor = characterKey
+        local confirm = function()
+            closeClearRouteWindow()
+            if characterKey == openedFor then clearWaypoints() end
+        end
+        clearRouteWindow = displayGeneralBox('Clear Waypoints',
+            'Clear all waypoints from this list? Saved JSON files will be kept.', {
+                { text = 'Clear', callback = confirm },
+                { text = 'Cancel', callback = closeClearRouteWindow },
+                anchor = AnchorHorizontalCenter
+            }, confirm, closeClearRouteWindow)
+    end
     window:recursiveGetChildById('v2CavebotAutoExploringButton').onClick = start
     window:recursiveGetChildById('v2CavebotEchoRaidsBox').onCheckChange = function(_, checked)
         if syncing then return end
@@ -1737,6 +1783,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
 end
 
 function BaiakHelperExplorerV2.terminate()
+    closeClearRouteWindow()
     if dialogPollEvent then removeEvent(dialogPollEvent) dialogPollEvent = nil end
     ProtocolGame.unregisterExtendedOpcode(CAVEBOT_OPCODE)
     if tickEvent then removeEvent(tickEvent) tickEvent = nil end

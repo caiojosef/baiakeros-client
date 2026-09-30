@@ -1254,7 +1254,7 @@ BaiakerosHelperV2Window < MainWindow
             id: v2CavebotSaveRouteButton
             text: Save
             color: #ffffff
-            size: 108 22
+            size: 70 22
             anchors.left: parent.horizontalCenter
             anchors.bottom: parent.bottom
             margin-left: -110
@@ -1265,11 +1265,21 @@ BaiakerosHelperV2Window < MainWindow
             id: v2CavebotLoadRouteButton
             text: Load
             color: #ffffff
-            size: 108 22
+            size: 72 22
             anchors.left: v2CavebotSaveRouteButton.right
             anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
             margin-left: 4
             !tooltip: tr('Choose a Cavebot JSON route while the game continues running.')
+
+          SmallButton
+            id: v2CavebotClearRouteButton
+            text: Clear
+            color: #ffffff
+            size: 70 22
+            anchors.left: v2CavebotLoadRouteButton.right
+            anchors.verticalCenter: v2CavebotSaveRouteButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Clear all recorded waypoints to begin a new route. Saved JSON files are kept.')
 
           QtPanel
             id: v2CavebotWaypointPanel
