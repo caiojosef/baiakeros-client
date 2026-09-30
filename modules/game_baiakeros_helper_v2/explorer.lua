@@ -1,6 +1,11 @@
 BaiakHelperExplorerV2 = {}
 
 local DAILY_LIMIT_MS = 60 * 60 * 1000
+local CAVEBOT_OPCODE = 92
+local HEARTBEAT_MS = 3000
+local serverStatusReady = false
+local lastHeartbeatAt = 0
+local lastRankingRequestAt = 0
 local ECHO_ITEM_ID = 54133
 local ECHO_SPAWN_WINDOW_MS = 12000
 local ECHO_COMBAT_RADIUS = 5
@@ -36,7 +41,6 @@ local window
 local tickEvent
 local characterKey
 local usedMs = 0
-local storedDay
 local options = { floors = false, maxFloors = 1, mode = 'off', waitCount = 3, movingCount = 4,
     echoRaids = false, hugWall = false, huntStyle = 'lure_stop', lureDistance = 2 }
 local running = false
@@ -128,15 +132,9 @@ local function configKey()
     return helper.playerConfigPrefix() .. '_auto_explorer_v2'
 end
 
-local function today()
-    return os.date('%Y-%m-%d')
-end
-
 local function save()
     if not characterKey then return end
     g_settings.setNode(characterKey, {
-        day = storedDay,
-        usedMs = math.floor(usedMs),
         floors = options.floors,
         maxFloors = options.maxFloors,
         mode = options.mode,
@@ -184,17 +182,16 @@ local function normalizedWaypoints(source)
     return result
 end
 
-local function refreshDay()
-    local current = today()
-    if not storedDay or current > storedDay then
-        storedDay = current
-        usedMs = 0
-        save()
-    end
-end
-
 local function remainingMs()
     return math.max(0, DAILY_LIMIT_MS - usedMs)
+end
+
+local function sendCavebotRequest(action, extra)
+    local protocol = g_game.getProtocolGame()
+    if not protocol then return end
+    local request = extra or {}
+    request.action = action
+    protocol:sendExtendedOpcode(CAVEBOT_OPCODE, json.encode(request))
 end
 
 local function setStatus(text)
@@ -307,7 +304,7 @@ render = function()
     end
     local button = window:recursiveGetChildById('v2CavebotAutoExploringButton')
     button:setText(running and 'Stop' or 'Start')
-    button:setEnabled(g_game.isOnline() and
+    button:setEnabled(g_game.isOnline() and serverStatusReady and
         (running or (remainingMs() > 0 and hasRoute())))
     window:recursiveGetChildById('v2CavebotStatus'):setText(statusText)
     window:recursiveGetChildById('v2CavebotNodeButton'):setEnabled(not running and g_game.isOnline())
@@ -557,6 +554,7 @@ local function stop(reason)
         return
     end
     running = false
+    if g_game.isOnline() then sendCavebotRequest('stop') end
     pendingStep = nil
     blockedCombat = false
     wallAnchor = nil
@@ -567,6 +565,33 @@ local function stop(reason)
     setStatus(reason or 'Exploration stopped')
     renderWaypoints()
     render()
+end
+
+local function onCavebotOpcode(protocol, opcode, buffer)
+    local ok, response = pcall(json.decode, buffer)
+    if not ok or type(response) ~= 'table' then return end
+    if response.action == 'ranking' then
+        local helper = modules.game_baiakeros_helper_v2
+        if helper and helper.updateCavebotRanking then
+            helper.updateCavebotRanking(response.daily or {}, response.monthly or {})
+        end
+    elseif response.action == 'status' then
+        serverStatusReady = true
+        local remaining = math.max(0, math.min(3600, tonumber(response.remaining) or 0))
+        usedMs = DAILY_LIMIT_MS - remaining * 1000
+        lastChargeAt = g_clock.millis()
+        if running and response.active ~= true then
+            stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily hour exhausted')
+        elseif not running then
+            setStatus(remaining > 0 and 'Ready to explore' or 'Daily hour exhausted')
+        end
+        render()
+    end
+end
+
+function BaiakHelperExplorerV2.requestRanking()
+    lastRankingRequestAt = g_clock.millis()
+    sendCavebotRequest('ranking')
 end
 
 local function isOccupiedWalkableTile(tile)
@@ -1150,11 +1175,21 @@ end
 
 local function tick()
     tickEvent = nil
-    refreshDay()
+    if g_game.isOnline() and window and serverStatusReady then
+        local highScorePage = window:recursiveGetChildById('v2CavebotHighScorePage')
+        if highScorePage and highScorePage:isVisible() and
+            g_clock.millis() - lastRankingRequestAt >= 10000 then
+            BaiakHelperExplorerV2.requestRanking()
+        end
+    end
     if running then
         local now = g_clock.millis()
         usedMs = math.min(DAILY_LIMIT_MS, usedMs + math.max(0, now - lastChargeAt))
         lastChargeAt = now
+        if now - lastHeartbeatAt >= HEARTBEAT_MS then
+            sendCavebotRequest('heartbeat')
+            lastHeartbeatAt = now
+        end
         if now - lastSaveAt >= 5000 then save() end
         if remainingMs() <= 0 then
             stop('Daily hour exhausted')
@@ -1346,7 +1381,7 @@ local function start()
         render()
         return
     end
-    refreshDay()
+    if not serverStatusReady then setStatus('Waiting for server time') render() return end
     if remainingMs() <= 0 then setStatus('Daily hour exhausted') render() return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() or player:hasState(PlayerStates.Pz) then
@@ -1356,6 +1391,7 @@ local function start()
     local position = player:getPosition()
     if not position then return end
     running = true
+    sendCavebotRequest('start', { waypoints = #waypoints })
     previousChaseMode = nil
     phase = 'gather'
     originFloor = position.z
@@ -1363,6 +1399,7 @@ local function start()
     pendingStep = nil
     nextMoveAt = 0
     lastChargeAt = g_clock.millis()
+    lastHeartbeatAt = lastChargeAt
     lastManualWalk = modules.game_interface.lastManualWalk or 0
     fightEmptySince = nil
     lostGroupSince = nil
@@ -1418,8 +1455,8 @@ function BaiakHelperExplorerV2.onGameStart()
     if not g_game.isOnline() then return end
     characterKey = configKey()
     local saved = g_settings.getNode(characterKey) or {}
-    storedDay = tostring(saved.day or '')
-    usedMs = math.max(0, math.min(DAILY_LIMIT_MS, tonumber(saved.usedMs) or 0))
+    usedMs = 0
+    serverStatusReady = false
     options.floors = false
     options.maxFloors = math.max(1, math.min(5, tonumber(saved.maxFloors) or 1))
     options.mode = 'off'
@@ -1440,7 +1477,6 @@ function BaiakHelperExplorerV2.onGameStart()
     echoTarget, echoActivatedAt = nil, nil
     echoActivationPosition, echoSpawned = nil, false
     visitedEchoesForStand = {}
-    refreshDay()
     syncing = true
     window:recursiveGetChildById('v2CavebotEchoRaidsBox'):setChecked(options.echoRaids)
     window:recursiveGetChildById('v2CavebotHugWallBox'):setChecked(options.hugWall)
@@ -1451,19 +1487,22 @@ function BaiakHelperExplorerV2.onGameStart()
     window:recursiveGetChildById('v2CavebotDirectionBox'):setCurrentOptionByData(selectedDirection, true)
     syncing = false
     renderWaypoints()
-    setStatus(remainingMs() > 0 and 'Ready to explore' or 'Daily hour exhausted')
+    setStatus('Waiting for server time')
     render()
+    sendCavebotRequest('status')
 end
 
 function BaiakHelperExplorerV2.onGameEnd()
     stop('Exploration stopped on disconnect')
     characterKey = nil
+    serverStatusReady = false
     render()
 end
 
 function BaiakHelperExplorerV2.init(helperWindow)
     -- Keep widget lookups anchored to the panel while it changes parents.
     window = helperWindow:recursiveGetChildById('cavebotPanel')
+    ProtocolGame.registerExtendedOpcode(CAVEBOT_OPCODE, onCavebotOpcode)
     local directionBox = window:recursiveGetChildById('v2CavebotDirectionBox')
     for _, direction in ipairs(WAYPOINT_DIRECTIONS) do
         directionBox:addOption(direction.name, direction.value)
@@ -1602,6 +1641,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
 end
 
 function BaiakHelperExplorerV2.terminate()
+    ProtocolGame.unregisterExtendedOpcode(CAVEBOT_OPCODE)
     if tickEvent then removeEvent(tickEvent) tickEvent = nil end
     stop()
     window = nil

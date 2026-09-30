@@ -74,6 +74,36 @@ local function showCavebotSection(section)
     highScoreTab:setOn(not scripts)
     scriptsTab:setEnabled(not scripts)
     highScoreTab:setEnabled(scripts)
+    if not scripts and BaiakHelperExplorerV2 and BaiakHelperExplorerV2.requestRanking then
+        BaiakHelperExplorerV2.requestRanking()
+    end
+end
+
+local function shortExperience(value)
+    local number = tonumber(value) or 0
+    if number >= 1000000000 then return string.format('%.1fB XP', number / 1000000000) end
+    if number >= 1000000 then return string.format('%.1fM XP', number / 1000000) end
+    if number >= 1000 then return string.format('%.1fK XP', number / 1000) end
+    return string.format('%d XP', number)
+end
+
+function updateCavebotRanking(daily, monthly)
+    if not cavebotWorkspace then return end
+    for _, group in ipairs({ { 'Daily', daily }, { 'Monthly', monthly } }) do
+        for rank = 1, 4 do
+            local label = cavebotWorkspace:recursiveGetChildById('v2Cavebot' .. group[1] .. rank)
+            local player = group[2][rank]
+            if label then
+                if player then
+                    local name = tostring(player.name or 'Unknown')
+                    if #name > 17 then name = name:sub(1, 16) .. '…' end
+                    label:setText(rank .. '. ' .. name .. '  -  ' .. shortExperience(player.experience))
+                else
+                    label:setText(rank .. '. ---')
+                end
+            end
+        end
+    end
 end
 
 local function attachCavebot(force)

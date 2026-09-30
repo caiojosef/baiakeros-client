@@ -1074,7 +1074,7 @@ BaiakerosHelperV2Window < MainWindow
           anchors.top: v2CavebotTitle.bottom
           margin-top: 8
           color: #ffffff
-          !tooltip: tr('One hour per character per local calendar day. Only active exploring uses time.')
+          !tooltip: tr('One hour per character between server saves. Only active exploring uses time.')
 
         HelperV2AttackValuePanel
           id: v2CavebotTimerPanel
@@ -1161,9 +1161,9 @@ BaiakerosHelperV2Window < MainWindow
           id: v2CavebotEchoRaidsBox
           text: Active Echo Raids
           color: #ffffff
-          anchors.left: parent.left
+          anchors.left: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotOptionsSeparator.bottom
-          margin-left: 17
+          margin-left: -100
           margin-top: 8
           size: 200 18
           text-offset: 18 0
@@ -1235,10 +1235,9 @@ BaiakerosHelperV2Window < MainWindow
 
           Label
             id: v2CavebotWaypointTitle
-            text: Waypoints
-            anchors.left: parent.left
+            text: Record Waypoints
+            anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            margin-left: 15
             margin-top: 8
             color: #ffffff
             !tooltip: tr('Select a waypoint before recording; the next one is inserted below it.')
@@ -1248,9 +1247,9 @@ BaiakerosHelperV2Window < MainWindow
             text: Node
             color: #ffffff
             size: 50 22
-            anchors.left: parent.left
+            anchors.left: parent.horizontalCenter
             anchors.top: v2CavebotWaypointTitle.bottom
-            margin-left: 13
+            margin-left: -115
             margin-top: 4
             !tooltip: tr('Record a path point. The explorer moves through Nodes toward the next Stand.')
 
@@ -1289,9 +1288,9 @@ BaiakerosHelperV2Window < MainWindow
             text: Hur Up
             color: #ffffff
             size: 108 22
-            anchors.left: parent.left
+            anchors.left: parent.horizontalCenter
             anchors.top: v2CavebotNodeButton.bottom
-            margin-left: 13
+            margin-left: -110
             margin-top: 5
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Up after combat.')
 
@@ -1305,15 +1304,32 @@ BaiakerosHelperV2Window < MainWindow
             margin-left: 4
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
 
+          HorizontalSeparator
+            id: v2CavebotRouteFileSeparator
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: v2CavebotHurUpButton.bottom
+            margin-left: 13
+            margin-right: 13
+            margin-top: 5
+
+          Label
+            id: v2CavebotRouteFileTitle
+            text: Script Files
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: v2CavebotRouteFileSeparator.bottom
+            margin-top: 3
+            color: #ffffff
+
           SmallButton
             id: v2CavebotSaveRouteButton
             text: Save
             color: #ffffff
             size: 108 22
-            anchors.left: parent.left
-            anchors.top: v2CavebotHurUpButton.bottom
-            margin-left: 13
-            margin-top: 6
+            anchors.left: parent.horizontalCenter
+            anchors.top: v2CavebotRouteFileTitle.bottom
+            margin-left: -110
+            margin-top: 4
             !tooltip: tr('Choose a JSON filename in the Windows Save dialog.')
 
           SmallButton
@@ -1447,30 +1463,213 @@ BaiakerosHelperV2Window < MainWindow
               text: Cavebot XP High Score
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.top: parent.top
-              margin-top: 18
+              margin-top: 8
               color: #ffffff
+
+            Label
+              text: Time and daily XP reset at server save. Only active Cavebot XP counts.
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-top: 30
+              color: #cfcfcf
 
             HorizontalSeparator
               anchors.left: parent.left
               anchors.right: parent.right
               anchors.top: parent.top
-              margin-left: 16
-              margin-right: 16
-              margin-top: 46
+              margin-left: 12
+              margin-right: 12
+              margin-top: 55
 
-            Label
-              text: Monthly XP ranking
+            VerticalSeparator
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.top: parent.top
+              anchors.bottom: parent.bottom
+              margin-top: 66
+              margin-bottom: 34
+
+            Label
+              text: TODAY  |  TOP 4
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 20
               margin-top: 68
-              color: #cfcfcf
+              color: #f3d284
 
             Label
-              text: XP earned while Cavebot is active will appear here.
-              anchors.horizontalCenter: parent.horizontalCenter
+              text: THIS MONTH  |  TOP 4
+              anchors.left: parent.horizontalCenter
               anchors.top: parent.top
-              margin-top: 91
-              color: #aaaaaa
+              margin-left: 15
+              margin-top: 68
+              color: #f3d284
+
+            Label
+              id: v2CavebotDaily1
+              text: 1. ---
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 20
+              margin-top: 100
+              color: #ffffff
+
+            Label
+              text: Prize: Arcane Bag
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 34
+              margin-top: 120
+              color: #bfc7be
+
+            Label
+              id: v2CavebotDaily2
+              text: 2. ---
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 20
+              margin-top: 167
+              color: #ffffff
+
+            Label
+              text: Prize: Mount Doll + Addon Doll
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 34
+              margin-top: 187
+              color: #bfc7be
+
+            Label
+              id: v2CavebotDaily3
+              text: 3. ---
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 20
+              margin-top: 234
+              color: #ffffff
+
+            Label
+              text: Prize: Addon Doll
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 34
+              margin-top: 254
+              color: #bfc7be
+
+            Label
+              id: v2CavebotDaily4
+              text: 4. ---
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 20
+              margin-top: 301
+              color: #ffffff
+
+            Label
+              text: Prize: Mount Doll
+              size: 240 18
+              anchors.left: parent.left
+              anchors.top: parent.top
+              margin-left: 34
+              margin-top: 321
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly1
+              text: 1. ---
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 15
+              margin-top: 100
+              color: #ffffff
+
+            Label
+              text: Prize: Primal, Soul War, Arcane Bags
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 29
+              margin-top: 120
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly2
+              text: 2. ---
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 15
+              margin-top: 167
+              color: #ffffff
+
+            Label
+              text: Prize: Arcane Bag + Soul War Bag
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 29
+              margin-top: 187
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly3
+              text: 3. ---
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 15
+              margin-top: 234
+              color: #ffffff
+
+            Label
+              text: Prize: 2 Addon Dolls + 2 Mount Dolls
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 29
+              margin-top: 254
+              color: #bfc7be
+
+            Label
+              id: v2CavebotMonthly4
+              text: 4. ---
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 15
+              margin-top: 301
+              color: #ffffff
+
+            Label
+              text: Prize: Addon Doll + Mount Doll
+              size: 240 18
+              anchors.left: parent.horizontalCenter
+              anchors.top: parent.top
+              margin-left: 29
+              margin-top: 321
+              color: #bfc7be
+
+            HorizontalSeparator
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.bottom: parent.bottom
+              margin-left: 12
+              margin-right: 12
+              margin-bottom: 28
+
+            Label
+              text: Rewards arrive in Store Inbox, or Your Inbox when capacity is insufficient.
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              margin-bottom: 8
+              color: #cfcfcf
 
   HorizontalSeparator
     id: bottomSeparator
