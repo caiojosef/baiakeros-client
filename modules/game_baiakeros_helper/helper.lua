@@ -3302,7 +3302,7 @@ local function getHealingCandidates(player, healthPercent, now)
     return candidates
 end
 
-local function getPotionCandidates(healthPercent, manaPercent)
+local function getPotionCandidates(healthPercent, manaPercent, resourceFilter)
     local candidates = {}
     for i = 1, 3 do
         local slot = helperWindow:recursiveGetChildById('potionSlot' .. i)
@@ -3310,7 +3310,7 @@ local function getPotionCandidates(healthPercent, manaPercent)
         local threshold = slot and slot.threshold or 0
         local resource = slot and slot.resource or 'health'
         local resourcePercent = resource == 'mana' and manaPercent or healthPercent
-        if potion and resourcePercent <= threshold then
+        if potion and resource == resourceFilter and resourcePercent <= threshold then
             table.insert(candidates, {
                 potion = potion,
                 threshold = threshold,
@@ -3404,25 +3404,9 @@ local function checkHealing()
     local healthPercent = getHealthPercent(player)
     local manaPercent = getManaPercent(player)
 
-    -- Nature's Embrace has absolute priority whenever its independent target
-    -- reaches the configured threshold and its own cooldown is ready.
-    local massFriendCast = tryMassFriendHealing(now)
-    if not massFriendCast then
-        if isCooldownReady(spellGroupCooldownsById, 2, now) then
-            local selected = getHealingCandidates(player, healthPercent, now)[1]
-            if selected then
-                local spell = selected.spell
-                -- Same path used by an auto-send text hotkey.
-                g_game.talk(spell.words)
-                guardSpellCommand(spell, 2, now)
-                setStatus(string.format('%d%%  %s', healthPercent, spell.words), '#78d878')
-            end
-        end
-        tryFriendHealing(now)
-    end
-
-    if now >= nextPotionAt then
-        local selected = getPotionCandidates(healthPercent, manaPercent)[1]
+    local function usePotion(resource)
+        if now < nextPotionAt then return end
+        local selected = getPotionCandidates(healthPercent, manaPercent, resource)[1]
         if selected then
             -- Same path used by a "Use on yourself" item hotkey. The server
             -- remains authoritative for vocation and level restrictions.
@@ -3432,6 +3416,23 @@ local function checkHealing()
                 selected.resource == 'mana' and 'MP' or 'HP',
                 selected.resourcePercent, selected.potion.name), '#78d878')
         end
+    end
+
+    -- Life potions take priority on the shared item cooldown. Spell healing
+    -- remains available on its independent cooldown while potions recover.
+    usePotion('health')
+    if isCooldownReady(spellGroupCooldownsById, 2, now) then
+        local selected = getHealingCandidates(player, healthPercent, now)[1]
+        if selected then
+            local spell = selected.spell
+            g_game.talk(spell.words)
+            guardSpellCommand(spell, 2, now)
+            setStatus(string.format('%d%%  %s', healthPercent, spell.words), '#78d878')
+        end
+    end
+    usePotion('mana')
+    if isCooldownReady(spellGroupCooldownsById, 2, now) and not tryMassFriendHealing(now) then
+        tryFriendHealing(now)
     end
 end
 

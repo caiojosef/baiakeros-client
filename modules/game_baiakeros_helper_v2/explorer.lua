@@ -163,7 +163,7 @@ local function normalizedWaypoints(source)
         if type(waypoint) == 'table' and
             (waypoint.kind == 'node' or waypoint.kind == 'stand' or
                 waypoint.kind == 'use' or waypoint.kind == 'hur_up' or
-                waypoint.kind == 'hur_down') then
+                waypoint.kind == 'hur_down' or waypoint.kind == 'stair') then
             local x, y, z = tonumber(waypoint.x), tonumber(waypoint.y), tonumber(waypoint.z)
             if x and y and z and x >= 0 and y >= 0 and z >= 0 and z <= 15 then
                 local direction = waypointDirection(waypoint.direction)
@@ -211,7 +211,8 @@ local function renderWaypoints()
         local kindLabel = waypoint.kind == 'use' and 'Use' or
             waypoint.kind == 'node' and 'Node' or
             waypoint.kind == 'hur_up' and 'Hur Up' or
-            waypoint.kind == 'hur_down' and 'Hur Down' or 'Stand'
+            waypoint.kind == 'hur_down' and 'Hur Down' or
+            waypoint.kind == 'stair' and 'Stair' or 'Stand'
         local row = g_ui.createWidget('HelperV2WaypointRow', list)
         local prefix = running and index == waypointIndex and '> ' or '  '
         row:setText(string.format('%s%02d %s %d,%d,%d %s', prefix, index,
@@ -314,6 +315,7 @@ render = function()
     window:recursiveGetChildById('v2CavebotUseButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotHurUpButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotHurDownButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotStairButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotSaveRouteButton'):setEnabled(
         not running and not dialogBusy and characterKey ~= nil and #waypoints > 0)
     window:recursiveGetChildById('v2CavebotLoadRouteButton'):setEnabled(
@@ -913,6 +915,11 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         z = waypoint.targetZ
     }
     local combatCount = routeCombatCount(monsters, position)
+    local stair = waypoint.kind == 'stair'
+    if stair then
+        phase = 'gather'
+        setChaseEngaged(false)
+    end
     if routeAction then
         if position.z ~= waypoint.z or
             (routeAction.kind == 'stand' and not routeAction.expectFloor and
@@ -1079,12 +1086,12 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         advanceWaypoint()
         return true
     end
-    if waypoint.kind == 'stand' or waypoint.kind == 'hur_up' or
+    if waypoint.kind == 'stand' or stair or waypoint.kind == 'hur_up' or
         waypoint.kind == 'hur_down' then
         if waypoint.kind == 'stand' then
             setChaseEngaged(options.huntStyle == 'chase' and combatCount > 0)
         end
-        if combatCount > 0 then
+        if not stair and combatCount > 0 then
             if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
                 not echoActivatedAt then
                 kiteStandIndex = waypointIndex
@@ -1143,7 +1150,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         if cardinalDirection(direction) and player:getDirection() ~= direction.walk then
             g_game.turn(direction.walk)
             nextMoveAt = now + 150
-            setStatus('Stand: facing ' .. direction.name)
+            setStatus((stair and 'Stair' or 'Stand') .. ': facing ' .. direction.name)
             return true
         end
         local tile = g_map.getTile(target)
@@ -1159,7 +1166,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             routeAttempts = routeAttempts + 1
             routeAction = { kind = 'stand', issuedAt = now,
                 expectFloor = tile:hasFloorChange() or tile:hasElevation(3) }
-            setStatus('Stand: stepping ' .. direction.name)
+            setStatus((stair and 'Stair' or 'Stand') .. ': stepping ' .. direction.name)
         end
         return true
     end
@@ -1393,6 +1400,9 @@ local function start()
     end
     local position = player:getPosition()
     if not position then return end
+    local combat = modules.game_baiakeros_helper
+    combat.setAutoAttackEnabled(true)
+    combat.setAttackRotationEnabled(true)
     running = true
     sendCavebotRequest('start', { waypoints = #waypoints })
     previousChaseMode = nil
@@ -1451,7 +1461,8 @@ function preferAreaExplorerAttack()
 end
 
 function isSingleTargetExplorerHunt()
-    return running and hasRoute() and options.huntStyle == 'chase'
+    return running and hasRoute() and options.huntStyle == 'chase' and
+        waypoints[waypointIndex].kind ~= 'stair'
 end
 
 function BaiakHelperExplorerV2.onGameStart()
@@ -1580,6 +1591,9 @@ function BaiakHelperExplorerV2.init(helperWindow)
     end
     window:recursiveGetChildById('v2CavebotHurDownButton').onClick = function()
         addWaypoint('hur_down')
+    end
+    window:recursiveGetChildById('v2CavebotStairButton').onClick = function()
+        addWaypoint('stair')
     end
     local function chooseRouteFile(saveDialog, onChosen)
         if not g_platform.startJsonFileDialog or not g_platform.isJsonFileDialogPending or

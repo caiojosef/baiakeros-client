@@ -1223,7 +1223,7 @@ BaiakerosHelperV2Window < MainWindow
             id: v2CavebotHurUpButton
             text: Hur Up
             color: #ffffff
-            size: 108 22
+            size: 70 22
             anchors.left: parent.horizontalCenter
             anchors.top: v2CavebotNodeButton.bottom
             margin-left: -110
@@ -1231,11 +1231,21 @@ BaiakerosHelperV2Window < MainWindow
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Up after combat.')
 
           SmallButton
+            id: v2CavebotStairButton
+            text: Stair
+            color: #ffffff
+            size: 72 22
+            anchors.left: v2CavebotHurUpButton.right
+            anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Move to this SQM, then step in the selected direction without waiting for monsters. Center records an approach point.')
+
+          SmallButton
             id: v2CavebotHurDownButton
             text: Hur Down
             color: #ffffff
-            size: 108 22
-            anchors.left: v2CavebotHurUpButton.right
+            size: 70 22
+            anchors.left: v2CavebotStairButton.right
             anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
             margin-left: 4
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
