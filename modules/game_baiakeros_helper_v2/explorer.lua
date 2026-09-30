@@ -603,7 +603,7 @@ local function isOccupiedWalkableTile(tile)
         tile:isWalkable(true)
 end
 
-local function walkOneStep(player, direction, destination, delay)
+local function walkOneStep(player, direction, destination, delay, explicitStair)
     if not player:canWalk() then return false end
     local tile = g_map.getTile(destination)
     if not tile or not tile:isWalkable() then
@@ -615,6 +615,9 @@ local function walkOneStep(player, direction, destination, delay)
         return false
     end
     if tile:hasFloorChange() or tile:hasElevation(3) then
+        -- Normal route and combat movement must never enter a floor transition.
+        -- Only the recorded stair action may authorize this particular step.
+        if hasRoute() and not explicitStair then return false end
         stairVisits[key(destination)] = (stairVisits[key(destination)] or 0) + 1
     end
     pendingStep = destination
@@ -737,7 +740,7 @@ local function findVisibleEcho(position)
     return nearest
 end
 
-local function routePathStep(position, goal, monsters)
+local function routePathStep(position, goal, monsters, allowGoalStair)
     if g_map.findPath then
         -- Allow decorative, non-pathable floor items; never allow solid blockers.
         local path = g_map.findPath(position, goal, 4000, 4)
@@ -749,7 +752,7 @@ local function routePathStep(position, goal, monsters)
                         x = position.x + option.x, y = position.y + option.y, z = position.z
                     }
                     if tileIsSafe(nextPosition, false, monsters, 1,
-                            samePosition(nextPosition, goal)) then
+                            allowGoalStair and samePosition(nextPosition, goal)) then
                         return direction, nextPosition
                     end
                     break
@@ -757,7 +760,7 @@ local function routePathStep(position, goal, monsters)
             end
         end
     end
-    return searchStep(position, goal, monsters, 1, false, true)
+    return searchStep(position, goal, monsters, 1, false, allowGoalStair)
 end
 
 local function routeBlockedByCreature(position, goal)
@@ -1039,7 +1042,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     end
     local standPosition = wallAnchor and wallAnchor.position or base
     if not samePosition(position, standPosition) then
-        local walkDirection, nextPosition = routePathStep(position, standPosition, monsters)
+        local walkDirection, nextPosition = routePathStep(position, standPosition, monsters, stair)
         if walkDirection then
             routeStuckSince = nil
             setStatus(wallAnchor and 'Stand: moving against the wall' or string.format('%s %d/%d - %s',
@@ -1049,7 +1052,8 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                     ('pulling ' .. visibleCount .. ' monsters') or
                     'moving to waypoint'))
             if walkOneStep(player, walkDirection, nextPosition,
-                    options.huntStyle == 'lure_stop' and combatCount > 0 and 200 or TICK_MS) then
+                    options.huntStyle == 'lure_stop' and combatCount > 0 and 200 or TICK_MS,
+                    stair and samePosition(nextPosition, standPosition)) then
                 local nextTile = g_map.getTile(nextPosition)
                 if samePosition(nextPosition, standPosition) and nextTile and
                     (nextTile:hasFloorChange() or nextTile:hasElevation(3)) then
@@ -1162,7 +1166,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             end
             return true
         end
-        if walkOneStep(player, direction.walk, target) then
+        if walkOneStep(player, direction.walk, target, nil, true) then
             routeAttempts = routeAttempts + 1
             routeAction = { kind = 'stand', issuedAt = now,
                 expectFloor = tile:hasFloorChange() or tile:hasElevation(3) }
