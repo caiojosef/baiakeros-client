@@ -65,6 +65,7 @@ local blocked = {}
 local trail = {}
 local stairVisits = {}
 local returnStairs = {}
+local learnedFloorChanges = {}
 local exploreGoal
 local statusText = 'Ready to explore'
 local syncing = false
@@ -73,6 +74,7 @@ local legacySavedRoutes = {}
 local waypointIndex = 1
 local selectedWaypoint
 local selectedDirection = 'center'
+local directionSelectionPosition
 local waypointRows = {}
 local routeAction
 local routeStuckSince
@@ -122,6 +124,26 @@ end
 
 local function samePosition(a, b)
     return a and b and a.x == b.x and a.y == b.y and a.z == b.z
+end
+
+local function resetWaypointDirection()
+    selectedDirection = 'center'
+    directionSelectionPosition = nil
+    if window then
+        window:recursiveGetChildById('v2CavebotDirectionBox'):
+            setCurrentOptionByData('center', true)
+    end
+end
+
+local function updateRecordingDirection(position)
+    if directionSelectionPosition and not samePosition(position, directionSelectionPosition) then
+        resetWaypointDirection()
+    end
+end
+
+local function isFloorTransition(position, tile)
+    return learnedFloorChanges[key(position)] or
+        (tile and (tile:hasFloorChange() or tile:hasElevation(3)))
 end
 
 local function distance(a, b)
@@ -399,16 +421,9 @@ local function routeCombatCount(monsters, position)
         return nearbyCount(monsters, echoActivationPosition or position,
             ECHO_COMBAT_RADIUS)
     end
-    if options.huntStyle == 'chase' or options.huntStyle == 'lure' then
-        return #monsters
-    end
-    if options.huntStyle == 'stop' then return nearbyCount(monsters, position, 2) end
-    local spell = selectedLureSpell()
-    if pullsDistantMonsters(spell, position, monsters) then
-        return #monsters
-    end
-    return nearbyCount(monsters, position,
-        spell and spell.name == 'Challenge' and 1 or 2)
+    -- Stand clearance is independent of the selected lure spell. Chebyshev
+    -- distance includes every diagonal in the 11 by 11 SQM combat area.
+    return nearbyCount(monsters, position, 5)
 end
 
 local function rangedVocation(player)
@@ -427,7 +442,7 @@ local function tileIsSafe(position, allowStair, monsters, minimumDistance, expli
     local tile = g_map.getTile(position)
     -- Closed doors and unknown ground are never opened or crossed automatically.
     if not tile or not tile:getGround() or not tile:isWalkable() then return false end
-    local isStair = tile:hasFloorChange() or tile:hasElevation(3)
+    local isStair = isFloorTransition(position, tile)
     if isStair and not allowStair and not explicitStair then return false end
     if isStair and not options.floors and not explicitStair then return false end
     if isStair and math.abs(position.z - originFloor) >= options.maxFloors and
@@ -606,7 +621,7 @@ end
 local function walkOneStep(player, direction, destination, delay, explicitStair)
     if not player:canWalk() then return false end
     local tile = g_map.getTile(destination)
-    if not tile or not tile:isWalkable() then
+    if not tile or (not explicitStair and not tile:getGround()) or not tile:isWalkable() then
         if isOccupiedWalkableTile(tile) then
             setStatus('Passage occupied: waiting for it to clear')
         else
@@ -614,7 +629,7 @@ local function walkOneStep(player, direction, destination, delay, explicitStair)
         end
         return false
     end
-    if tile:hasFloorChange() or tile:hasElevation(3) then
+    if isFloorTransition(destination, tile) then
         -- Normal route and combat movement must never enter a floor transition.
         -- Only the recorded stair action may authorize this particular step.
         if hasRoute() and not explicitStair then return false end
@@ -634,6 +649,23 @@ local function recordPosition(position)
     local positionKey = key(position)
     visited[positionKey] = (visited[positionKey] or 0) + 1
     if oldPosition and oldPosition.z ~= position.z then
+        if pendingStep then
+            -- Remember the tile that actually changed floors even when the
+            -- client's item data does not flag it as a stair or hole.
+            learnedFloorChanges[key(pendingStep)] = true
+            if pendingStep.x ~= position.x or pendingStep.y ~= position.y then
+                learnedFloorChanges[key({ x = pendingStep.x, y = pendingStep.y,
+                    z = position.z })] = true
+            end
+        end
+        local departureTile = g_map.getTile(oldPosition)
+        if position.z == oldPosition.z - 1 and departureTile and
+            departureTile:hasElevation(3) then
+            -- Walking off an elevated stair leaves its return hole directly
+            -- above the departure SQM. Route around it on the new floor.
+            learnedFloorChanges[key({ x = oldPosition.x, y = oldPosition.y,
+                z = position.z })] = true
+        end
         exploreGoal = nil
         if hasRoute() and not routeAction then
             -- A hole or a manual floor change may bypass a scripted stair.
@@ -1056,7 +1088,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                     stair and samePosition(nextPosition, standPosition)) then
                 local nextTile = g_map.getTile(nextPosition)
                 if samePosition(nextPosition, standPosition) and nextTile and
-                    (nextTile:hasFloorChange() or nextTile:hasElevation(3)) then
+                    isFloorTransition(nextPosition, nextTile) then
                     routeAction = { kind = 'stair_approach', issuedAt = now,
                         expectFloor = true }
                 end
@@ -1111,11 +1143,6 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             end
             return true
         end
-        if waypoint.kind == 'stand' and options.huntStyle == 'stop' and
-            visibleCount > 0 then
-            setStatus('Stand: waiting for visible monsters to approach')
-            return true
-        end
         if waypoint.kind == 'stand' and options.echoRaids then
             -- Only an Echo that is visible now is actionable; do not wait
             -- for one to appear after the box has been cleared.
@@ -1151,13 +1178,17 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             advanceWaypoint()
             return true
         end
+        local tile = g_map.getTile(target)
+        if not stair and isFloorTransition(target, tile) then
+            skipWaypoint('floor transition requires Stair', now)
+            return true
+        end
         if cardinalDirection(direction) and player:getDirection() ~= direction.walk then
             g_game.turn(direction.walk)
             nextMoveAt = now + 150
             setStatus((stair and 'Stair' or 'Stand') .. ': facing ' .. direction.name)
             return true
         end
-        local tile = g_map.getTile(target)
         if not tile or not tile:isWalkable() then
             if isOccupiedWalkableTile(tile) then
                 setStatus('Stand passage occupied: waiting for it to clear')
@@ -1166,10 +1197,10 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             end
             return true
         end
-        if walkOneStep(player, direction.walk, target, nil, true) then
+        if walkOneStep(player, direction.walk, target, nil, stair) then
             routeAttempts = routeAttempts + 1
             routeAction = { kind = 'stand', issuedAt = now,
-                expectFloor = tile:hasFloorChange() or tile:hasElevation(3) }
+                expectFloor = isFloorTransition(target, tile) }
             setStatus((stair and 'Stair' or 'Stand') .. ': stepping ' .. direction.name)
         end
         return true
@@ -1188,6 +1219,8 @@ end
 
 local function tick()
     tickEvent = nil
+    local recordingPlayer = g_game.isOnline() and g_game.getLocalPlayer()
+    if recordingPlayer then updateRecordingDirection(recordingPlayer:getPosition()) end
     if g_game.isOnline() and window and serverStatusReady then
         local highScorePage = window:recursiveGetChildById('v2CavebotHighScorePage')
         if highScorePage and highScorePage:isVisible() and
@@ -1471,6 +1504,8 @@ end
 
 function BaiakHelperExplorerV2.onGameStart()
     if not g_game.isOnline() then return end
+    learnedFloorChanges = {}
+    resetWaypointDirection()
     characterKey = configKey()
     local saved = g_settings.getNode(characterKey) or {}
     usedMs = 0
@@ -1528,7 +1563,13 @@ function BaiakHelperExplorerV2.init(helperWindow)
     end
     directionBox:setCurrentOptionByData(selectedDirection, true)
     directionBox.onOptionChange = function(_, _, value)
-        if value then selectedDirection = waypointDirection(value).value end
+        if value then
+            selectedDirection = waypointDirection(value).value
+            local player = g_game.getLocalPlayer()
+            local position = player and player:getPosition()
+            directionSelectionPosition = selectedDirection ~= 'center' and position and
+                { x = position.x, y = position.y, z = position.z } or nil
+        end
     end
     local huntStyleBox = window:recursiveGetChildById('v2CavebotHuntStyleBox')
     for _, style in ipairs(HUNT_STYLES) do
@@ -1577,6 +1618,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
         })
         selectedWaypoint = insertAt
         waypointIndex = insertAt
+        resetWaypointDirection()
         save()
         renderWaypoints()
         render()

@@ -1197,7 +1197,7 @@ BaiakerosHelperV2Window < MainWindow
             anchors.left: v2CavebotNodeButton.right
             anchors.verticalCenter: v2CavebotNodeButton.verticalCenter
             margin-left: 4
-            !tooltip: tr('Stop here and fight every visible monster before continuing. A direction steps onto the adjacent tile after combat.')
+            !tooltip: tr('Stop here until no monsters remain within 5 SQMs, including diagonals. A direction steps onto a safe adjacent tile after combat. Use Stair to change floors.')
 
           SmallButton
             id: v2CavebotUseButton
@@ -1217,7 +1217,7 @@ BaiakerosHelperV2Window < MainWindow
             anchors.verticalCenter: v2CavebotStandButton.verticalCenter
             margin-left: 4
             mouse-scroll: false
-            !tooltip: tr('Direction from the recorded player position. Center records the same tile.')
+            !tooltip: tr('Direction from the recorded player position. Center records the same tile. Returns to Center after recording or moving.')
 
           SmallButton
             id: v2CavebotHurUpButton
