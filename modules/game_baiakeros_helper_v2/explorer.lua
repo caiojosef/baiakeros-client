@@ -1113,8 +1113,13 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                 pullsDistantMonsters(selectedLureSpell(), position, monsters) and
                     ('pulling ' .. visibleCount .. ' monsters') or
                     'moving to waypoint'))
-            if walkOneStep(player, walkDirection, nextPosition,
-                    options.huntStyle == 'lure_stop' and combatCount > 0 and 200 or TICK_MS,
+            local moveDelay = options.huntStyle == 'lure_stop' and
+                combatCount > 0 and 200 or TICK_MS
+            if waypoint.kind == 'node' and visibleCount > 0 and
+                (options.huntStyle == 'lure_stop' or options.huntStyle == 'lure') then
+                moveDelay = 250
+            end
+            if walkOneStep(player, walkDirection, nextPosition, moveDelay,
                     stair and samePosition(nextPosition, standPosition)) then
                 local nextTile = g_map.getTile(nextPosition)
                 if samePosition(nextPosition, standPosition) and nextTile and
