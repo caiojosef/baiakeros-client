@@ -188,6 +188,9 @@ function showHelperV2Tab(tabName)
         tab.button:setOn(active)
         tab.button:setEnabled(not active)
     end
+    if tabName == 'cavebot' and g_game.isOnline() and BaiakHelperExplorerV2 then
+        BaiakHelperExplorerV2.requestRanking()
+    end
 end
 
 function show()
