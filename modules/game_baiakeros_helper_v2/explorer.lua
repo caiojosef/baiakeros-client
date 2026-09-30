@@ -1582,6 +1582,11 @@ function BaiakHelperExplorerV2.init(helperWindow)
         addWaypoint('hur_down')
     end
     local function chooseRouteFile(saveDialog, onChosen)
+        if not g_platform.startJsonFileDialog or not g_platform.isJsonFileDialogPending or
+            not g_platform.takeJsonFileDialogResult then
+            setStatus('Update and restart the client to Save/Load routes')
+            return
+        end
         if dialogBusy or not g_platform.startJsonFileDialog(saveDialog) then
             setStatus('File dialog unavailable')
             return
