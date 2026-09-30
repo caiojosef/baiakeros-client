@@ -1057,14 +1057,30 @@ BaiakerosHelperV2Window < MainWindow
 
         SmallButton
           id: v2CavebotDetachButton
-          text: Float
-          color: #ffffff
-          size: 42 20
-          anchors.left: parent.left
-          anchors.top: parent.top
-          margin-left: 7
-          margin-top: 3
+          size: 26 26
+          anchors.left: v2CavebotAutoExploringButton.right
+          anchors.verticalCenter: v2CavebotAutoExploringButton.verticalCenter
+          margin-left: 6
           !tooltip: tr('Open Cavebot in a floating window.')
+
+          UIWidget
+            size: 11 10
+            anchors.centerIn: parent
+            margin-left: -4
+            margin-top: 4
+            border-width: 1
+            border-color: #cfcfcf
+            phantom: true
+
+          UIWidget
+            size: 11 10
+            anchors.centerIn: parent
+            margin-left: 4
+            margin-top: -4
+            background-color: #383838
+            border-width: 1
+            border-color: #ffffff
+            phantom: true
 
         Label
           id: v2CavebotTimerTitle
@@ -1146,6 +1162,7 @@ BaiakerosHelperV2Window < MainWindow
           size: 130 26
           anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.top: v2CavebotProgressFrame.bottom
+          margin-left: -16
           margin-top: 7
 
         UIWidget
@@ -1303,7 +1320,7 @@ BaiakerosHelperV2Window < MainWindow
           anchors.top: parent.top
           anchors.bottom: parent.bottom
           margin-left: -5
-          margin-top: 9
+          margin-top: 31
           margin-bottom: 9
 
         UIWidget
@@ -1443,7 +1460,7 @@ BaiakerosHelperV2Window < MainWindow
           anchors.top: parent.top
           anchors.bottom: parent.bottom
           margin-left: -5
-          margin-top: 9
+          margin-top: 31
           margin-bottom: 9
 
         UIWidget
@@ -1702,21 +1719,12 @@ BaiakerosCavebotFloatWindow < MainWindow
     @onClick: modules.game_baiakeros_helper_v2.returnCavebotToHelper()
 
   SmallButton
-    id: v2CavebotFloatCloseButton
-    text: X
-    size: 22 22
-    anchors.right: parent.right
-    anchors.verticalCenter: v2CavebotReturnButton.verticalCenter
-    margin-right: 8
-    @onClick: modules.game_baiakeros_helper_v2.closeDetachedCavebot()
-
-  SmallButton
     id: v2CavebotMinimizeButton
     text: Minimize
     size: 68 22
-    anchors.right: v2CavebotFloatCloseButton.left
-    anchors.verticalCenter: v2CavebotFloatCloseButton.verticalCenter
-    margin-right: 4
+    anchors.right: parent.right
+    anchors.verticalCenter: v2CavebotReturnButton.verticalCenter
+    margin-right: 8
     @onClick: modules.game_baiakeros_helper_v2.minimizeCavebot()
 
   SmallButton
