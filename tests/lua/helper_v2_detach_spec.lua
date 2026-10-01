@@ -22,6 +22,8 @@ local function widget(id, parent)
     function value:setText(text) self.text = text end
     function value:setWidth(width) self.width = width end
     function value:setHeight(height) self.height = height end
+    function value:setMarginLeft(margin) self.marginLeft = margin end
+    function value:setMarginRight(margin) self.marginRight = margin end
     function value:setPercent(percent) self.percent = percent end
     function value:setBackgroundColor(color) self.backgroundColor = color end
     function value:setColor(color) self.color = color end
@@ -96,6 +98,11 @@ BaiakHelperToolsV2 = submodule()
 BaiakHelperAttackV2 = submodule()
 BaiakHelperExplorerV2 = submodule()
 BaiakHelperExplorerV2.isAutoExplorerActive = function() return explorerActive end
+BaiakHelperExplorerV2.requestRanking = function() end
+BaiakHelperExplorerV2.onGameEnd = function() explorerActive = false end
+PartyHuntV2 = setmetatable({}, { __index = function(_, key)
+    error('disabled Party Hunt must not run: ' .. key)
+end })
 
 dofile('modules/game_baiakeros_helper_v2/helper_v2.lua')
 init()
@@ -110,22 +117,17 @@ showHelperV2Tab('cavebot')
 assert(cavebotPage.visible and not attackPage.visible and
     widgets.cavebotTab.width == 116 and widgets.cavebotTab.text == 'Cavebot',
     'the Cavebot tab must own its full-size page and match Attack tab sizing')
-assert(scriptPanel.parent == scriptHome and scriptPanel.fillTarget == 'parent',
-    'the script editor must fill the fixed Cavebot workspace')
-widgets.v2CavebotHighScoreTab.onClick()
-assert(highScorePage.visible and not scriptHome.visible,
-    'High Score must have its own ready-to-fill Cavebot section')
-widgets.v2CavebotScriptsTab.onClick()
-assert(scriptHome.visible and not highScorePage.visible,
-    'Scripts must restore the route editor')
+assert(scriptPanel.parent == scriptHome and scriptPanel.fillTarget == 'parent')
+assert(not widgets.partyHuntTab.visible and not widgets.partyHuntPage.visible,
+    'Party Hunt must stay hidden while its runtime is disabled')
 
 detachButton.onClick()
 assert(panel.parent == floatSlot and floating.visible and not helper.visible,
     'Detach must move Cavebot into its own window and hide Helper')
 assert(panel.fillTarget == 'parent', 'the detached panel must fill its floating slot')
-assert(scriptPanel.parent == floatScriptSlot and floatScriptSlot.visible and
-    not workspace.visible,
-    'the script editor must reflow into the narrow floating Cavebot')
+assert(scriptPanel.parent == scriptHome and not workspace.visible and
+    not widgets.v2CavebotConfigColumn.visible,
+    'the whole runtime column must move while settings and ranking stay hidden')
 assert(not detachButton.visible and not widgets.helperButton.on)
 assert(movementBindings.binds == 1 and movementBindings.unbinds == 0,
     'Detach must enable movement keys in the focused floating window')
@@ -134,7 +136,7 @@ closeDetachedCavebot()
 assert(panel.parent == cavebotPage and not floating.visible and not helper.visible,
     'X must close the floating window and restore Cavebot without opening Helper')
 assert(#panel.anchors == 4 and scriptPanel.parent == scriptHome and
-    workspace.visible and not floatScriptSlot.visible,
+    workspace.visible and widgets.v2CavebotConfigColumn.visible,
     'reattaching must restore the full workspace and its script editor')
 assert(panel.anchors[1][1] == AnchorLeft,
     'reattaching must return Cavebot to the left edge of its own page')
@@ -158,17 +160,34 @@ assert(panel.parent == cavebotPage and helper.visible and not floating.visible,
 detachButton.onClick()
 explorerActive = true
 show()
-assert(panel.parent == floatSlot and floating.visible,
-    'an active Cavebot must stay floating when Helper opens')
+assert(panel.parent == cavebotPage and helper.visible and not floating.visible and explorerActive,
+    'opening Helper must reattach an active Cavebot without stopping it')
 hide()
 assert(panel.parent == floatSlot and floating.visible and not helper.visible,
-    'closing Helper must preserve the active floating Cavebot')
+    'closing Helper with the bot running must detach it into the mini window')
 closeDetachedCavebot()
-assert(floating.visible and floating.height == 154 and
+assert(floating.visible and floating.height == 168 and
     widgets.v2CavebotCompactPanel.visible and not floatSlot.visible,
-    string.format('X must compact an active Cavebot: visible=%s height=%s panel=%s slot=%s',
+    string.format('Escape must compact an active Cavebot: visible=%s height=%s panel=%s slot=%s',
         tostring(floating.visible), tostring(floating.height),
         tostring(widgets.v2CavebotCompactPanel.visible), tostring(floatSlot.visible)))
+showHelperV2Tab('attack')
+toggle()
+assert(helper.visible and cavebotPage.visible and not attackPage.visible and
+    panel.parent == cavebotPage and not floating.visible and explorerActive,
+    'the existing Helper button must restore compact Cavebot to its normal tab while running')
+hide()
+minimizeCavebot()
+returnCavebotToHelper()
+assert(helper.visible and cavebotPage.visible and panel.parent == cavebotPage and
+    not floating.visible and explorerActive and workspace.visible,
+    'Open Helper must restore the compact panel without leaving an empty Cavebot tab')
+hide()
+expandCavebot()
+returnCavebotToHelper()
+assert(helper.visible and not floating.visible and panel.parent == cavebotPage and explorerActive,
+    'Open Helper must also restore the full floating window while the bot runs')
+hide()
 expandCavebot()
 assert(floating.height == 570 and floatSlot.visible and
     not widgets.v2CavebotCompactPanel.visible,

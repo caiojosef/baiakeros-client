@@ -1,0 +1,538 @@
+PartyHuntWaypointRow < HelperV2WaypointRow
+  text-offset: 4 0
+
+  SmallButton
+    id: removeWaypoint
+    margin-right: 5
+
+BaiakerosPartyHuntPanel < UIWidget
+  anchors.fill: parent
+
+  HelperV2Section
+    id: partyRouteColumn
+    width: 346
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-right: 8
+
+    Label
+      text: Knight Route
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 5
+
+    Label
+      id: partyTime
+      text: --:--:--
+      color: #ffffff
+      size: 106 22
+      text-align: center
+      background-color: #383838
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 31
+
+    UIProgressBar
+      id: partyProgress
+      size: 240 14
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: partyTime.bottom
+      margin-top: 5
+      background-color: #63d897
+      border-width: 1
+      border-color: #f0d48a
+
+    QtButton
+      id: partyStart
+      text: Start
+      size: 122 25
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: partyProgress.bottom
+      margin-top: 6
+      margin-left: -16
+
+    SmallButton
+      id: partyFloat
+      size: 25 25
+      anchors.left: partyStart.right
+      anchors.top: partyStart.top
+      margin-left: 5
+      !tooltip: tr('Open the floating Party Hunt window')
+
+      UIWidget
+        size: 11 10
+        anchors.centerIn: parent
+        margin-left: -4
+        margin-top: 4
+        border-width: 1
+        border-color: #cfcfcf
+        phantom: true
+
+      UIWidget
+        size: 11 10
+        anchors.centerIn: parent
+        margin-left: 4
+        margin-top: -4
+        background-color: #383838
+        border-width: 1
+        border-color: #ffffff
+        phantom: true
+
+    Label
+      id: partyRecordTitle
+      text: Record Waypoints
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: partyStart.bottom
+      margin-top: 10
+
+    SmallButton
+      id: partyNode
+      text: Node
+      size: 62 22
+      anchors.left: parent.left
+      anchors.top: partyRecordTitle.bottom
+      margin-left: 12
+      margin-top: 5
+      !tooltip: tr('Walk through this point and continue')
+
+    SmallButton
+      id: partyStand
+      text: Stand
+      size: 62 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 4
+      !tooltip: tr('Stop the knight here until the visible box is cleared')
+
+    SmallButton
+      id: partyUse
+      text: Use
+      size: 62 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 4
+
+    ComboBox
+      id: partyDirection
+      size: 110 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 4
+
+    SmallButton
+      id: partyHurUp
+      text: Hur Up
+      size: 103 22
+      anchors.left: partyNode.left
+      anchors.top: partyNode.bottom
+      margin-top: 4
+
+    SmallButton
+      id: partyStair
+      text: Stair
+      size: 103 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 5
+      !tooltip: tr('Reach and cross a staircase without waiting for monsters')
+
+    SmallButton
+      id: partyHurDown
+      text: Hur Down
+      size: 103 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 5
+
+    ScrollablePanel
+      id: partyWaypointList
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyHurUp.bottom
+      anchors.bottom: partySave.top
+      margin-left: 12
+      margin-right: 26
+      margin-top: 7
+      margin-bottom: 7
+      padding: 3
+      border-width: 1
+      border-color: #747474
+      vertical-scrollbar: partyWaypointScroll
+      layout:
+        type: verticalBox
+        fit-children: false
+
+    VerticalScrollBar
+      id: partyWaypointScroll
+      anchors.right: parent.right
+      anchors.top: partyWaypointList.top
+      anchors.bottom: partyWaypointList.bottom
+      margin-right: 12
+      step: 22
+
+    Label
+      id: partyEmptyRoute
+      text: Add Node, Stand, Stair, Use or Hur
+      color: #ffffff
+      anchors.centerIn: partyWaypointList
+      phantom: true
+
+    SmallButton
+      id: partySave
+      text: Save
+      size: 103 22
+      anchors.left: parent.left
+      anchors.bottom: partyFromCavebot.top
+      margin-left: 12
+      margin-bottom: 5
+
+    SmallButton
+      id: partyLoad
+      text: Load
+      size: 103 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 5
+
+    SmallButton
+      id: partyClear
+      text: Clear
+      size: 103 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 5
+
+    SmallButton
+      id: partyFromCavebot
+      text: Copy from Cavebot
+      size: 157 22
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-left: 12
+      margin-bottom: 12
+
+    SmallButton
+      id: partyToCavebot
+      text: Copy to Cavebot
+      size: 157 22
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 5
+
+  UIWidget
+    id: partyDivider
+    width: 1
+    background-color: #747474
+    anchors.left: partyRouteColumn.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 10
+    margin-top: 8
+    margin-bottom: 8
+
+  HelperV2Section
+    id: partyGroupColumn
+    width: 242
+    anchors.left: partyDivider.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 10
+
+    Label
+      text: Party - Up to 4 Players
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 5
+
+    Label
+      id: partyMember1
+      text: 1. ---
+      color: #ffffff
+      size: 217 22
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 12
+      margin-top: 39
+
+    Label
+      id: partyMember2
+      text: 2. ---
+      color: #ffffff
+      size: 217 22
+      anchors.left: prev.left
+      anchors.top: prev.bottom
+      margin-top: 6
+
+    Label
+      id: partyMember3
+      text: 3. ---
+      color: #ffffff
+      size: 217 22
+      anchors.left: prev.left
+      anchors.top: prev.bottom
+      margin-top: 6
+
+    Label
+      id: partyMember4
+      text: 4. ---
+      color: #ffffff
+      size: 217 22
+      anchors.left: prev.left
+      anchors.top: prev.bottom
+      margin-top: 6
+
+    SmallButton
+      id: partyRefresh
+      text: Refresh Party
+      size: 217 22
+      anchors.left: prev.left
+      anchors.top: prev.bottom
+      margin-top: 8
+
+    HorizontalSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyRefresh.bottom
+      margin: 11 12 0 12
+
+    Label
+      id: partyGuideTitle
+      text: Knight Path Guide
+      color: #f0d48a
+      anchors.left: partyRefresh.left
+      anchors.top: partyRefresh.bottom
+      margin-top: 24
+
+    ComboBox
+      id: partyGuide
+      size: 217 22
+      anchors.left: partyRefresh.left
+      anchors.top: partyGuideTitle.bottom
+      margin-top: 7
+
+    Label
+      id: partyGroupHelp
+      text: Invite players using the normal party controls. The party leader chooses the knight guide. Start the knight route first, then press Start on the druid's client.
+      color: #d0d0d0
+      text-wrap: true
+      text-auto-resize: true
+      anchors.left: partyRefresh.left
+      anchors.right: parent.right
+      anchors.top: partyGuide.bottom
+      margin-right: 12
+      margin-top: 13
+
+    Label
+      text: 1 hour per character, saved by the server. Resets at server save.
+      color: #f0d48a
+      text-wrap: true
+      text-auto-resize: true
+      anchors.left: partyRefresh.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin-right: 12
+      margin-bottom: 14
+
+  HelperV2Section
+    id: partyDruidColumn
+    anchors.left: partyGroupColumn.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    margin-left: 10
+
+    Label
+      text: Druid Positioning
+      color: #ffffff
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-top: 5
+
+    Label
+      text: Follow Distance
+      color: #ffffff
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 12
+      margin-top: 40
+
+    ComboBox
+      id: partyFollowDistance
+      size: 77 22
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-right: 12
+      margin-top: 35
+
+    Label
+      text: Avoid Monsters
+      color: #ffffff
+      anchors.left: parent.left
+      anchors.top: partyFollowDistance.bottom
+      margin-left: 12
+      margin-top: 17
+
+    ComboBox
+      id: partyAvoidDistance
+      size: 77 22
+      anchors.right: parent.right
+      anchors.top: partyFollowDistance.bottom
+      margin-right: 12
+      margin-top: 12
+
+    Label
+      id: partyDruidHelp
+      text: Configure healing, Sio and attacks in Healing / Attack. Party Hunt positions the ED for the selected Shooter spell and avoids nearby attackers.
+      color: #d0d0d0
+      text-wrap: true
+      text-auto-resize: true
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyAvoidDistance.bottom
+      margin-left: 12
+      margin-right: 12
+      margin-top: 13
+
+    HorizontalSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyDruidHelp.bottom
+      margin: 12 12 0 12
+
+    Label
+      id: partyJsonTitle
+      text: Route JSON - Copy / Paste
+      color: #f0d48a
+      anchors.left: partyDruidHelp.left
+      anchors.top: partyDruidHelp.bottom
+      margin-top: 24
+
+    MultilineTextEdit
+      id: partyJsonEditor
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyJsonTitle.bottom
+      anchors.bottom: partyApplyJson.top
+      margin-left: 12
+      margin-right: 12
+      margin-top: 6
+      margin-bottom: 6
+      color: #ffffff
+      text-wrap: true
+      !tooltip: tr('Paste a Cavebot JSON route. Only waypoint data is accepted; no Lua is executed.')
+
+    SmallButton
+      id: partyApplyJson
+      text: Apply JSON
+      height: 22
+      anchors.left: partyDruidHelp.left
+      anchors.right: partyDruidHelp.right
+      anchors.bottom: partyStatus.top
+      margin-bottom: 10
+
+    Label
+      id: partyStatus
+      text: Join a party to begin
+      color: #ffffff
+      text-wrap: true
+      text-auto-resize: true
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 0 12 12 12
+
+BaiakerosPartyHuntFloat < MainWindow
+  text: Party Hunt
+  size: 286 242
+  anchors.centerIn: parent
+  visible: false
+  @onEscape: modules.game_baiakeros_helper_v2.PartyHuntV2.closeFloating()
+
+  SmallButton
+    id: partyFloatBack
+    text: Back to Helper
+    size: 112 22
+    anchors.left: parent.left
+    anchors.top: parent.top
+    margin-left: 8
+    margin-top: 4
+
+  SmallButton
+    id: partyFloatMinimize
+    text: Minimize
+    size: 68 22
+    anchors.right: parent.right
+    anchors.top: partyFloatBack.top
+    margin-right: 8
+
+  SmallButton
+    id: partyFloatExpand
+    text: Expand
+    size: 68 22
+    anchors.right: parent.right
+    anchors.top: partyFloatBack.top
+    margin-right: 8
+    visible: false
+
+  Label
+    id: partyFloatTime
+    text: --:--:--
+    color: #ffffff
+    size: 106 22
+    text-align: center
+    background-color: #383838
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: partyFloatBack.bottom
+    margin-top: 10
+
+  UIProgressBar
+    id: partyFloatProgress
+    size: 210 16
+    background-color: #63d897
+    border-width: 1
+    border-color: #f0d48a
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: partyFloatTime.bottom
+    margin-top: 5
+
+  QtButton
+    id: partyFloatStop
+    text: Stop
+    color: #ffffff
+    size: 130 26
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: partyFloatProgress.bottom
+    margin-top: 6
+
+  UIWidget
+    id: partyFloatDetails
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: partyFloatStop.bottom
+    anchors.bottom: parent.bottom
+    margin-top: 8
+
+    Label
+      id: partyFloatGuide
+      text: No guide
+      color: #f0d48a
+      size: 240 18
+      text-align: center
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+
+    Label
+      id: partyFloatStatus
+      text: Waiting for Party Hunt
+      color: #ffffff
+      text-wrap: true
+      text-auto-resize: true
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyFloatGuide.bottom
+      margin: 8 10 0 10

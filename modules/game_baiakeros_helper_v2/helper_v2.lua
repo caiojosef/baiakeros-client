@@ -1,15 +1,18 @@
 helperV2Window = nil
 
 local selectedTab = 'healing'
+-- Party Hunt is paused for this release. To resume it, also restore
+-- party_hunt_movement and party_hunt in helper_v2.otmod's scripts list.
+local PARTY_HUNT_ENABLED = false
 local cavebotFloatWindow
 local cavebotPanel
 local cavebotHomeParent
 local cavebotScriptPanel
 local cavebotScriptHome
-local cavebotFloatScriptSlot
 local cavebotWorkspace
+local cavebotConfigColumn
 local cavebotDivider
-local selectedCavebotSection = 'scripts'
+local cavebotRankingDivider
 local cavebotDetached = false
 
 local function explorerActive()
@@ -19,11 +22,10 @@ end
 
 local function setCavebotCompact(compact)
     if not cavebotFloatWindow or not cavebotDetached then return end
-    cavebotFloatWindow:setHeight(compact and 154 or 570)
+    cavebotFloatWindow:setHeight(compact and 168 or 570)
     cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot'):setVisible(not compact)
     cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):setVisible(compact)
     cavebotFloatWindow:recursiveGetChildById('v2CavebotReturnButton'):setVisible(not compact)
-    cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatCloseButton'):setVisible(not compact)
     cavebotFloatWindow:recursiveGetChildById('v2CavebotMinimizeButton'):setVisible(not compact)
     cavebotFloatWindow:recursiveGetChildById('v2CavebotExpandButton'):setVisible(compact)
 end
@@ -62,18 +64,31 @@ local function setHelperButtonOn(enabled)
     end
 end
 
-local function showCavebotSection(section)
-    selectedCavebotSection = section == 'highscore' and 'highscore' or 'scripts'
-    local scripts = selectedCavebotSection == 'scripts'
-    cavebotScriptHome:setVisible(scripts)
-    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScorePage'):
-        setVisible(not scripts)
-    local scriptsTab = cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab')
-    local highScoreTab = cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab')
-    scriptsTab:setOn(scripts)
-    highScoreTab:setOn(not scripts)
-    scriptsTab:setEnabled(not scripts)
-    highScoreTab:setEnabled(scripts)
+local function shortExperience(value)
+    local number = tonumber(value) or 0
+    if number >= 1000000000 then return string.format('%.1fB XP', number / 1000000000) end
+    if number >= 1000000 then return string.format('%.1fM XP', number / 1000000) end
+    if number >= 1000 then return string.format('%.1fK XP', number / 1000) end
+    return string.format('%d XP', number)
+end
+
+function updateCavebotRanking(daily, monthly)
+    if not cavebotWorkspace then return end
+    for _, group in ipairs({ { 'Daily', daily }, { 'Monthly', monthly } }) do
+        for rank = 1, 4 do
+            local label = cavebotWorkspace:recursiveGetChildById('v2Cavebot' .. group[1] .. rank)
+            local player = group[2][rank]
+            if label then
+                if player then
+                    local name = tostring(player.name or 'Unknown')
+                    if #name > 17 then name = name:sub(1, 16) .. '…' end
+                    label:setText(rank .. '. ' .. name .. '  -  ' .. shortExperience(player.experience))
+                else
+                    label:setText(rank .. '. ---')
+                end
+            end
+        end
+    end
 end
 
 local function attachCavebot(force)
@@ -81,18 +96,25 @@ local function attachCavebot(force)
     if explorerActive() and not force then return false end
     setCavebotCompact(false)
     modules.game_walk.unbindMovementKeysFromWidget(cavebotFloatWindow)
-    cavebotScriptPanel:setParent(cavebotScriptHome)
-    cavebotScriptPanel:breakAnchors()
-    cavebotScriptPanel:fill('parent')
-    cavebotFloatScriptSlot:hide()
+    cavebotConfigColumn:show()
     cavebotWorkspace:show()
     cavebotDivider:show()
+    cavebotRankingDivider:show()
     cavebotPanel:setParent(cavebotHomeParent)
     cavebotPanel:breakAnchors()
     cavebotPanel:addAnchor(AnchorLeft, 'parent', AnchorLeft)
     cavebotPanel:addAnchor(AnchorRight, 'parent', AnchorRight)
     cavebotPanel:addAnchor(AnchorTop, 'parent', AnchorTop)
     cavebotPanel:addAnchor(AnchorBottom, 'parent', AnchorBottom)
+    cavebotPanel:setMarginLeft(6)
+    cavebotPanel:setMarginRight(7)
+    local runtimeColumn = cavebotPanel:recursiveGetChildById('v2CavebotRuntimeColumn')
+    runtimeColumn:breakAnchors()
+    runtimeColumn:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+    runtimeColumn:addAnchor(AnchorTop, 'parent', AnchorTop)
+    runtimeColumn:addAnchor(AnchorBottom, 'parent', AnchorBottom)
+    runtimeColumn:setWidth(260)
+    cavebotPanel:recursiveGetChildById('v2CavebotAutoExploringButton'):setMarginLeft(-16)
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):show()
     cavebotDetached = false
     cavebotFloatWindow:hide()
@@ -103,15 +125,19 @@ end
 function detachCavebot()
     if cavebotDetached or not cavebotFloatWindow or not g_game.isOnline() then return end
     local slot = cavebotFloatWindow:recursiveGetChildById('v2CavebotFloatSlot')
-    cavebotScriptPanel:setParent(cavebotFloatScriptSlot)
-    cavebotScriptPanel:breakAnchors()
-    cavebotScriptPanel:fill('parent')
-    cavebotFloatScriptSlot:show()
+    cavebotConfigColumn:hide()
     cavebotWorkspace:hide()
     cavebotDivider:hide()
+    cavebotRankingDivider:hide()
     cavebotPanel:setParent(slot)
     cavebotPanel:breakAnchors()
     cavebotPanel:fill('parent')
+    cavebotPanel:setMarginLeft(0)
+    cavebotPanel:setMarginRight(0)
+    local runtimeColumn = cavebotPanel:recursiveGetChildById('v2CavebotRuntimeColumn')
+    runtimeColumn:breakAnchors()
+    runtimeColumn:fill('parent')
+    cavebotPanel:recursiveGetChildById('v2CavebotAutoExploringButton'):setMarginLeft(0)
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton'):hide()
     cavebotDetached = true
     setCavebotCompact(false)
@@ -132,14 +158,15 @@ function closeDetachedCavebot()
 end
 
 function returnCavebotToHelper()
-    if not explorerActive() and not attachCavebot() then return end
+    attachCavebot(true)
     showHelperV2Tab('cavebot')
     show()
 end
 
 function showHelperV2Tab(tabName)
     if not helperV2Window then return end
-    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' then
+    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' and
+        not (PARTY_HUNT_ENABLED and tabName == 'party') then
         tabName = 'healing'
     end
     selectedTab = tabName
@@ -150,14 +177,19 @@ function showHelperV2Tab(tabName)
     local healingTab = helperV2Window:recursiveGetChildById('healingToolsTab')
     local attackTab = helperV2Window:recursiveGetChildById('attackTab')
     local cavebotTab = helperV2Window:recursiveGetChildById('cavebotTab')
-    for _, tab in ipairs({
+    local tabs = {
         { name = 'healing', page = healingPage, button = healingTab,
             label = 'Healing & Tools', width = 162 },
         { name = 'attack', page = attackPage, button = attackTab,
             label = 'Attack', width = 116 },
         { name = 'cavebot', page = cavebotPage, button = cavebotTab,
             label = 'Cavebot', width = 116 }
-    }) do
+    }
+    if PARTY_HUNT_ENABLED then
+        tabs[#tabs + 1] = { name = 'party', page = helperV2Window:recursiveGetChildById('partyHuntPage'),
+            button = helperV2Window:recursiveGetChildById('partyHuntTab'), label = 'Party Hunt', width = 132 }
+    end
+    for _, tab in ipairs(tabs) do
         local active = tabName == tab.name
         tab.page:setVisible(active)
         tab.button:setWidth(active and tab.width or 34)
@@ -165,11 +197,18 @@ function showHelperV2Tab(tabName)
         tab.button:setOn(active)
         tab.button:setEnabled(not active)
     end
+    if tabName == 'cavebot' and g_game.isOnline() and BaiakHelperExplorerV2 then
+        BaiakHelperExplorerV2.requestRanking()
+    end
+    if PARTY_HUNT_ENABLED and tabName == 'party' and g_game.isOnline() and PartyHuntV2 then PartyHuntV2.refresh() end
 end
 
 function show()
     if not helperV2Window or not g_game.isOnline() then return end
-    if cavebotDetached and not explorerActive() then attachCavebot() end
+    if cavebotDetached then
+        attachCavebot(true)
+        selectedTab = 'cavebot'
+    end
     showHelperV2Tab(selectedTab)
     helperV2Window:show()
     helperV2Window:raise()
@@ -178,6 +217,7 @@ function show()
 end
 
 function hide()
+    if PARTY_HUNT_ENABLED and PartyHuntV2 and PartyHuntV2.isActive() then PartyHuntV2.showFloating() end
     if explorerActive() and not cavebotDetached then detachCavebot() end
     if helperV2Window then helperV2Window:hide() end
     setHelperButtonOn(false)
@@ -203,9 +243,11 @@ end
 
 local function onGameStart()
     BaiakHelperExplorerV2.onGameStart()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.onGameStart() end
 end
 
 local function onGameEnd()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.onGameEnd() end
     BaiakHelperExplorerV2.onGameEnd()
     attachCavebot(true)
     hide()
@@ -221,18 +263,16 @@ function init()
     cavebotHomeParent = cavebotPanel:getParent()
     cavebotScriptPanel = cavebotPanel:recursiveGetChildById('v2CavebotScriptPanel')
     cavebotScriptHome = cavebotPanel:recursiveGetChildById('v2CavebotScriptHomeSlot')
-    cavebotFloatScriptSlot = cavebotPanel:recursiveGetChildById('v2CavebotFloatScriptSlot')
     cavebotWorkspace = cavebotPanel:recursiveGetChildById('v2CavebotWorkspace')
+    cavebotConfigColumn = cavebotPanel:recursiveGetChildById('v2CavebotConfigColumn')
     cavebotDivider = cavebotPanel:recursiveGetChildById('v2CavebotMainDivider')
+    cavebotRankingDivider = cavebotPanel:recursiveGetChildById('v2CavebotRankingDivider')
     cavebotScriptPanel:setParent(cavebotScriptHome)
     cavebotScriptPanel:breakAnchors()
     cavebotScriptPanel:fill('parent')
-    cavebotWorkspace:recursiveGetChildById('v2CavebotScriptsTab').onClick =
-        function() showCavebotSection('scripts') end
-    cavebotWorkspace:recursiveGetChildById('v2CavebotHighScoreTab').onClick =
-        function() showCavebotSection('highscore') end
-    showCavebotSection('scripts')
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton').onClick = detachCavebot
+    helperV2Window:recursiveGetChildById('partyHuntTab'):setVisible(PARTY_HUNT_ENABLED)
+    helperV2Window:recursiveGetChildById('partyHuntPage'):hide()
     cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):hide()
     showHelperV2Tab('healing')
 
@@ -241,6 +281,7 @@ function init()
     BaiakHelperToolsV2.init(helperV2Window)
     BaiakHelperAttackV2.init(helperV2Window)
     BaiakHelperExplorerV2.init(helperV2Window)
+    if PARTY_HUNT_ENABLED then PartyHuntV2.init(helperV2Window) end
 
     connect(g_game, {
         onGameStart = onGameStart,
@@ -262,6 +303,7 @@ function terminate()
     BaiakHelperTrainingV2.terminate()
     BaiakHelperToolsV2.terminate()
     BaiakHelperAttackV2.terminate()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.terminate() end
     BaiakHelperExplorerV2.terminate()
 
     if cavebotFloatWindow then
@@ -272,9 +314,10 @@ function terminate()
     cavebotHomeParent = nil
     cavebotScriptPanel = nil
     cavebotScriptHome = nil
-    cavebotFloatScriptSlot = nil
     cavebotWorkspace = nil
+    cavebotConfigColumn = nil
     cavebotDivider = nil
+    cavebotRankingDivider = nil
 
     setHelperButtonOn(false)
     if helperV2Window then

@@ -1272,6 +1272,11 @@ function getHighlightedText(text, color, highlightColor)
 end
 
 local function changeNewNessageColor(tab)
+    -- Spell history is passive and must never signal unread messages.
+    if tab == spellsTab or tab.spellCapture then
+        return
+    end
+
     if tab.newMessageEvent ~= nil or tab.isOnRedMessage then
         return
     end

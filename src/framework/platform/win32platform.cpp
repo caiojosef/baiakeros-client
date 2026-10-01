@@ -28,13 +28,84 @@
 
 #include <psapi.h>
 #include <commdlg.h>
+#include <objbase.h>
 #include <windows.h>
 #include <shellapi.h>
+#include <mutex>
+#include <thread>
 
 #pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "comdlg32.lib")
+#pragma comment(lib, "ole32.lib")
 
-std::string Platform::chooseJsonFile(bool save)
+namespace {
+struct JsonFileDialogState {
+    std::mutex mutex;
+    bool pending = false;
+    std::string result;
+};
+
+JsonFileDialogState& jsonFileDialogState()
+{
+    // The native dialog may still be open when the client exits. Keep its state
+    // alive until process termination instead of tying it to Platform lifetime.
+    static auto* state = new JsonFileDialogState;
+    return *state;
+}
+}
+
+static std::string chooseJsonFileNative(bool save);
+
+bool Platform::startJsonFileDialog(bool save)
+{
+    auto& state = jsonFileDialogState();
+    {
+        std::lock_guard lock(state.mutex);
+        if (state.pending) return false;
+        state.pending = true;
+        state.result.clear();
+    }
+    try {
+        std::thread([save] {
+            const HRESULT comResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+            std::string path;
+            try {
+                path = chooseJsonFileNative(save);
+            } catch (...) {
+                // The game loop must remain alive even if the native dialog fails.
+            }
+            if (SUCCEEDED(comResult)) CoUninitialize();
+            auto& completed = jsonFileDialogState();
+            std::lock_guard lock(completed.mutex);
+            completed.result = path;
+            completed.pending = false;
+        }).detach();
+    } catch (...) {
+        std::lock_guard lock(state.mutex);
+        state.pending = false;
+        return false;
+    }
+    return true;
+}
+
+bool Platform::isJsonFileDialogPending()
+{
+    auto& state = jsonFileDialogState();
+    std::lock_guard lock(state.mutex);
+    return state.pending;
+}
+
+std::string Platform::takeJsonFileDialogResult()
+{
+    auto& state = jsonFileDialogState();
+    std::lock_guard lock(state.mutex);
+    if (state.pending) return {};
+    std::string result;
+    result.swap(state.result);
+    return result;
+}
+
+static std::string chooseJsonFileNative(bool save)
 {
     wchar_t path[32768] = {};
     OPENFILENAMEW dialog = {};
@@ -50,6 +121,11 @@ std::string Platform::chooseJsonFile(bool save)
     if (!(save ? GetSaveFileNameW(&dialog) : GetOpenFileNameW(&dialog)))
         return {};
     return stdext::utf16_to_utf8(path);
+}
+
+std::string Platform::chooseJsonFile(bool save)
+{
+    return chooseJsonFileNative(save);
 }
 
 std::string Platform::readUserFile(std::string path)

@@ -47,6 +47,9 @@ public:
     bool fileExists(std::string file);
     bool removeFile(std::string file);
     std::string chooseJsonFile(bool save);
+    bool startJsonFileDialog(bool save);
+    bool isJsonFileDialogPending();
+    std::string takeJsonFileDialogResult();
     std::string readUserFile(std::string path);
     bool writeUserFile(std::string path, std::string contents);
     ticks_t getFileModificationTime(std::string file);

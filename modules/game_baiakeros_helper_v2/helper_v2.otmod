@@ -9,7 +9,7 @@ Module
     - game_walk
     - game_mainpanel
     - game_baiakeros_helper
-  scripts: [ healing_slots, sio, healing, training, tools, attack, explorer, helper_v2 ]
+  scripts: [ healing_slots, sio, healing, training, tools, attack, lure_movement, explorer, helper_v2 ]
   @onLoad: init()
   @onUnload: terminate()
 
