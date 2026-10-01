@@ -304,6 +304,27 @@ BaiakerosHelperV2Window < MainWindow
         image-source: /images/baiakeros/helper_v2_cavebot
         image-smooth: true
         phantom: true
+    HelperV2TabButton
+      id: partyHuntTab
+      visible: false
+      enabled: false
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 1
+      size: 34 36
+      text: ''
+      !tooltip: tr('Party Hunt')
+      @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('party')
+
+      UIWidget
+        size: 24 24
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 5
+        image-source: /images/icons/icon-partyhunt-widget
+        image-smooth: true
+        phantom: true
+
   UIWidget
     id: contentContainer
     anchors.left: parent.left
@@ -312,6 +333,11 @@ BaiakerosHelperV2Window < MainWindow
     anchors.bottom: bottomSeparator.top
     margin-top: 7
     margin-bottom: 7
+
+    UIWidget
+      id: partyHuntPage
+      anchors.fill: parent
+      visible: false
 
     UIWidget
       id: healingToolsPage
@@ -1384,16 +1410,17 @@ BaiakerosHelperV2Window < MainWindow
             anchors.verticalCenter: v2CavebotHuntStyleLabel.verticalCenter
             margin-right: 10
             mouse-scroll: false
-            !tooltip: tr('Chase follows one target; Lure runs and attacks while keeping distance; Lure and Stop gathers monsters for Stand; Stop waits for them.')
+            !tooltip: tr('Chase follows one target; Distance keeps moving away from monsters along the travelled route and clears them before resuming waypoints; Lure and Stop gathers monsters for Stand; Stop waits for them.')
 
           Label
             id: v2CavebotLureDistanceLabel
             text: Distance
             color: #ffffff
             visible: false
-            anchors.left: v2CavebotHuntStyleLabel.left
+            anchors.left: parent.left
             anchors.top: v2CavebotHuntStyleBox.bottom
             margin-top: 13
+            margin-left: 13
 
           UIWidget
             id: v2CavebotLureDistanceIcon
@@ -1403,7 +1430,7 @@ BaiakerosHelperV2Window < MainWindow
             anchors.right: v2CavebotLureDistanceBox.left
             anchors.verticalCenter: v2CavebotLureDistanceBox.verticalCenter
             margin-right: 4
-            !tooltip: tr('Preferred distance from the current target while Lure is fighting.')
+            !tooltip: tr('Preferred distance from the current target while Distance is fighting.')
 
           QtComboBox
             id: v2CavebotLureDistanceBox
@@ -1414,7 +1441,7 @@ BaiakerosHelperV2Window < MainWindow
             anchors.verticalCenter: v2CavebotLureDistanceLabel.verticalCenter
             margin-right: 10
             mouse-scroll: false
-            !tooltip: tr('Choose 1 to 4 SQMs from the current target.')
+            !tooltip: tr('Choose 1 to 4 SQMs from the current target. Distance stays within 4 SQMs of the travelled path, preferring open routes away from walls.')
 
           HorizontalSeparator
             id: v2CavebotOptionsSeparator

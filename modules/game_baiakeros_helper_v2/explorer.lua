@@ -15,7 +15,7 @@ local MAX_SEARCH_DEPTH = 12
 local MAX_SEARCH_NODES = 400
 local HUNT_STYLES = {
     { name = 'Chase', value = 'chase' },
-    { name = 'Lure', value = 'lure' },
+    { name = 'Distance', value = 'lure' },
     { name = 'Lure and Stop', value = 'lure_stop' },
     { name = 'Stop', value = 'stop' }
 }
@@ -52,6 +52,8 @@ local originFloor
 local lastPosition
 local pendingStep
 local pendingSince = 0
+local pendingKite = false
+local kiteRejected = {}
 local nextMoveAt = 0
 local lastChargeAt = 0
 local lastSaveAt = 0
@@ -82,7 +84,10 @@ local routeStuckSince
 local routeAttempts = 0
 local blockedCombat = false
 local wallAnchor
-local kiteStandIndex
+local lureCombatMembers = {}
+local lureRouteHistory = {}
+local lureCorridor
+local lurePatrolBack = true
 local lastKiteDirection
 local echoTarget
 local echoActivatedAt
@@ -90,6 +95,10 @@ local echoActivationPosition
 local echoSpawned = false
 local visitedEchoesForStand = {}
 local previousChaseMode
+local controlledChaseMode
+local routeController
+local normalRouteBackup
+local lastFloorTransition
 local render
 
 local function waypointDirection(value)
@@ -158,6 +167,7 @@ local function configKey()
 end
 
 local function save()
+    if routeController then return end
     if not characterKey then return end
     g_settings.setNode(characterKey, {
         floors = options.floors,
@@ -208,10 +218,12 @@ local function normalizedWaypoints(source)
 end
 
 local function remainingMs()
+    if routeController then return routeController.remainingMs() end
     return math.max(0, DAILY_LIMIT_MS - usedMs)
 end
 
 local function sendCavebotRequest(action, extra)
+    if routeController then return end
     local protocol = g_game.getProtocolGame()
     if not protocol then return end
     local request = extra or {}
@@ -221,10 +233,12 @@ end
 
 local function setStatus(text)
     statusText = text
+    if routeController then return end
     if window then window:recursiveGetChildById('v2CavebotStatus'):setText(text) end
 end
 
 local function renderWaypoints()
+    if routeController then return end
     if not window then return end
     local list = window:recursiveGetChildById('v2CavebotWaypointList')
     list:destroyChildren()
@@ -265,7 +279,7 @@ local function renderWaypoints()
             routeAction, echoTarget, echoActivatedAt = nil, nil, nil
             blockedCombat = false
             wallAnchor = nil
-            kiteStandIndex = nil
+            lureCombatMembers, lureCorridor = {}, nil
             echoActivationPosition, echoSpawned = nil, false
             visitedEchoesForStand = {}
             if running and #waypoints == 0 then
@@ -283,7 +297,7 @@ local function renderWaypoints()
             routeAction, routeStuckSince = nil, nil
             blockedCombat = false
             wallAnchor = nil
-            kiteStandIndex = nil
+            lureCombatMembers, lureCorridor = {}, nil
             echoTarget, echoActivatedAt = nil, nil
             echoActivationPosition, echoSpawned = nil, false
             visitedEchoesForStand = {}
@@ -312,6 +326,7 @@ local function formatTime(milliseconds)
 end
 
 render = function()
+    if routeController then return end
     if not window then return end
     local time = formatTime(remainingMs())
     window:recursiveGetChildById('v2CavebotTimerLabel'):setText(time)
@@ -427,6 +442,30 @@ local function routeCombatCount(monsters, position)
     -- Stand clearance is independent of the selected lure spell. Chebyshev
     -- distance includes every diagonal in the 11 by 11 SQM combat area.
     return nearbyCount(monsters, position, 5)
+end
+
+local function lureCombatMonsters(monsters, position)
+    -- Any nearby monster starts Distance combat, including along Nodes.
+    if not next(lureCombatMembers) and nearbyCount(monsters, position, 5) == 0 then
+        lureCorridor = nil
+        return {}
+    end
+    if not lureCorridor then
+        lureCorridor = BaiakLureMovement.corridor(lureRouteHistory, position)
+        lurePatrolBack = true
+    end
+    local pack, current = {}, {}
+    for _, monster in ipairs(monsters) do
+        local id = monster.getId and monster:getId() or monster
+        if distance(position, monster:getPosition()) <= 5 or lureCombatMembers[id] then
+            pack[#pack + 1], current[id] = monster, true
+        end
+    end
+    -- An engaged, still-visible monster stays in the pack if an escape step
+    -- briefly puts it beyond five SQM. New distant monsters do not block routing.
+    lureCombatMembers = current
+    if #pack == 0 then lureCorridor = nil end
+    return pack
 end
 
 local function rangedVocation(player)
@@ -552,19 +591,22 @@ local function beginFight(text)
 end
 
 local function setChaseEngaged(engaged)
-    if options.huntStyle ~= 'chase' then return end
     if engaged then
+        if options.huntStyle ~= 'chase' and options.huntStyle ~= 'lure' then return end
         if previousChaseMode == nil then
             previousChaseMode = g_game.getChaseMode()
         end
-        if g_game.getChaseMode() ~= ChaseOpponent then
-            g_game.setChaseMode(ChaseOpponent)
+        -- Native chase walks into the target and competes with Lure's escape
+        -- steps. Keep the attack, but let Cavebot own movement in this style.
+        controlledChaseMode = options.huntStyle == 'lure' and DontChase or ChaseOpponent
+        if g_game.getChaseMode() ~= controlledChaseMode then
+            g_game.setChaseMode(controlledChaseMode)
         end
     elseif previousChaseMode ~= nil then
-        if g_game.isOnline() and g_game.getChaseMode() == ChaseOpponent then
+        if g_game.isOnline() and g_game.getChaseMode() == controlledChaseMode then
             g_game.setChaseMode(previousChaseMode)
         end
-        previousChaseMode = nil
+        previousChaseMode, controlledChaseMode = nil, nil
     end
 end
 
@@ -580,13 +622,20 @@ local function stop(reason)
     pendingStep = nil
     blockedCombat = false
     wallAnchor = nil
-    kiteStandIndex = nil
+    lureCombatMembers, lureCorridor = {}, nil
     lastKiteDirection = nil
     exploreGoal = nil
+    local controller = routeController
+    if controller then
+        options, waypoints = normalRouteBackup.options, normalRouteBackup.waypoints
+        waypointIndex, selectedWaypoint = normalRouteBackup.index, normalRouteBackup.selected
+        routeController, normalRouteBackup = nil, nil
+    end
     save()
     setStatus(reason or 'Exploration stopped')
     renderWaypoints()
     render()
+    if controller then controller.onStop(reason or 'Party route stopped') end
 end
 
 local function onCavebotOpcode(protocol, opcode, buffer)
@@ -602,7 +651,7 @@ local function onCavebotOpcode(protocol, opcode, buffer)
         local remaining = math.max(0, math.min(3600, tonumber(response.remaining) or 0))
         usedMs = DAILY_LIMIT_MS - remaining * 1000
         lastChargeAt = g_clock.millis()
-        if running and response.active ~= true then
+        if running and not routeController and response.active ~= true then
             stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily hour exhausted')
         elseif not running then
             setStatus(remaining > 0 and 'Ready to explore' or 'Daily hour exhausted')
@@ -621,7 +670,7 @@ local function isOccupiedWalkableTile(tile)
         tile:isWalkable(true)
 end
 
-local function walkOneStep(player, direction, destination, delay, explicitStair)
+local function walkOneStep(player, direction, destination, delay, explicitStair, kiteStep)
     if not player:canWalk() then return false end
     local tile = g_map.getTile(destination)
     if not tile or (not explicitStair and not tile:getGround()) or not tile:isWalkable() then
@@ -640,9 +689,34 @@ local function walkOneStep(player, direction, destination, delay, explicitStair)
     end
     pendingStep = destination
     pendingSince = g_clock.millis()
+    pendingKite = kiteStep == true
     nextMoveAt = pendingSince + (delay or TICK_MS)
-    g_game.walk(direction)
+    if g_game.walk(direction) == false then
+        pendingStep = nil
+        return false
+    end
+    -- Use the client's normal prediction when supported, so running does not
+    -- add a network round trip to every step. Never predict floor transitions.
+    if pendingKite and GameAllowPreWalk and g_game.getFeature and
+        g_game.getFeature(GameAllowPreWalk) and player.preWalk then
+        player:preWalk(direction)
+    end
     return true
+end
+
+local function rejectKiteStep(player)
+    if not pendingStep or not pendingKite then return end
+    -- A creature, a walk lock or a rejected packet is NOT a four-second wall.
+    -- Exclude this step briefly, then let fresh map data decide again.
+    local duration = player.getStepDuration and player:getStepDuration() or TICK_MS
+    kiteRejected[key(pendingStep)] = g_clock.millis() + math.max(250, duration)
+    pendingStep, pendingKite = nil, false
+    nextMoveAt = g_clock.millis()
+    setStatus('Distance: step cancelled; choosing another exit')
+end
+
+local function onExplorerCancelWalk(player)
+    if running and player == g_game.getLocalPlayer() then rejectKiteStep(player) end
 end
 
 local function recordPosition(position)
@@ -652,6 +726,19 @@ local function recordPosition(position)
     local positionKey = key(position)
     visited[positionKey] = (visited[positionKey] or 0) + 1
     if oldPosition and oldPosition.z ~= position.z then
+        lureRouteHistory, lureCombatMembers, lureCorridor = { position }, {}, nil
+    elseif hasRoute() and not next(lureCombatMembers) then
+        -- Only route travel grows the history. Never record kiting as new route.
+        lureRouteHistory[#lureRouteHistory + 1] = { x = position.x, y = position.y, z = position.z }
+        if #lureRouteHistory > 60 then table.remove(lureRouteHistory, 1) end
+    end
+    if oldPosition and oldPosition.z ~= position.z then
+        local waypoint = waypoints[waypointIndex]
+        lastFloorTransition = {
+            entry = pendingStep or oldPosition, exit = position, at = g_clock.millis(),
+            kind = waypoint and (waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down') and waypoint.kind or 'stair',
+            direction = waypoint and waypointDirection(waypoint.direction).walk or nil
+        }
         if pendingStep then
             -- Remember the tile that actually changed floors even when the
             -- client's item data does not flag it as a stair or hole.
@@ -708,7 +795,7 @@ local function recordPosition(position)
 end
 
 local function advanceWaypoint()
-    setChaseEngaged(false)
+    if options.huntStyle ~= 'lure' then setChaseEngaged(false) end
     waypointIndex = waypointIndex % #waypoints + 1
     selectedWaypoint = waypointIndex
     phase = 'gather'
@@ -718,7 +805,7 @@ local function advanceWaypoint()
     routeAttempts = 0
     blockedCombat = false
     wallAnchor = nil
-    kiteStandIndex = nil
+    lureCombatMembers, lureCorridor = {}, nil
     lastKiteDirection = nil
     exploreGoal = nil
     echoTarget, echoActivatedAt = nil, nil
@@ -752,7 +839,8 @@ local function clearWaypoints()
     routeAttempts = 0
     fightEmptySince = nil
     blockedCombat = false
-    wallAnchor, kiteStandIndex, lastKiteDirection = nil, nil, nil
+    wallAnchor, lastKiteDirection = nil, nil
+    lureCombatMembers, lureCorridor = {}, nil
     echoTarget, echoActivatedAt, echoActivationPosition = nil, nil, nil
     echoSpawned = false
     visitedEchoesForStand = {}
@@ -898,7 +986,7 @@ local function findStandWallAnchor(base)
     end
 end
 
-local function kiteAroundTarget(player, position, monsters)
+local function kiteAroundTarget(player, position, monsters, obstacles)
     if #monsters == 0 then return end
     local attacking = g_game.getAttackingCreature()
     local target
@@ -920,53 +1008,44 @@ local function kiteAroundTarget(player, position, monsters)
     end
     local targetPosition = target:getPosition()
     local desiredDistance = options.lureDistance
-    local opposite = {
-        [North] = South, [South] = North, [East] = West, [West] = East,
-        [NorthEast] = SouthWest, [SouthWest] = NorthEast,
-        [NorthWest] = SouthEast, [SouthEast] = NorthWest
-    }
-    local bestDirection, bestPosition, bestScore
-    -- Keep the chosen attack target at the selected range. If boxed in,
-    -- accept a closer free tile instead of freezing in place.
-    for requiredDistance = desiredDistance, 1, -1 do
-        for directionIndex, direction in ipairs(DIRECTIONS) do
-            local candidate = {
-                x = position.x + direction[1],
-                y = position.y + direction[2], z = position.z
-            }
-            local targetDistance = distance(candidate, targetPosition)
-            if targetDistance >= requiredDistance and
-                tileIsSafe(candidate, false, monsters, 1) then
-                local nearestOther = math.huge
-                for _, monster in ipairs(monsters) do
-                    if monster ~= target then
-                        nearestOther = math.min(nearestOther,
-                            distance(candidate, monster:getPosition()))
-                    end
-                end
-                local score = -math.abs(targetDistance - desiredDistance) * 40 -
-                    math.max(0, 2 - nearestOther) * 8 -
-                    math.min(visited[key(candidate)] or 0, 5) * 3
-                if directionIndex > 4 then score = score - 10 end
-                if direction[3] == lastKiteDirection then score = score + 4 end
-                if lastKiteDirection and
-                    direction[3] == opposite[lastKiteDirection] then
-                    score = score - 12
-                end
-                if not bestDirection or score > bestScore then
-                    bestDirection, bestPosition, bestScore =
-                        direction[3], candidate, score
-                end
-            end
-        end
-        if bestDirection then break end
+    local patrolGoal = lureCorridor and (lurePatrolBack and lureCorridor.first or lureCorridor.last)
+    if patrolGoal and distance(position, patrolGoal) <= 1 then
+        lurePatrolBack = not lurePatrolBack
+        patrolGoal = lurePatrolBack and lureCorridor.first or lureCorridor.last
     end
-    if bestDirection and walkOneStep(player, bestDirection, bestPosition, TICK_MS) then
-        lastKiteDirection = bestDirection
-        setStatus('Lure: kiting target at ' ..
-            distance(bestPosition, targetPosition) .. ' SQM')
+    if not player:canWalk() then
+        setStatus('Distance: waiting for next step, attacking target')
+        return
+    end
+    local obstaclePositions, occupied = {}, {}
+    for _, monster in ipairs(obstacles or monsters) do
+        local p = monster:getPosition()
+        obstaclePositions[#obstaclePositions + 1], occupied[key(p)] = p, true
+    end
+    local now = g_clock.millis()
+    local movementConfig = {
+        walkable = function(p)
+            return not occupied[key(p)] and tileIsSafe(p, false, nil, 1)
+        end,
+        rejected = function(p) return (kiteRejected[key(p)] or 0) > now end,
+        wall = function(p)
+            local tile = g_map.getTile(p)
+            return not tile or not tile:getGround() or not tile:isWalkable(true) or isFloorTransition(p, tile)
+        end,
+        visits = function(p) return visited[key(p)] or 0 end,
+        routeDistance = lureCorridor and lureCorridor.distance,
+        patrolGoal = patrolGoal,
+        lastDirection = lastKiteDirection
+    }
+    local choice = BaiakLureMovement.choose(position, targetPosition, obstaclePositions,
+        desiredDistance, movementConfig)
+    if choice and walkOneStep(player, choice.direction, choice.position, TICK_MS, false, true) then
+        lastKiteDirection = choice.direction
+        setStatus('Distance: kiting target at ' .. distance(choice.position, targetPosition) ..
+            ' SQM; fighting along the recorded route')
     else
-        setStatus('Lure: no free SQM, attacking target')
+        setStatus(choice and 'Distance: waiting for movement; attacking target' or
+            'Distance: all safe exits blocked; attacking target')
     end
 end
 local function followWaypoint(player, position, monsters, visibleCount, now)
@@ -982,8 +1061,10 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     local combatCount = routeCombatCount(monsters, position)
     local stair = waypoint.kind == 'stair'
     if stair then
-        phase = 'gather'
-        setChaseEngaged(false)
+        if options.huntStyle ~= 'lure' then
+            phase = 'gather'
+            setChaseEngaged(false)
+        end
     end
     if routeAction then
         if position.z ~= waypoint.z or
@@ -1022,23 +1103,16 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         resumeWaypointOnFloor(position.z, now)
         return true
     end
-    local base = { x = waypoint.x, y = waypoint.y, z = waypoint.z }
-    local standTile = waypoint.kind == 'stand' and g_map.getTile(base) or nil
-    if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
-        visibleCount > 0 and standTile and standTile:isWalkable(true) and
-        (kiteStandIndex == waypointIndex or distance(position, base) <= 4 or
-            isOccupiedWalkableTile(standTile)) and
-        not echoTarget and not echoActivatedAt then
-        if kiteStandIndex ~= waypointIndex then
-            kiteStandIndex = waypointIndex
-            lastKiteDirection = nil
+    if options.huntStyle == 'lure' then
+        local pack = lureCombatMonsters(monsters, position)
+        if #pack > 0 then
+            routeStuckSince = nil
+            if phase ~= 'fight' then beginFight('Distance: clearing monsters before the waypoint') end
+            kiteAroundTarget(player, position, pack, monsters)
+            return true
         end
-        if phase ~= 'fight' then
-            beginFight('Lure: keeping distance from target')
-        end
-        kiteAroundTarget(player, position, monsters)
-        return true
     end
+    local base = { x = waypoint.x, y = waypoint.y, z = waypoint.z }
     if waypoint.kind == 'stand' and echoTarget then
         if samePosition(position, echoTarget) then
             visitedEchoesForStand[key(echoTarget)] = true
@@ -1078,21 +1152,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             setStatus('Another Echo Raid found')
             return true
         end
-        if direction.value == 'center' then
-            advanceWaypoint()
-            return true
-        end
-    end
-    if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
-        kiteStandIndex == waypointIndex and phase ~= 'fight' then
-        if visibleCount > 0 then
-            beginFight('Lure: keeping distance from target')
-            return true
-        elseif options.echoRaids then
-            echoTarget = findVisibleEcho(position)
-            if not echoTarget then advanceWaypoint() end
-            return true
-        else
+        if direction.value == 'center' and options.huntStyle ~= 'lure' then
             advanceWaypoint()
             return true
         end
@@ -1160,21 +1220,14 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     if waypoint.kind == 'stand' or stair or waypoint.kind == 'hur_up' or
         waypoint.kind == 'hur_down' then
         if waypoint.kind == 'stand' then
-            setChaseEngaged(options.huntStyle == 'chase' and combatCount > 0)
+            if options.huntStyle ~= 'lure' then
+                setChaseEngaged(options.huntStyle == 'chase' and combatCount > 0)
+            end
         end
         if not stair and combatCount > 0 then
-            if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
-                not echoActivatedAt then
-                kiteStandIndex = waypointIndex
-                lastKiteDirection = nil
-            end
             if phase ~= 'fight' then
                 beginFight(combatCount > nearbyCount(monsters, position, 2) and
                     'Stand: pulling distant monsters' or 'Stand: clearing nearby monsters')
-            end
-            if waypoint.kind == 'stand' and options.huntStyle == 'lure' and
-                kiteStandIndex == waypointIndex then
-                kiteAroundTarget(player, position, monsters)
             end
             return true
         end
@@ -1265,7 +1318,9 @@ local function tick()
     end
     if running then
         local now = g_clock.millis()
-        usedMs = math.min(DAILY_LIMIT_MS, usedMs + math.max(0, now - lastChargeAt))
+        if not routeController then
+            usedMs = math.min(DAILY_LIMIT_MS, usedMs + math.max(0, now - lastChargeAt))
+        end
         lastChargeAt = now
         if now - lastHeartbeatAt >= HEARTBEAT_MS then
             sendCavebotRequest('heartbeat')
@@ -1301,8 +1356,14 @@ local function tick()
                     blockedCombat = false
                 end
                 local position = player:getPosition()
-                recordPosition(position)
+                -- Predicted positions are not server acknowledgement. Keep the
+                -- pending step until confirmation or onCancelWalk; otherwise a
+                -- rejected prediction looks like progress and stalls recovery.
+                if not (pendingStep and pendingKite and player.isPreWalking and player:isPreWalking()) then
+                    recordPosition(position)
+                end
                 if running then
+                    if options.huntStyle == 'lure' then setChaseEngaged(true) end
                     local monsters = visibleMonsters(position)
                     local visibleCount = #monsters
                     if echoActivatedAt and nearbyCount(monsters,
@@ -1376,12 +1437,22 @@ local function tick()
                     end
 
                     local stepDuration = player.getStepDuration and player:getStepDuration() or TICK_MS
-                    if pendingStep and now - pendingSince >= math.max(900, stepDuration + 500) then
-                        local pendingTile = g_map.getTile(pendingStep)
-                        if not pendingTile or not pendingTile:isWalkable(true) then
-                            blocked[key(pendingStep)] = now + BLOCKED_RETRY_MS
+                    local ping = g_game.getPing and math.max(0, g_game.getPing()) or 0
+                    local confirmationTimeout = pendingKite and math.max(250, stepDuration + ping * 2 + 100) or
+                        math.max(900, stepDuration + 500)
+                    -- A slow server/animation must finish before we declare a
+                    -- rejection. Native canWalk includes walk locks and sync.
+                    if pendingStep and now - pendingSince >= confirmationTimeout and
+                        (not pendingKite or player:canWalk()) then
+                        if pendingKite then
+                            rejectKiteStep(player)
+                        else
+                            local pendingTile = g_map.getTile(pendingStep)
+                            if not pendingTile or not pendingTile:isWalkable(true) then
+                                blocked[key(pendingStep)] = now + BLOCKED_RETRY_MS
+                            end
+                            pendingStep = nil
                         end
-                        pendingStep = nil
                     end
                     if now >= nextMoveAt and not pendingStep then
                         local mobileFight = not hasRoute() and options.mode == 'wait' and phase == 'fight' and
@@ -1456,6 +1527,10 @@ end
 
 local function start()
     if running then stop() return end
+    if not routeController and PartyHuntV2 and PartyHuntV2.isActive() then
+        setStatus('Stop Party Hunt before starting Cavebot')
+        return
+    end
     if dialogBusy then return end
     if not g_game.isOnline() then return end
     if not hasRoute() then
@@ -1463,7 +1538,7 @@ local function start()
         render()
         return
     end
-    if not serverStatusReady then setStatus('Waiting for server time') render() return end
+    if not routeController and not serverStatusReady then setStatus('Waiting for server time') render() return end
     if remainingMs() <= 0 then setStatus('Daily hour exhausted') render() return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() or player:hasState(PlayerStates.Pz) then
@@ -1477,11 +1552,14 @@ local function start()
     combat.setAttackRotationEnabled(true)
     running = true
     sendCavebotRequest('start', { waypoints = #waypoints })
-    previousChaseMode = nil
+    previousChaseMode, controlledChaseMode = nil, nil
+    if options.huntStyle == 'lure' then setChaseEngaged(true) end
     phase = 'gather'
     originFloor = position.z
+    lastFloorTransition = nil
     lastPosition = position
     pendingStep = nil
+    pendingKite, kiteRejected = false, {}
     nextMoveAt = 0
     lastChargeAt = g_clock.millis()
     lastHeartbeatAt = lastChargeAt
@@ -1495,7 +1573,8 @@ local function start()
     routeAttempts = 0
     blockedCombat = false
     wallAnchor = nil
-    kiteStandIndex, lastKiteDirection = nil, nil
+    lureCombatMembers, lastKiteDirection, lureCorridor = {}, nil, nil
+    lureRouteHistory, lureCorridor = { { x = position.x, y = position.y, z = position.z } }, nil
     echoTarget, echoActivatedAt = nil, nil
     echoActivationPosition, echoSpawned = nil, false
     visitedEchoesForStand = {}
@@ -1512,14 +1591,67 @@ local function start()
     setStatus('Following waypoint ' .. waypointIndex)
     render()
     local helperV2 = modules.game_baiakeros_helper_v2
-    if helperV2 and helperV2.detachCavebot then helperV2.detachCavebot() end
+    if not routeController and helperV2 and helperV2.detachCavebot then helperV2.detachCavebot() end
 end
 
-function isAutoExplorerActive()
+function BaiakHelperExplorerV2.copyRoute()
+    local source = normalRouteBackup and normalRouteBackup.waypoints or waypoints
+    return { version = 1, waypoints = normalizedWaypoints(source) }
+end
+
+function BaiakHelperExplorerV2.replaceRoute(route)
+    if running or type(route) ~= 'table' then return false end
+    waypoints = normalizedWaypoints(route.waypoints)
+    waypointIndex, selectedWaypoint = 1, #waypoints > 0 and 1 or nil
+    save()
+    renderWaypoints()
+    render()
+    return true
+end
+
+function BaiakHelperExplorerV2.startPartyRoute(route, controller)
+    if running or type(route) ~= 'table' or type(controller) ~= 'table' then return false end
+    local partyWaypoints = normalizedWaypoints(route.waypoints)
+    if #partyWaypoints == 0 then return false end
+    normalRouteBackup = { options = options, waypoints = waypoints,
+        index = waypointIndex, selected = selectedWaypoint }
+    routeController = controller
+    options = { floors = false, maxFloors = 1, mode = 'off', waitCount = 3,
+        movingCount = 4, echoRaids = false, hugWall = false,
+        huntStyle = 'lure_stop', lureDistance = 2 }
+    waypoints, waypointIndex, selectedWaypoint = partyWaypoints, 1, 1
+    start()
+    if not running then
+        options, waypoints = normalRouteBackup.options, normalRouteBackup.waypoints
+        waypointIndex, selectedWaypoint = normalRouteBackup.index, normalRouteBackup.selected
+        routeController, normalRouteBackup = nil, nil
+    end
     return running
 end
 
+function BaiakHelperExplorerV2.stopPartyRoute(reason)
+    if routeController then stop(reason) end
+end
+
+function BaiakHelperExplorerV2.getRouteState()
+    return { active = running, owner = routeController and 'party' or 'cavebot',
+        phase = (phase == 'fight' or blockedCombat) and 'fight' or 'travel',
+        waypoint = waypointIndex, status = statusText,
+        transition = lastFloorTransition and g_clock.millis() - lastFloorTransition.at < 15000 and lastFloorTransition or nil }
+end
+
+function BaiakHelperExplorerV2.isSafeMovementTile(position)
+    return not isFloorTransition(position, g_map.getTile(position))
+end
+
+function isAutoExplorerActive()
+    return running and not routeController
+end
+
+BaiakHelperExplorerV2.isAutoExplorerActive = isAutoExplorerActive
+
 function shouldHoldExplorerAttack()
+    if routeController then return false end
     if options.huntStyle == 'chase' or options.huntStyle == 'lure' then return false end
     return running and (hasRoute() or options.mode ~= 'off') and
         phase ~= 'fight' and not blockedCombat
@@ -1561,7 +1693,7 @@ function BaiakHelperExplorerV2.onGameStart()
     routeAction = nil
     blockedCombat = false
     wallAnchor = nil
-    kiteStandIndex, lastKiteDirection = nil, nil
+    lureCombatMembers, lastKiteDirection, lureCorridor = {}, nil, nil
     echoTarget, echoActivatedAt = nil, nil
     echoActivationPosition, echoSpawned = nil, false
     visitedEchoesForStand = {}
@@ -1593,6 +1725,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
     -- Keep widget lookups anchored to the panel while it changes parents.
     window = helperWindow:recursiveGetChildById('cavebotPanel')
     ProtocolGame.registerExtendedOpcode(CAVEBOT_OPCODE, onCavebotOpcode)
+    if LocalPlayer then connect(LocalPlayer, { onCancelWalk = onExplorerCancelWalk }) end
     local directionBox = window:recursiveGetChildById('v2CavebotDirectionBox')
     for _, direction in ipairs(WAYPOINT_DIRECTIONS) do
         directionBox:addOption(direction.name, direction.value)
@@ -1748,7 +1881,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
             routeAction = nil
             blockedCombat = false
             wallAnchor = nil
-            kiteStandIndex, lastKiteDirection = nil, nil
+            lureCombatMembers, lastKiteDirection, lureCorridor = {}, nil, nil
             echoTarget, echoActivatedAt = nil, nil
             echoActivationPosition, echoSpawned = nil, false
             visitedEchoesForStand = {}
@@ -1791,6 +1924,7 @@ function BaiakHelperExplorerV2.terminate()
     closeClearRouteWindow()
     if dialogPollEvent then removeEvent(dialogPollEvent) dialogPollEvent = nil end
     ProtocolGame.unregisterExtendedOpcode(CAVEBOT_OPCODE)
+    if LocalPlayer then disconnect(LocalPlayer, { onCancelWalk = onExplorerCancelWalk }) end
     if tickEvent then removeEvent(tickEvent) tickEvent = nil end
     stop()
     window = nil

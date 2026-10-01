@@ -3878,6 +3878,52 @@ local function checkAutoAttack()
     g_game.attack(best)
 end
 
+local function getOrderedAttackSpellSlots(preferArea)
+    local profile = getVocationProfile()
+    local count = profile and ATTACK_SPELL_SLOT_COUNTS[profile.key] or 0
+    local ordered = {}
+    for i = 1, count do
+        local slot = helperWindow:recursiveGetChildById('attackSpellSlot' .. i)
+        if slot then ordered[#ordered + 1] = { slot = slot, index = i } end
+    end
+    table.sort(ordered, function(a, b)
+        if preferArea then
+            local aArea = a.slot.assignedAttackSpell ~= nil and not isSingleTargetAttackSpell(a.slot.assignedAttackSpell)
+            local bArea = b.slot.assignedAttackSpell ~= nil and not isSingleTargetAttackSpell(b.slot.assignedAttackSpell)
+            if aArea ~= bArea then return aArea == true end
+        end
+        local aPriority, bPriority = a.slot.attackPriority or a.index, b.slot.attackPriority or b.index
+        if aPriority ~= bPriority then return aPriority < bPriority end
+        return a.index < b.index
+    end)
+    return ordered
+end
+
+-- Position planning reads the Shooter's configured rotation and individual
+-- cooldowns. Casting still goes through checkAttackRotation and all its gates.
+function getPartyHuntSpellPlan()
+    if not attackRotationEnabled or not helperWindow or not g_game.isOnline() then return nil end
+    local player = g_game.getLocalPlayer()
+    if not player then return nil end
+    local ordered = getOrderedAttackSpellSlots(false)
+    local count = #ordered
+    local startIndex = math.max(1, math.min(count, nextAttackSpellIndex or 1))
+    local now, manaPercent = g_clock.millis(), getManaPercent(player)
+    for offset = 0, count - 1 do
+        local entry = ordered[((startIndex + offset - 1) % count) + 1]
+        local slot, spell = entry.slot, entry.slot.assignedAttackSpell
+        if spell and slot.attackEnabled ~= false and manaPercent >= (slot.attackMinMana or 0) and
+            (spell.mana or 0) <= player:getMana() and isAttackSpellAvailable(spell, player, currentVocation) and
+            hasRequiredAttackSpellHarmony(spell, player) and isCooldownReady(spellCooldownsById, spell.id, now) then
+            local profile = ATTACK_SPELL_AREAS[spell.words]
+            return { words = spell.words, id = spell.id, profile = profile,
+                offsets = profile and ATTACK_DIRECTIONAL_AREAS[profile.area],
+                minEnemies = slot.attackMinEnemies or 1, ready = isSpellCooldownReady(spell, now) }
+        end
+    end
+    return nil
+end
+
 local function checkAttackRotation()
     if not attackRotationEnabled or not g_game.isOnline() then return end
     local player = g_game.getLocalPlayer()
@@ -3899,27 +3945,7 @@ local function checkAttackRotation()
     local manaPercent = getManaPercent(player)
     local target = g_game.getAttackingCreature()
     local profile = getVocationProfile()
-    local slotCount = profile and ATTACK_SPELL_SLOT_COUNTS[profile.key] or 0
-    local orderedSpellSlots = {}
-    for i = 1, slotCount do
-        local slot = helperWindow:recursiveGetChildById('attackSpellSlot' .. i)
-        if slot then
-            table.insert(orderedSpellSlots, { slot = slot, index = i })
-        end
-    end
-    table.sort(orderedSpellSlots, function(a, b)
-        if preferArea then
-            local aArea = a.slot.assignedAttackSpell ~= nil and
-                not isSingleTargetAttackSpell(a.slot.assignedAttackSpell)
-            local bArea = b.slot.assignedAttackSpell ~= nil and
-                not isSingleTargetAttackSpell(b.slot.assignedAttackSpell)
-            if aArea ~= bArea then return aArea == true end
-        end
-        local aPriority = a.slot.attackPriority or a.index
-        local bPriority = b.slot.attackPriority or b.index
-        if aPriority ~= bPriority then return aPriority < bPriority end
-        return a.index < b.index
-    end)
+    local orderedSpellSlots = getOrderedAttackSpellSlots(preferArea)
 
     local orderedSpellCount = #orderedSpellSlots
     local spellStartIndex = preferArea and 1 or orderedSpellCount > 0 and
@@ -3933,6 +3959,18 @@ local function checkAttackRotation()
             local spell = slot.assignedAttackSpell
             local affectedMonsters, castDirection = getSpellAffectedMonsters(
                 spell, monsters, player, playerPosition, target)
+            local partyHunt = explorer and explorer.PartyHuntV2
+            local positioned = true
+            if partyHunt and spell then
+                local partyDirection
+                positioned, partyDirection = partyHunt.prepareSpell(spell)
+                if positioned and partyDirection then
+                    castDirection = partyDirection
+                    local area = ATTACK_SPELL_AREAS[spell.words]
+                    affectedMonsters = getDirectionalAffectedMonsters(monsters, player,
+                        playerPosition, area and area.area, partyDirection)
+                end
+            end
             local singleTarget = isSingleTargetAttackSpell(spell)
             local monstersInRange = singleTarget and
                 getSingleTargetRangeMonsterCount(spell, monsters, playerPosition) or 0
@@ -3940,7 +3978,7 @@ local function checkAttackRotation()
                 (singleTargetOnly and monstersInRange >= 1) or
                 (slot.attackAllowMultiple == true and monstersInRange >= 1) or
                 (slot.attackAllowMultiple ~= true and monstersInRange == 1)
-            if spell and (not singleTargetOnly or singleTarget) and
+            if positioned and spell and (not singleTargetOnly or singleTarget) and
                 #affectedMonsters >= (slot.attackMinEnemies or 1) and
                 singleTargetCondition and
                 isAttackSpellAvailable(spell, player, currentVocation) and
@@ -3969,6 +4007,7 @@ local function checkAttackRotation()
                 -- complete list and skips entries whose creature, mana,
                 -- vocation, target or individual cooldown condition fails.
                 nextAttackSpellIndex = (orderedIndex % orderedSpellCount) + 1
+                if partyHunt then partyHunt.onSpellCast(spell) end
                 return
             end
         end

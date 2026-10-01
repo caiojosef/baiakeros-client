@@ -1,6 +1,9 @@
 helperV2Window = nil
 
 local selectedTab = 'healing'
+-- Party Hunt is paused for this release. To resume it, also restore
+-- party_hunt_movement and party_hunt in helper_v2.otmod's scripts list.
+local PARTY_HUNT_ENABLED = false
 local cavebotFloatWindow
 local cavebotPanel
 local cavebotHomeParent
@@ -155,14 +158,15 @@ function closeDetachedCavebot()
 end
 
 function returnCavebotToHelper()
-    if not explorerActive() and not attachCavebot() then return end
+    attachCavebot(true)
     showHelperV2Tab('cavebot')
     show()
 end
 
 function showHelperV2Tab(tabName)
     if not helperV2Window then return end
-    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' then
+    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' and
+        not (PARTY_HUNT_ENABLED and tabName == 'party') then
         tabName = 'healing'
     end
     selectedTab = tabName
@@ -173,14 +177,19 @@ function showHelperV2Tab(tabName)
     local healingTab = helperV2Window:recursiveGetChildById('healingToolsTab')
     local attackTab = helperV2Window:recursiveGetChildById('attackTab')
     local cavebotTab = helperV2Window:recursiveGetChildById('cavebotTab')
-    for _, tab in ipairs({
+    local tabs = {
         { name = 'healing', page = healingPage, button = healingTab,
             label = 'Healing & Tools', width = 162 },
         { name = 'attack', page = attackPage, button = attackTab,
             label = 'Attack', width = 116 },
         { name = 'cavebot', page = cavebotPage, button = cavebotTab,
             label = 'Cavebot', width = 116 }
-    }) do
+    }
+    if PARTY_HUNT_ENABLED then
+        tabs[#tabs + 1] = { name = 'party', page = helperV2Window:recursiveGetChildById('partyHuntPage'),
+            button = helperV2Window:recursiveGetChildById('partyHuntTab'), label = 'Party Hunt', width = 132 }
+    end
+    for _, tab in ipairs(tabs) do
         local active = tabName == tab.name
         tab.page:setVisible(active)
         tab.button:setWidth(active and tab.width or 34)
@@ -191,11 +200,15 @@ function showHelperV2Tab(tabName)
     if tabName == 'cavebot' and g_game.isOnline() and BaiakHelperExplorerV2 then
         BaiakHelperExplorerV2.requestRanking()
     end
+    if PARTY_HUNT_ENABLED and tabName == 'party' and g_game.isOnline() and PartyHuntV2 then PartyHuntV2.refresh() end
 end
 
 function show()
     if not helperV2Window or not g_game.isOnline() then return end
-    if cavebotDetached and not explorerActive() then attachCavebot() end
+    if cavebotDetached then
+        attachCavebot(true)
+        selectedTab = 'cavebot'
+    end
     showHelperV2Tab(selectedTab)
     helperV2Window:show()
     helperV2Window:raise()
@@ -204,6 +217,7 @@ function show()
 end
 
 function hide()
+    if PARTY_HUNT_ENABLED and PartyHuntV2 and PartyHuntV2.isActive() then PartyHuntV2.showFloating() end
     if explorerActive() and not cavebotDetached then detachCavebot() end
     if helperV2Window then helperV2Window:hide() end
     setHelperButtonOn(false)
@@ -229,9 +243,11 @@ end
 
 local function onGameStart()
     BaiakHelperExplorerV2.onGameStart()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.onGameStart() end
 end
 
 local function onGameEnd()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.onGameEnd() end
     BaiakHelperExplorerV2.onGameEnd()
     attachCavebot(true)
     hide()
@@ -255,6 +271,8 @@ function init()
     cavebotScriptPanel:breakAnchors()
     cavebotScriptPanel:fill('parent')
     cavebotPanel:recursiveGetChildById('v2CavebotDetachButton').onClick = detachCavebot
+    helperV2Window:recursiveGetChildById('partyHuntTab'):setVisible(PARTY_HUNT_ENABLED)
+    helperV2Window:recursiveGetChildById('partyHuntPage'):hide()
     cavebotFloatWindow:recursiveGetChildById('v2CavebotCompactPanel'):hide()
     showHelperV2Tab('healing')
 
@@ -263,6 +281,7 @@ function init()
     BaiakHelperToolsV2.init(helperV2Window)
     BaiakHelperAttackV2.init(helperV2Window)
     BaiakHelperExplorerV2.init(helperV2Window)
+    if PARTY_HUNT_ENABLED then PartyHuntV2.init(helperV2Window) end
 
     connect(g_game, {
         onGameStart = onGameStart,
@@ -284,6 +303,7 @@ function terminate()
     BaiakHelperTrainingV2.terminate()
     BaiakHelperToolsV2.terminate()
     BaiakHelperAttackV2.terminate()
+    if PARTY_HUNT_ENABLED then PartyHuntV2.terminate() end
     BaiakHelperExplorerV2.terminate()
 
     if cavebotFloatWindow then
