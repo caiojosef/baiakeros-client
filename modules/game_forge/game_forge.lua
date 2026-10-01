@@ -73,6 +73,10 @@ local function resetInfo()
     ForgeController.fusion.canFusion = false
     ForgeController.fusion.chanceImprovedChecked = false
     ForgeController.fusion.reduceTierLossChecked = false
+    ForgeController.fusion.chanceImprovedLabel = tostring(ForgeController.fusion.chanceBase) .. "%"
+    ForgeController.fusion.reduceTierLossLabel = tostring(ForgeController.fusion.reduceTierLossBase) .. "%"
+    ForgeController.fusion.chanceImprovedButtonClip = {x = 0, y = 0, width = 43, height = 20}
+    ForgeController.fusion.reduceTierLossButtonClip = {x = 0, y = 0, width = 43, height = 20}
     ForgeController.fusion.dustLabel = ForgeController.fusion.dust
     replaceTableContents(ForgeController.fusion.currentList, ForgeController.fusion.items)
     ForgeController.showResult = false
@@ -224,41 +228,18 @@ end
 
 function ForgeController:getPrice(prices, itemId, currentTier, isConvergence, isTransfer)
     local price = 0
-    local tierIndex = (tonumber(currentTier) or 0) + 1
+    local tier = tonumber(currentTier) or 0
 
-    if isTransfer and isConvergence then
-        for tier, _price in pairs(prices) do
-            if isConvergence then
-                tier = tier > 1 and (tier - 1) or tier
-            end
-            if currentTier == tier then
-                price = tonumber(_price) or 0
-                break
-            end
-        end
-    elseif isConvergence then
-        for tier, _price in pairs(prices) do
-            if tierIndex == tier then
-                price = tonumber(_price) or 0
-                break
-            end
-        end
+    if isConvergence then
+        -- Fusion prices arrive with zero-based tiers. Transfer prices arrive
+        -- with donor tiers; normalizeTierPriceEntries adds one to both.
+        price = tonumber(prices[tier + 1]) or 0
     else
         local itemPtr = Item.create(itemId, 1)
-
         local classification = itemPtr and itemPtr.getClassification and itemPtr:getClassification() or 0
-        if classification <= 0 then return 0 end
-
-        for class, tiers in pairs(prices) do
-            if class == classification then
-                for tier, _price in pairs(tiers) do
-                    if tier == tierIndex or (isTransfer and tier == currentTier) then
-                        price = tonumber(_price) or 0
-                        break
-                    end
-                end
-            end
-        end
+        local targetTier = isTransfer and (tier - 1) or (tier + 1)
+        local classPrices = prices[classification] or {}
+        price = tonumber(classPrices[targetTier]) or 0
     end
 
     -- Guard against negative prices from server data (e.g. uint64 overflow in pushInteger).
@@ -306,14 +287,15 @@ end
 
 function ForgeController:forgeAction(isTransfer)
     local data = isTransfer and ForgeController.transfer or ForgeController.fusion
-    local canDoAction = isTransfer and data.canTransfer or data.canFusion
+    local canDoAction = isTransfer and data.canTransfer or (not isTransfer and data.canFusion)
     if data.selected.id == -1 then return end
     if data.selectedTarget.id == -1 then return end
     if not canDoAction then return end
 
     if ForgeController.rawPrice <= 0 then return end
     if ForgeController.rawCurrentGold < ForgeController.rawPrice then return end
-    if ForgeController.currentDust < data.dust then return end
+    local dustCost = data.isConvergence and data.convergenceDust or data.dust
+    if ForgeController.currentDust < dustCost then return end
 
     if isTransfer then
         if ForgeController.currentExaltedCores < data.necessaryExaltedCores then return end
@@ -324,9 +306,11 @@ function ForgeController:forgeAction(isTransfer)
     local chanceImproved = false
     local reduceTierLoss = false
 
-    if not isTransfer then
+    if not isTransfer and not data.isConvergence then
         chanceImproved = data.chanceImprovedChecked
         reduceTierLoss = data.reduceTierLossChecked
+        local coreCost = (chanceImproved and 1 or 0) + (reduceTierLoss and 1 or 0)
+        if ForgeController.currentExaltedCores < coreCost then return end
     end
 
     -- Set a flag to indicate we're waiting for a result
@@ -579,6 +563,9 @@ end
 -- Store callback in ForgeController to prevent garbage collection
 ForgeController.fusion.exaltedCoreImprovements = function(currentType)
     if currentType == 'improve-chance' then
+        local otherCost = ForgeController.fusion.reduceTierLossChecked and 1 or 0
+        if not ForgeController.fusion.chanceImprovedChecked
+            and ForgeController.currentExaltedCores < otherCost + 1 then return end
         ForgeController.fusion.chanceImprovedChecked = not ForgeController.fusion.chanceImprovedChecked
         if ForgeController.fusion.chanceImprovedChecked then
             ForgeController.fusion.chanceImprovedButtonClip = buttonClipPressed
@@ -589,6 +576,9 @@ ForgeController.fusion.exaltedCoreImprovements = function(currentType)
             ForgeController.fusion.chanceImprovedLabel = tostring(ForgeController.fusion.chanceBase) .. "%"
         end
     elseif currentType == 'reduce-loss' then
+        local otherCost = ForgeController.fusion.chanceImprovedChecked and 1 or 0
+        if not ForgeController.fusion.reduceTierLossChecked
+            and ForgeController.currentExaltedCores < otherCost + 1 then return end
         ForgeController.fusion.reduceTierLossChecked = not ForgeController.fusion.reduceTierLossChecked
         if ForgeController.fusion.reduceTierLossChecked then
             ForgeController.fusion.reduceTierLossButtonClip = buttonClipPressed
@@ -691,8 +681,11 @@ function ForgeController:handleSelect(data, item, isTransfer)
 
         local list = isConvergence and data.convergenceItems or data.items
         local receivers = {}
+        local donor = Item.create(item.id, 1)
         for _, _item in pairs(list.receivers) do
-            if item.id ~= _item.id then
+            local receiver = Item.create(_item.id, 1)
+            if item.id ~= _item.id and donor and receiver
+                and donor:getClassification() == receiver:getClassification() then
                 table.insert(receivers, _item)
             end
         end
@@ -724,7 +717,7 @@ function ForgeController:handleSelect(data, item, isTransfer)
     ForgeController:getPrice(prices, item.id, data.selected.tier, isConvergence, isTransfer)
 
     if ForgeController.rawPrice > 0 and ForgeController.rawCurrentGold >= ForgeController.rawPrice then
-        if ForgeController.currentDust >= ForgeController.fusion.dust then
+        if ForgeController.currentDust >= (isConvergence and data.convergenceDust or data.dust) then
             if isConvergence then return end
             ForgeController.fusion.canFusion = true
         end
@@ -766,7 +759,7 @@ function ForgeController:handleSelectTarget(item, isTransfer)
         data.selectedTarget.rarityClipObject = rarityClipObject
     end
 
-    if ForgeController.currentDust < data.dust then return end
+    if ForgeController.currentDust < (data.isConvergence and data.convergenceDust or data.dust) then return end
 
     if ForgeController.rawPrice > 0 and ForgeController.rawCurrentGold >= ForgeController.rawPrice then
         if isTransfer then
@@ -775,9 +768,11 @@ function ForgeController:handleSelectTarget(item, isTransfer)
             end
             data.canTransfer = true
         else
-            -- For convergence fusion, we need at least 2 items of the same type
+            -- Convergence accepts different items of the same equipment type.
+            -- Two copies are required only when both selections are identical.
             if data.isConvergence then
-                if item.count >= 2 then
+                local needed = item.id == data.selected.id and 2 or 1
+                if item.tier == data.selected.tier and item.count >= needed then
                     data.canFusion = true
                 end
             else
@@ -891,6 +886,10 @@ function onOpenForge(data)
     
     ForgeController.fusion.chanceImprovedChecked = false
     ForgeController.fusion.reduceTierLossChecked = false
+    ForgeController.fusion.chanceImprovedLabel = tostring(ForgeController.fusion.chanceBase) .. "%"
+    ForgeController.fusion.reduceTierLossLabel = tostring(ForgeController.fusion.reduceTierLossBase) .. "%"
+    ForgeController.fusion.chanceImprovedButtonClip = buttonClip
+    ForgeController.fusion.reduceTierLossButtonClip = buttonClip
     ForgeController.conversion.dustMax = data.dustLevel or ForgeController.conversion.dustMax or 100
 
     -- FUSION ITEMS
