@@ -62,6 +62,7 @@ local function widget(id)
     function value:setTooltip(tooltip) self.tooltip = tooltip end
     function value:setOn(on) self.on = on end
     function value:setVisible(visible) self.visible = visible end
+    function value:isVisible()return self.visible==true end
     function value:setMarginTop(margin) self.marginTop = margin end
     function value:recursiveGetChildById(childId) return widget(childId) end
     function value:destroyChildren() self.children = {} end
@@ -334,15 +335,38 @@ local function monster(x, y)
     }
 end
 
+local cavebotCallbacks={}
+ProtocolGame={registerExtendedOpcode=function(code,callback)cavebotCallbacks[code]=callback end,
+    unregisterExtendedOpcode=function(code)cavebotCallbacks[code]=nil end}
+g_game.getProtocolGame=function()return {sendExtendedOpcode=function(_,code,buffer)
+    local request=json.decode(buffer)
+    if request.action~='ranking' then
+        cavebotCallbacks[code](nil,code,json.encode({action='status',remaining=10800,limitSeconds=10800,
+            active=request.action=='start' or request.action=='heartbeat'}))
+    end
+end}end
 dofile('modules/game_baiakeros_helper_v2/explorer.lua')
 BaiakHelperExplorerV2.init(window)
 BaiakHelperExplorerV2.onGameStart()
-assert(widget('v2CavebotTimerLabel').text == '01:00:00')
+assert(widget('v2CavebotTimerLabel').text == '03:00:00')
 assert(widget('v2CavebotProgress').percent == 100)
 assert(widget('v2CavebotAutoExploringButton').enabled == false,
     'Start must be disabled without waypoints')
 widget('v2CavebotAutoExploringButton').onClick()
 assert(not isAutoExplorerActive(), 'Start must reject an empty route even if invoked directly')
+
+if CAVEBOT_TIMER_ONLY then
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=7200,limitSeconds=10800,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='02:00:00' and widget('v2CavebotProgress').percent==66,
+        'authoritative used time stays deducted from the three-hour quota')
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=3600,limitSeconds=3600,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='01:00:00' and widget('v2CavebotProgress').percent==100,
+        'progress uses the server limit rather than a hard-coded client denominator')
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=10800,limitSeconds=10800,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='03:00:00' and widget('v2CavebotProgress').percent==100)
+    print('PASS: Cavebot three-hour timer, authoritative quota, remaining time and progress')
+    return
+end
 
 -- The selected row is the next target, including after Stop or a manual walk.
 widget('v2CavebotNodeButton').onClick() -- 100,100
@@ -360,8 +384,8 @@ assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2)
 widget('v2CavebotAutoExploringButton').onClick()
 assert(detachedStarts == 1 and widget('v2CavebotAutoExploringButton').text == 'Stop',
     'Start must open the compact Cavebot window with a Stop button')
-assert(not attacks.autoTarget and not attacks.shooter,
-    'starting Cavebot must not enable Auto Target or Shooter Helper')
+assert(attacks.autoTarget and attacks.shooter,
+    'starting Cavebot enables Auto Target and Shooter Helper')
 advance(50)
 assert(playerPosition.x == 101, 'Start must follow the selected second waypoint')
 advance(50)

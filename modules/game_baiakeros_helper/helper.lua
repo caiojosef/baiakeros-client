@@ -3227,6 +3227,9 @@ function checkAutoHaste()
         return
     end
 
+    local party=modules.game_baiakeros_helper_v2 and modules.game_baiakeros_helper_v2.PartyHuntV2
+    if party and party.isChangingFloor and party.isChangingFloor() then return end
+
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() or player:hasState(PlayerStates.Haste) then return end
     if player:hasState(PlayerStates.Pz) and not g_settings.getBoolean(
@@ -3490,6 +3493,8 @@ end
 
 local nextShooterLureAt = 0
 local function checkShooterLureSpell(player, monsters, playerPosition)
+    local party=modules.game_baiakeros_helper_v2 and modules.game_baiakeros_helper_v2.PartyHuntV2
+    if party and party.isChangingFloor and party.isChangingFloor() then return false end
     local spell = getSelectedExplorerLureSpell()
     if not spell or g_clock.millis() < nextShooterLureAt then return false end
 
@@ -3823,7 +3828,11 @@ local function checkAutoAttack()
     end
     local adjacent = getAdjacentMonsters(monsters, playerPosition)
     local candidates
-    if autoAttackMode == 'A' or autoAttackMode == 'F' or autoAttackMode == 'G' then
+    local partyHunt=explorer and explorer.PartyHuntV2
+    local leaderTarget=partyHunt and partyHunt.getLeaderTarget and partyHunt.getLeaderTarget()
+    if containsCreature(monsters,leaderTarget) then
+        candidates={leaderTarget}
+    elseif autoAttackMode == 'A' or autoAttackMode == 'F' or autoAttackMode == 'G' then
         candidates = #adjacent > 0 and adjacent or
             getDistanceGroup(monsters, playerPosition, false)
     elseif autoAttackMode == 'B' or autoAttackMode == 'H' or autoAttackMode == 'I' then
@@ -3899,7 +3908,7 @@ local function getOrderedAttackSpellSlots(preferArea)
     return ordered
 end
 
--- Position planning reads the Shooter's configured rotation and individual
+-- Position planning reads the Shooter's configured rotation and all server
 -- cooldowns. Casting still goes through checkAttackRotation and all its gates.
 function getPartyHuntSpellPlan()
     if not attackRotationEnabled or not helperWindow or not g_game.isOnline() then return nil end
@@ -3909,16 +3918,22 @@ function getPartyHuntSpellPlan()
     local count = #ordered
     local startIndex = math.max(1, math.min(count, nextAttackSpellIndex or 1))
     local now, manaPercent = g_clock.millis(), getManaPercent(player)
+    local monsters=getVisibleMonsters(player:getPosition())
+    local target=g_game.getAttackingCreature()
     for offset = 0, count - 1 do
         local entry = ordered[((startIndex + offset - 1) % count) + 1]
         local slot, spell = entry.slot, entry.slot.assignedAttackSpell
         if spell and slot.attackEnabled ~= false and manaPercent >= (slot.attackMinMana or 0) and
             (spell.mana or 0) <= player:getMana() and isAttackSpellAvailable(spell, player, currentVocation) and
-            hasRequiredAttackSpellHarmony(spell, player) and isCooldownReady(spellCooldownsById, spell.id, now) then
+            hasRequiredAttackSpellHarmony(spell, player) and
+            #monsters >= (slot.attackMinEnemies or 1) and (not spell.needTarget or target) and
+            (not isSingleTargetAttackSpell(spell) or slot.attackAllowMultiple==true or #monsters==1) then
             local profile = ATTACK_SPELL_AREAS[spell.words]
-            return { words = spell.words, id = spell.id, profile = profile,
-                offsets = profile and ATTACK_DIRECTIONAL_AREAS[profile.area],
-                minEnemies = slot.attackMinEnemies or 1, ready = isSpellCooldownReady(spell, now) }
+            if isSpellCooldownReady(spell, now) then
+                return { words = spell.words, id = spell.id, profile = profile,
+                    offsets = profile and ATTACK_DIRECTIONAL_AREAS[profile.area],
+                    minEnemies = slot.attackMinEnemies or 1, ready = true }
+            end
         end
     end
     return nil
@@ -3961,12 +3976,12 @@ local function checkAttackRotation()
                 spell, monsters, player, playerPosition, target)
             local partyHunt = explorer and explorer.PartyHuntV2
             local positioned = true
-            if partyHunt and spell then
+            if partyHunt and spell and isSpellCooldownReady(spell,now) then
                 local partyDirection
                 positioned, partyDirection = partyHunt.prepareSpell(spell)
-                if positioned and partyDirection then
+                local area = spell and ATTACK_SPELL_AREAS[spell.words]
+                if positioned and partyDirection and area and area.shape=='directional' then
                     castDirection = partyDirection
-                    local area = ATTACK_SPELL_AREAS[spell.words]
                     affectedMonsters = getDirectionalAffectedMonsters(monsters, player,
                         playerPosition, area and area.area, partyDirection)
                 end
@@ -4129,7 +4144,8 @@ function checkAttackAfkTimeout()
     end
 
     local explorer = modules.game_baiakeros_helper_v2
-    if explorer and explorer.isAutoExplorerActive and explorer.isAutoExplorerActive() then
+    if explorer and ((explorer.isAutoExplorerActive and explorer.isAutoExplorerActive()) or
+        (explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive())) then
         ATTACK_AFK.trackingSince = g_clock.millis()
         return false
     end
@@ -4169,6 +4185,11 @@ local function onLocalPlayerStatesChange(player, states, oldStates)
     lastAutoAttackPacketAt = 0
     pendingAttackTurnDirection = nil
     lastAttackTurnAt = 0
+
+    -- Party Hunt stays armed while crossing PZ; combat callbacks already
+    -- suppress attacks there and resume after the group leaves it.
+    local explorer = modules.game_baiakeros_helper_v2
+    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive() then return end
 
     if not autoAttackEnabled and not attackRotationEnabled then return end
 
@@ -4218,6 +4239,17 @@ function setAutoAttackMode(mode)
     g_settings.set(autoAttackModeConfigKey(), autoAttackMode)
     g_settings.save()
     updateAutoAttackControls()
+end
+
+-- Restore the user's choices even when logout has already made setters offline.
+function restorePartyCombatState(state)
+    setAutoAttackEnabled(state.auto)
+    setAttackRotationEnabled(state.shooter)
+    if not g_game.isOnline() then
+        g_settings.set(autoAttackEnabledConfigKey(),state.auto==true)
+        g_settings.set(attackRotationEnabledConfigKey(),state.shooter==true)
+        g_settings.save()
+    end
 end
 
 function refreshHelperPresetBox()

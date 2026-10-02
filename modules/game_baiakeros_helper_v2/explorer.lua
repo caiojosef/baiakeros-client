@@ -1,6 +1,6 @@
 BaiakHelperExplorerV2 = {}
 
-local DAILY_LIMIT_MS = 60 * 60 * 1000
+local DAILY_LIMIT_MS = 3 * 60 * 60 * 1000
 local CAVEBOT_OPCODE = 92
 local HEARTBEAT_MS = 3000
 local serverStatusReady = false
@@ -648,13 +648,14 @@ local function onCavebotOpcode(protocol, opcode, buffer)
         end
     elseif response.action == 'status' then
         serverStatusReady = true
-        local remaining = math.max(0, math.min(3600, tonumber(response.remaining) or 0))
+        DAILY_LIMIT_MS=math.max(1,tonumber(response.limitSeconds) or 10800)*1000
+        local remaining = math.max(0, math.min(DAILY_LIMIT_MS/1000, tonumber(response.remaining) or 0))
         usedMs = DAILY_LIMIT_MS - remaining * 1000
         lastChargeAt = g_clock.millis()
         if running and not routeController and response.active ~= true then
-            stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily hour exhausted')
+            stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily time exhausted')
         elseif not running then
-            setStatus(remaining > 0 and 'Ready to explore' or 'Daily hour exhausted')
+            setStatus(remaining > 0 and 'Ready to explore' or 'Daily time exhausted')
         end
         render()
     end
@@ -1328,7 +1329,7 @@ local function tick()
         end
         if now - lastSaveAt >= 5000 then save() end
         if remainingMs() <= 0 then
-            stop('Daily hour exhausted')
+            stop('Daily time exhausted')
         else
             local player = g_game.getLocalPlayer()
             if not g_game.isOnline() or not player or player:isDead() then
@@ -1527,7 +1528,7 @@ end
 
 local function start()
     if running then stop() return end
-    if not routeController and PartyHuntV2 and PartyHuntV2.isActive() then
+    if not routeController and PartyHuntV2 and PartyHuntV2.isFollowing() then
         setStatus('Stop Party Hunt before starting Cavebot')
         return
     end
@@ -1539,7 +1540,7 @@ local function start()
         return
     end
     if not routeController and not serverStatusReady then setStatus('Waiting for server time') render() return end
-    if remainingMs() <= 0 then setStatus('Daily hour exhausted') render() return end
+    if remainingMs() <= 0 then setStatus('Daily time exhausted') render() return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() or player:hasState(PlayerStates.Pz) then
         setStatus('Leave the protection zone to explore')

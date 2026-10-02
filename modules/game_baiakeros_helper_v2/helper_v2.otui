@@ -1127,7 +1127,7 @@ BaiakerosHelperV2Window < MainWindow
 
           Label
             id: v2CavebotTimerLabel
-            text: 01:00:00
+            text: 03:00:00
             anchors.fill: parent
             text-align: center
             color: #ffffff
@@ -1796,7 +1796,7 @@ BaiakerosCavebotFloatWindow < MainWindow
 
     Label
       id: v2CavebotCompactTime
-      text: 01:00:00
+      text: 03:00:00
       color: #ffffff
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top

@@ -1,9 +1,7 @@
 helperV2Window = nil
 
 local selectedTab = 'healing'
--- Party Hunt is paused for this release. To resume it, also restore
--- party_hunt_movement and party_hunt in helper_v2.otmod's scripts list.
-local PARTY_HUNT_ENABLED = false
+local PARTY_HUNT_ENABLED = true
 local cavebotFloatWindow
 local cavebotPanel
 local cavebotHomeParent
