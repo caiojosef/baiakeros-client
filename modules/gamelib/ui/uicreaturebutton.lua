@@ -56,6 +56,28 @@ function UICreatureButton.getCreatureButtonColors()
     return CreatureButtonColors
 end
 
+-- The map marker belongs to the game selection, not to an individual Battle
+-- List row. Another list may filter or recycle its row for the same creature.
+function UICreatureButton.updateCreatureSquare(creature, hovered)
+    if not creature then return nil, false end
+    local color = CreatureButtonColors.onIdle
+    local selected = false
+    if creature == g_game.getAttackingCreature() then
+        color = CreatureButtonColors.onTargeted
+        selected = true
+    elseif creature == g_game.getFollowingCreature() then
+        color = CreatureButtonColors.onFollowed
+        selected = true
+    end
+    color = hovered and color.hovered or color.notHovered
+    if hovered or selected then
+        creature:showStaticSquare(color)
+    else
+        creature:hideStaticSquare()
+    end
+    return color, hovered or selected
+end
+
 function UICreatureButton:setCreature(creature)
     self.creature = creature
 end
@@ -94,22 +116,17 @@ function UICreatureButton:setup(creature, onlyOutfit)
 end
 
 function UICreatureButton:update()
-    local color = CreatureButtonColors.onIdle
-    if self.isTarget then
-        color = CreatureButtonColors.onTargeted
-    elseif self.isFollowed then
-        color = CreatureButtonColors.onFollowed
-    end
-    color = self.isHovered and color.hovered or color.notHovered
+    if not self.creature then return end
+    self.isTarget = self.creature == g_game.getAttackingCreature()
+    self.isFollowed = self.creature == g_game.getFollowingCreature()
+    local color, marked = UICreatureButton.updateCreatureSquare(self.creature, self.isHovered)
     local labelColor = self.isBattleButton and '#FFFFFF' or color
 
-    if self.isHovered or self.isTarget or self.isFollowed then
-        self.creature:showStaticSquare(color)
+    if marked then
         self:getChildById('creature'):setBorderWidth(1)
         self:getChildById('creature'):setBorderColor(color)
         self:getChildById('label'):setColor(labelColor)
     else
-        self.creature:hideStaticSquare()
         self:getChildById('creature'):setBorderWidth(0)
         self:getChildById('label'):setColor(labelColor)
     end
@@ -201,7 +218,7 @@ function UICreatureButton:resetState()
     self.isTarget = false
     self.isFollowed = false
     if self.creature then
-        self.creature:hideStaticSquare()
+        UICreatureButton.updateCreatureSquare(self.creature, false)
     end
     self:getChildById('creature'):setBorderWidth(0)
     local labelColor = self.isBattleButton and '#FFFFFF' or CreatureButtonColors.onIdle.notHovered
