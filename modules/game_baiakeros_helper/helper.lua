@@ -3015,18 +3015,22 @@ updateExtrasControls = function()
     end
 
     local hasLootPouch = g_settings.getBoolean(lootPouchKnownConfigKey(), false)
-    for _, container in pairs(g_game.getContainers()) do
-        for _, item in ipairs(container:getItems()) do
-            local itemId = item.getServerId and tonumber(item:getServerId()) or 0
-            if itemId == 0 then itemId = tonumber(item:getId()) or 0 end
-            if itemId == 23721 then
-                hasLootPouch = true
-                g_settings.set(lootPouchKnownConfigKey(), true)
-                g_settings.save()
-                break
+    -- Discover the pouch once. Loot snapshots must not rescan all backpacks
+    -- or synchronously rewrite the same character setting on every kill.
+    if not hasLootPouch then
+        for _, container in pairs(g_game.getContainers()) do
+            for _, item in ipairs(container:getItems()) do
+                local itemId = item.getServerId and tonumber(item:getServerId()) or 0
+                if itemId == 0 then itemId = tonumber(item:getId()) or 0 end
+                if itemId == 23721 then
+                    hasLootPouch = true
+                    g_settings.set(lootPouchKnownConfigKey(), true)
+                    g_settings.save()
+                    break
+                end
             end
+            if hasLootPouch then break end
         end
-        if hasLootPouch then break end
     end
     if autolootBox then
         autolootBox:setChecked(hasLootPouch and g_settings.getBoolean(
