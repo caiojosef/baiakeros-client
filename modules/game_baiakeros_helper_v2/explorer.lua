@@ -513,12 +513,13 @@ local function openNeighbors(position, monsters, minimumDistance)
 end
 
 local function searchStep(startPosition, goal, monsters, minimumDistance, allowStairs,
-        allowGoalStair)
+        allowGoalStair, routeAnchors)
     local queue = { { position = startPosition, depth = 0 } }
     local seen = { [key(startPosition)] = true }
     local best, bestScore
     local roam, roamScore
     local stair, stairScore
+    local detour, detourScore
     local head = 1
     while head <= #queue and head <= MAX_SEARCH_NODES do
         local node = queue[head]
@@ -542,6 +543,15 @@ local function searchStep(startPosition, goal, monsters, minimumDistance, allowS
                         local depth = node.depth + 1
                         if goal and samePosition(nextPosition, goal) then
                             return first, firstPosition
+                        end
+                        -- A distant waypoint may be outside this visible search.
+                        -- Rejoin a reachable point ahead on the recorded route
+                        -- instead of waiting behind a player that can be bypassed.
+                        if routeAnchors and routeAnchors[nextKey] and not isStair then
+                            local score = routeAnchors[nextKey] * 1000 - depth * 10
+                            if not detour or score > detourScore then
+                                detour, detourScore = { first, firstPosition }, score
+                            end
                         end
                         if not goal and not isStair then
                             local visits = visited[nextKey] or 0
@@ -578,6 +588,7 @@ local function searchStep(startPosition, goal, monsters, minimumDistance, allowS
         local selected = best or stair or roam
         if selected then return selected[1], selected[2], selected[3] end
     end
+    if detour then return detour[1], detour[2] end
     return nil
 end
 
@@ -892,6 +903,7 @@ local function findVisibleEcho(position)
 end
 
 local function routePathStep(position, goal, monsters, allowGoalStair)
+    local routeAnchors
     if g_map.findPath then
         -- Allow decorative, non-pathable floor items; never allow solid blockers.
         local path = g_map.findPath(position, goal, 4000, 4)
@@ -910,8 +922,24 @@ local function routePathStep(position, goal, monsters, allowGoalStair)
                 end
             end
         end
+        -- Ignoring creatures supplies only route hints, never permission to
+        -- walk through them. The visible search still checks each destination.
+        local guide = g_map.findPath(position, goal, 4000, 4 + 16)
+        if guide then
+            routeAnchors = {}
+            local p = { x = position.x, y = position.y, z = position.z }
+            for index = 1, math.min(#guide, MAX_SEARCH_DEPTH) do
+                for _, option in ipairs(WAYPOINT_DIRECTIONS) do
+                    if option.walk == guide[index] then
+                        p = { x = p.x + option.x, y = p.y + option.y, z = p.z }
+                        routeAnchors[key(p)] = index
+                        break
+                    end
+                end
+            end
+        end
     end
-    return searchStep(position, goal, monsters, 1, false, allowGoalStair)
+    return searchStep(position, goal, monsters, 1, false, allowGoalStair, routeAnchors)
 end
 
 local function routeBlockedByCreature(position, goal)

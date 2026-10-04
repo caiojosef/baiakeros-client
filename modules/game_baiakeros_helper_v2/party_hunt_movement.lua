@@ -152,6 +152,21 @@ function Movement.faceBox(position,box)
     if math.abs(dx)>math.abs(dy) then return dx>0 and East or West end
     return dy>0 and South or North
 end
+-- Paladin targeted attacks keep the selected formation, but must still reach
+-- and see the actual Shooter target. A blocked close slot falls back to free space.
+function Movement.paladin(position,box,monsters,radius,plan,walkable,visible,cornerWalkable)
+    local route=visibleRoute(position,box,visible)
+    local target=plan and plan.needTarget and plan.targetPosition
+    return search(position,function(p)
+        return Movement.distance(p,box)<=math.max(Movement.boxRadius,Movement.distance(position,box)) and
+            nearest(p,monsters)>=1 and walkable(p) and route(p)
+    end,function(p,depth)
+        local distance=Movement.distance(p,box)
+        if distance<1 or distance>Movement.boxRadius or not inSight(p,box,visible) or
+            target and (Movement.distance(p,target)>(plan.castRange or 7) or not inSight(p,target,visible)) then return nil end
+        return {score=-math.abs(distance-radius)*1000-depth*10,facing=Movement.faceBox(p,box)}
+    end,nil,cornerWalkable)
+end
 function Movement.coverageFacing(plan,position,box,monsters,facing)
     local count,boxCount=0,0
     for _,monster in ipairs(monsters)do

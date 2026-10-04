@@ -313,7 +313,7 @@ local function simulate(count)
     table.remove(packets,index)
    end
   end
-  PartyFollower.update(incoming,true);rotation()
+  PartyFollower.update(incoming,incoming.vocation==2);rotation()
   assert(PartyHuntMovement.distance(playerPosition,box)<=5,'do not flee beyond the box')
  end
 end
@@ -331,3 +331,87 @@ simulate(800)
 assert(steps>pressureSteps+30 and pressureCasts>=5,'adjacent damage must keep circling and using the actual Shooter repeatedly: steps='..
  (steps-pressureSteps)..', casts='..pressureCasts)
 print('Party Hunt Shooter passed: '..pressureCasts..' casts while pursued, '..(steps-pressureSteps)..' confirmed steps; real waves/ultimates/Ulus, individual and shared cooldowns, leader target and AFK/PZ persistence')
+
+-- The same actual Shooter/follower drive Paladin modes. Close slots must be
+-- free, targeted attacks keep working during orbit, and Mas San is exact.
+vocation=12;currentVocation={baseSpellVocation=3,promotedSpellVocation=7,promoted=true}
+incoming.vocation=3;incoming.attackers={};incoming.settings={runThreshold=3,alwaysRun=false,paladinMode='close'}
+chasing=false;walkTo=nil;packets={};now=now+100000;PartyFollower.reset()
+local boxPack=spectators
+local masSan={id=36,name='Divine Caldera',words='exevo mas san',type='Instant',mana=150,
+ level=50,vocations={3,7},group={[1]=2000},exhaustion=4000}
+local targeted={id=28,name='Ethereal Spear',words='exori con',type='Instant',mana=20,
+ level=23,vocations={3,7},needTarget=true,range=7,group={[1]=2000},exhaustion=2000}
+local holyTarget={id=249,name='Divine Grenade',words='exevo tempo mas san',type='Instant',mana=160,
+ level=150,vocations={3,7},needTarget=true,group={[1]=2000,[6]=26000},exhaustion=26000}
+slots={
+ attackSpellSlot1={assignedAttackSpell=masSan,attackEnabled=false,attackPriority=1,attackMinEnemies=8},
+ attackSpellSlot2={assignedAttackSpell=targeted,attackEnabled=true,attackAllowMultiple=true,attackPriority=2,attackMinEnemies=1},
+ attackSpellSlot3={assignedAttackSpell=holyTarget,attackEnabled=false,attackPriority=3,attackMinEnemies=1}
+}
+local paladinCasts={};local masPositions={}
+g_game.talk=function(words)
+ assert(not walkTo,'Paladin casts after a confirmed step')
+ local selected=getPartyHuntSpellPlan()
+ assert(selected and selected.ready,'Paladin never selects a spell on cooldown')
+ local spell
+ for _,slot in pairs(slots)do if slot.assignedAttackSpell.words==words then spell=slot.assignedAttackSpell;break end end
+ assert(spell and (not lastCastAt[words] or now-lastCastAt[words]>=spell.exhaustion))
+ lastCastAt[words]=now;paladinCasts[words]=(paladinCasts[words] or 0)+1
+ if words==masSan.words then
+  assert(PartyHuntMovement.distance(playerPosition,box)==2 and
+   (playerPosition.x==box.x or playerPosition.y==box.y),'Mas San always casts from a two-SQM cardinal slot')
+  masPositions[#masPositions+1]={x=playerPosition.x,y=playerPosition.y}
+ end
+ packets[#packets+1]={at=now+50,spell=spell}
+end
+spectators={boxPack[8]};actualTarget=spectators[1];playerPosition={x=100,y=104,z=7}
+simulate(160)
+assert(PartyHuntMovement.distance(playerPosition,box)==2 and paladinCasts[targeted.words],
+ 'close mode leaves one intervening SQM, holds two SQMs from the EK and casts the configured target spell')
+PartyFollower.reset();incoming.settings.paladinMode='distance';playerPosition={x=104,y=102,z=7};walkTo=nil
+simulate(160)
+assert(PartyHuntMovement.distance(playerPosition,box)==2,'distance mode holds two SQMs')
+spectators={};for i=1,8 do spectators[i]=boxPack[i]end;actualTarget=spectators[8]
+incoming.settings.paladinMode='orbit';PartyFollower.reset();playerPosition={x=100,y=103,z=7};walkTo=nil
+local oldTargetCasts=paladinCasts[targeted.words] or 0;local oldSteps=steps
+simulate(240)
+assert(steps>oldSteps+15 and (paladinCasts[targeted.words] or 0)>=oldTargetCasts+3,
+ 'orbit must keep circling and repeatedly cast targeted spells instead of starving the Shooter')
+slots.attackSpellSlot1.attackEnabled=true;slots.attackSpellSlot3.attackEnabled=true
+simulate(360)
+assert(#masPositions>=2 and paladinCasts[holyTarget.words],
+ 'orbit pauses at two SQMs for Mas San and also casts the real target-centered spell')
+-- PZ/travel and absent targets do not invent offensive movement or casts.
+player.hasState=function()return true end
+local oldPaladinCasts=#masPositions
+simulate(80)
+assert(#masPositions==oldPaladinCasts,'Paladin Mas San is not cast in protection zone')
+-- All four exact Mas San slots blocked: do not cast from an incorrect fallback
+-- or stop the orbit indefinitely while waiting for a slot to open.
+player.hasState=function()return false end
+now=now+100000;PartyFollower.reset();walkTo=nil;packets={}
+playerPosition={x=100,y=104,z=7}
+slots.attackSpellSlot2.attackEnabled=false;slots.attackSpellSlot3.attackEnabled=false
+local originalTile=g_map.getTile
+g_map.getTile=function(p)
+ local tile=originalTile(p)
+ if PartyHuntMovement.distance(p,box)==2 and (p.x==box.x or p.y==box.y) then
+  tile.isWalkable=function()return false end
+ end
+ return tile
+end
+oldSteps=steps;oldPaladinCasts=#masPositions
+simulate(200)
+assert(steps>oldSteps+10 and #masPositions==oldPaladinCasts,
+ 'blocked two-SQM cardinal slots keep the orbit moving without an invalid Mas San cast')
+g_map.getTile=originalTile
+-- The holding modes retain the shared inclusive attacker threshold.
+slots.attackSpellSlot1.attackEnabled=false;slots.attackSpellSlot2.attackEnabled=true
+incoming.settings.paladinMode='distance';incoming.attackers={{id=11},{id=12},{id=13}}
+PartyFollower.reset();walkTo=nil;packets={};playerPosition={x=100,y=103,z=7};now=now+100000
+oldSteps=steps;oldTargetCasts=paladinCasts[targeted.words] or 0
+simulate(180)
+assert(steps>oldSteps+10 and (paladinCasts[targeted.words] or 0)>oldTargetCasts,
+ 'three attackers trigger circling in holding mode while targeted attacks continue')
+print('Paladin Shooter passed: adjacent/two-SQM/orbit modes, targeted casts, cardinal Mas San, blocked slots, attacker threshold, target AoE and PZ')

@@ -205,12 +205,29 @@ BaiakerosPartyHuntPanel < UIWidget
       id: partyOptionsSeparator
       anchors.left: parent.left
       anchors.right: parent.right
-      anchors.top: partyAlwaysRun.bottom
-      margin: 18 20 0 20
+      anchors.top: partyRunThreshold.bottom
+      margin: 58 20 0 20
+
+    Label
+      id: partyPaladinModeLabel
+      text: Paladin position
+      anchors.left: partyDruidOptionsTitle.left
+      anchors.top: partyRunThreshold.bottom
+      margin-top: 18
+      visible: false
+
+    ComboBox
+      id: partyPaladinMode
+      size: 180 22
+      anchors.left: partyPaladinModeLabel.right
+      anchors.verticalCenter: partyPaladinModeLabel.verticalCenter
+      margin-left: 12
+      !tooltip: tr('Personal Paladin movement. A ready exevo mas san always uses a free cardinal slot 2 SQMs from the leader, then returns to the selected mode.')
+      visible: false
 
     Label
       id: partyMovementHelp
-      !text: tr('Each player configures their own movement. Knight and Elite Knight do not have distance options.\n\nBelow the chosen count: hold and face the box.\nAt or above it: circle clockwise, 3 to 5 SQMs from the visible box. Setting 3 means run from the third attacker. Reverse only to avoid obstacles; use free diagonal exits. Pause between steps to cast.\n\nAlways run: keep moving and use the runes configured in Attack.\n\nOnly ready Shooter spells change your casting position; individual and all group cooldowns apply.\nDruid / Sorcerer: nearest cardinal slot at 3 SQMs.\nDruid - Earth Wave: 4 SQMs.\nDruid - Strong Ice Wave and Ulus: 3 SQMs.\nDruid - Gran Mas Frigo / Tera: 2 SQMs when holding; at least 3 while circling.\nRescue: another floor, over 5 SQMs away or hidden for 3 seconds; return to a visible free tile 3 SQMs away.')
+      !text: tr('Each player configures their own movement. Knight and Elite Knight do not have distance options.\n\nBelow the chosen count: hold and face the box.\nAt or above it: circle clockwise, 3 to 5 SQMs from the visible box. Setting 3 means run from the third attacker. Reverse only to avoid obstacles; use free diagonal exits. Pause between steps to cast.\n\nAlways run: keep moving and use the runes configured in Attack.\n\nOnly ready Shooter spells change your casting position; individual and all group cooldowns apply.\nDruid / Sorcerer: nearest cardinal slot at 3 SQMs.\nDruid - Earth Wave: 4 SQMs.\nDruid - Strong Ice Wave and Ulus: 3 SQMs.\nDruid - Gran Mas Frigo / Tera: 2 SQMs when holding; at least 3 while circling.\nRescue: another floor, over 10 SQMs away or hidden for 3 seconds; return to a visible free tile 3 SQMs away.')
       color: #d0d0d0
       text-wrap: true
       text-auto-resize: true

@@ -110,4 +110,22 @@ for i=1,48 do
  quadrants[(orbitPoint.x>=box.x and 'E' or 'W')..(orbitPoint.y>=box.y and 'S' or 'N')]=true
 end
 assert(quadrants.ES and quadrants.EN and quadrants.WS and quadrants.WN,'a continuous orbit must pass all four sides of the box')
+-- Paladin holding positions keep the actual target in range and line of sight,
+-- independently of the line of sight to the leader's box.
+local target={x=103,y=100,z=7}
+local function targetSight(q,to)
+ if M.same(to,target) then return q.y<=100 end
+ return true
+end
+local plan={needTarget=true,targetPosition=target,castRange=4}
+local rp=assert(M.paladin({x=100,y=103,z=7},box,{},2,plan,safe,targetSight))
+assert(M.distance(rp.position,box)==2 and M.distance(rp.position,target)<=4 and targetSight(rp.position,target),
+ 'Paladin must reach a two-SQM slot that also sees the actual target')
+local close=assert(M.paladin({x=100,y=103,z=7},box,monsters,1,nil,safe))
+assert(M.distance(close.position,box)==2,'an occupied eight-monster box must fall back to the nearest free tile')
+for _,case in ipairs({{100,98,South},{102,100,West},{100,102,North},{98,100,East}})do
+ local origin={x=case[1],y=case[2],z=7}
+ local choice=assert(M.cardinal(origin,box,{},2,safe))
+ assert(M.same(choice.position,origin) and choice.facing==case[3],'Mas San keeps the nearest two-SQM cardinal side')
+end
 print('Party Hunt movement passed: full box waves, spell repositioning, UE, escape, holes, visible formations, wall recovery, pressure radius 3/4/5 and clockwise/reverse orbit')

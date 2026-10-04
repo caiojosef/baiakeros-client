@@ -17,6 +17,7 @@ local function widget(id)
     function w:setCurrentOptionByData(data)self.option={data=data}end
     function w:getCurrentOption()return self.option end
     function w:isChecked()return self.checked end
+    function w:getText()return self.text or 'Shared movement help' end
     function w:recursiveGetChildById(child) return widget(child) end
     function w:isVisible()return self.visible end
     function w:show()self.visible=true end
@@ -43,7 +44,7 @@ end
 g_game={isOnline=function()return true end,getLocalPlayer=function()return {getId=function()return selfId end}end,
  getProtocolGame=function()return {sendExtendedOpcode=function(_,opcode,buffer)
   local req=json.decode(buffer);requests[#requests+1]=req.action
-  if req.action=='options' and selfVocation~=4 then personalSettings[selfId]={runThreshold=req.runThreshold,alwaysRun=req.alwaysRun}end
+  if req.action=='options' and selfVocation~=4 then personalSettings[selfId]={runThreshold=req.runThreshold,alwaysRun=req.alwaysRun,paladinMode=req.paladinMode}end
   if req.action=='start' then active=true elseif req.action=='stop' then active=false elseif req.action=='teleport' then serverCooldown=600 end
   if not silent then respond() end
  end}end,
@@ -94,6 +95,19 @@ count=#requests;widget('partyRunThreshold').onOptionChange();widget('partyAlways
 assert(#requests==count,'Knight cannot send movement options even by invoking hidden controls')
 selfId=1;respond();assert(widget('partyStart').enabled and not widget('partyAlwaysRun').visible,'Knight leader keeps Start controls')
 selfVocation=2;respond();assert(widget('partyRunThreshold').visible and not widget('partyKnightNotice').visible)
+assert(not widget('partyPaladinMode').visible,'other vocations do not see Paladin options')
+selfId=2;selfVocation=3;respond()
+assert(widget('partyPaladinMode').visible and widget('partyPaladinMode').enabled and
+ not widget('partyAlwaysRun').visible and not widget('partyStart').enabled,
+ 'Paladin members choose only their own positioning; orbit is distinct from runes-only')
+for _,mode in ipairs({'close','distance','orbit'})do
+ widget('partyPaladinMode'):setCurrentOptionByData(mode);widget('partyPaladinMode').onOptionChange()
+ assert(settings().paladinMode==mode and not settings().alwaysRun)
+end
+assert(widget('partyMovementHelp').text:find('exevo mas san'))
+selfVocation=2;respond()
+assert(not widget('partyPaladinMode').visible and widget('partyAlwaysRun').visible and
+ widget('partyMovementHelp').text=='Shared movement help','changing vocation restores shared help and controls')
 selfId=1;tooMany=true;respond();assert(not widget('partyStart').enabled and widget('partyWarning').text:find('4 pessoas'))
 tooMany=false;allPz=false;serverCooldown=0;respond();assert(not widget('partyTeleport').enabled)
 -- A missing response is not mistaken for an absent party. Controls fail closed.

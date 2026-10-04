@@ -1,4 +1,4 @@
-# Party Hunt: acompanhamento, Druid e Sorcerer
+# Party Hunt: acompanhamento, Druid, Sorcerer e Paladin
 
 O líder da party inicia Party Hunt. Pode andar manualmente ou usar Cavebot:
 os controles são independentes. Os membros com o cliente atualizado acompanham
@@ -94,14 +94,49 @@ lançamento no contorno, respeitando o mínimo de três SQMs durante a fuga.
 Não abandona a box para manter a distância de cada monstro. Cobertura real,
 mínimo de inimigos e cooldowns continuam valendo. Always run não para para
 magias ofensivas e mantém o uso das runas.
-Outras vocações habilitadas têm acompanhamento e recuo; suas formações
-específicas serão desenvolvidas depois. Knight/Elite Knight não têm essas opções.
+Knight/Elite Knight não têm essas opções.
+
+## Formação de Paladin / Royal Paladin
+
+Cada Paladin escolhe sua própria opção **Paladin position** em Extras:
+
+- **Close to box**: mantém dois SQMs entre personagens: EK, um SQM intermediário,
+  RP. Busca um espaço livre nessa distância; não entra no SQM do líder nem dos
+  monstros. Se a formação estiver bloqueada, procura outro espaço seguro próximo.
+- **2 SQMs from leader**: mantém um espaço livre a dois SQMs do líder.
+- **Circle and attack**: contorna a box visível no sentido horário, normalmente
+  entre três e cinco SQMs, com pausas curtas após os passos confirmados para
+  atacar pelo Shooter. Obstáculos podem exigir um desvio temporário no outro sentido.
+
+`exevo mas san` é uma exceção nos três modos. Somente quando a magia está pronta
+na rotação real, busca uma posição livre exatamente a **dois SQMs**, ao norte,
+sul, leste ou oeste do líder. O Shooter lança a magia respeitando sua área real
+e o mínimo de inimigos configurado; depois retoma o modo escolhido. Não lança
+a partir de uma posição diagonal ou a outra distância quando os quatro lados
+estão bloqueados. No modo de contorno, continua circulando enquanto aguarda espaço.
+
+As demais magias usam o alvo real do Helper, sua distância de alcance, linha de
+visão, mana e cooldown individual e de grupos. Magias centradas no alvo, como
+`exevo tempo mas san`, continuam usando sua própria área, sem receber a regra
+do Mas San centrado no personagem. O Party Hunt não cria uma segunda rotação
+nem lança ataques por conta própria.
+
+O limite **Run from (monsters)** também vale nos modos parados: ao atingir o
+número escolhido de atacantes que causaram dano, começa a contornar a box sem
+parar de atacar. Abaixo desse limite, retoma a posição selecionada. O modo
+Circle and attack substitui para Paladin a opção Always run (runes); ele permite
+magias e as runas configuradas no Helper. As preferências são pessoais,
+validadas e persistidas no KV existente do personagem no servidor, sem nova tabela
+ou migração de banco de dados.
 
 ## Escadas e recuperação
 
 Com Party Hunt ativo, o servidor resgata automaticamente o membro quando ele
-fica em outro andar, a mais de cinco SQMs do líder ou sem linha de visão por
+fica em outro andar, a mais de dez SQMs do líder ou sem linha de visão por
 três segundos. Essa espera permite ao cliente primeiro contornar a parede.
+O limite de dez SQMs vale para todas as vocações e conta também diagonais.
+A exatamente dez SQMs, com visão livre, acompanha andando. Esse limite de
+resgate é independente da distância usada para se posicionar ou contornar a box.
 A recuperação coloca cada
 membro em um SQM livre a exatamente três SQMs (distância de Chebyshev) do líder,
 priorizando norte, sul, leste ou oeste e procurando outros pontos desse anel

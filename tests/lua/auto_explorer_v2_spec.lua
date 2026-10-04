@@ -20,6 +20,8 @@ local stairsOnly = false
 local routeMap = false
 local corridorMap = false
 local diagonalMap = false
+local detourMap = false
+local detourSealed = false
 local wallMap = false
 local huntMap = false
 local huntStandOccupied = false
@@ -196,6 +198,15 @@ g_game = {
 }
 g_map = {
     findPath = function(startPosition, goal, _, flags)
+        if detourMap then
+            if passageOccupied and startPosition.x <= 101 and flags ~= 20 then return nil end
+            local path = {}
+            for _ = 1, math.abs(startPosition.y - 100) do
+                path[#path + 1] = startPosition.y < 100 and South or North
+            end
+            for _ = startPosition.x + 1, goal.x do path[#path + 1] = East end
+            return path
+        end
         if not corridorMap then return nil end
         if passageWall or (passageOccupied and flags ~= 20) then return nil end
         if startPosition.y ~= 100 or goal.y ~= 100 or
@@ -205,6 +216,19 @@ g_map = {
         return path
     end,
     getTile = function(position)
+        if detourMap then
+            if position.z ~= 7 or position.x < 99 or position.x > 106 or
+                position.y < 99 or position.y > 101 or detourSealed and position.y ~= 100 then return nil end
+            local occupied = passageOccupied and position.x == 101 and position.y == 100
+            return {
+                getGround = function() return true end,
+                isWalkable = function(_, ignoreCreatures) return ignoreCreatures or not occupied end,
+                hasCreatures = function() return occupied end,
+                hasFloorChange = function() return false end,
+                hasElevation = function() return false end,
+                getItems = function() return {} end
+            }
+        end
         if huntMap then
             if position.z ~= 7 or position.x < 95 or position.x > 115 or
                 position.y < 97 or position.y > 103 then return nil end
@@ -354,6 +378,37 @@ assert(widget('v2CavebotAutoExploringButton').enabled == false,
     'Start must be disabled without waypoints')
 widget('v2CavebotAutoExploringButton').onClick()
 assert(not isAutoExplorerActive(), 'Start must reject an empty route even if invoked directly')
+
+if CAVEBOT_DETOUR_ONLY then
+    detourMap=true;monsters={}
+    playerPosition={x=120,y=100,z=7}
+    widget('v2CavebotNodeButton').onClick()
+    playerPosition={x=100,y=100,z=7}
+    widget('v2CavebotAutoExploringButton').onClick()
+    advance(50)
+    assert(playerPosition.x==101 and playerPosition.y==100 and lastWalkDirection==East,
+        'an unobstructed path must keep its straight cardinal step')
+    widget('v2CavebotAutoExploringButton').onClick()
+    playerPosition={x=100,y=100,z=7};passageOccupied=true
+    widget('v2CavebotAutoExploringButton').onClick()
+    advance(50)
+    assert(not (playerPosition.x==101 and playerPosition.y==100) and playerPosition.y~=100,
+        'a player blocking a distant Node must cause a side or diagonal detour, not indefinite waiting')
+    for _=1,12 do advance(100) end
+    assert(playerPosition.x>=105 and settings.explorer_test_auto_explorer_v2.waypointIndex==1 and
+        isAutoExplorerActive(),'rejoin the route beyond the blocker without skipping the off-screen waypoint')
+    widget('v2CavebotAutoExploringButton').onClick()
+    detourSealed=true;playerPosition={x=100,y=100,z=7}
+    widget('v2CavebotAutoExploringButton').onClick()
+    local before=walks
+    advance(50);advance(3000)
+    assert(walks==before and isAutoExplorerActive() and widget('v2CavebotStatus').text:find('Passage occupied'),
+        'a genuinely sealed passage still waits, without walking through the blocking player')
+    widget('v2CavebotAutoExploringButton').onClick()
+    BaiakHelperExplorerV2.terminate()
+    print('PASS: Cavebot bypasses a blocking player toward an off-screen Node, rejoins the route, keeps cardinal steps when clear and waits only without an exit')
+    return
+end
 
 if CAVEBOT_TIMER_ONLY then
     cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=7200,limitSeconds=10800,active=false}))

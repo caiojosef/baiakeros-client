@@ -3930,9 +3930,13 @@ function getPartyHuntSpellPlan()
             (not isSingleTargetAttackSpell(spell) or slot.attackAllowMultiple==true or #monsters==1) then
             local profile = ATTACK_SPELL_AREAS[spell.words]
             if isSpellCooldownReady(spell, now) then
+                local affected=getSpellAffectedMonsters(spell,monsters,player,player:getPosition(),target)
                 return { words = spell.words, id = spell.id, profile = profile,
                     offsets = profile and ATTACK_DIRECTIONAL_AREAS[profile.area],
-                    minEnemies = slot.attackMinEnemies or 1, ready = true }
+                    minEnemies = slot.attackMinEnemies or 1, ready = true,
+                    needTarget = spell.needTarget == true, targetPosition = target and target:getPosition(),
+                    castRange = profile and (profile.castRange or profile.range) or spell.range or 7,
+                    canCastHere = #affected >= (slot.attackMinEnemies or 1) }
             end
         end
     end

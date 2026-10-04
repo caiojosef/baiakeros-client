@@ -26,6 +26,7 @@ local function send(action, options)
     local data={action=action}
     if action=='options' then
         data.runThreshold,data.alwaysRun=options.runThreshold,options.alwaysRun
+        data.paladinMode=options.paladinMode
     end
     if action=='heartbeat' then
         local t=lastTransition
@@ -64,12 +65,24 @@ local function render()
     updatingOptions=true
     get('RunThreshold'):setCurrentOptionByData(options.runThreshold, true)
     get('AlwaysRun'):setChecked(options.alwaysRun==true)
+    get('PaladinMode'):setCurrentOptionByData(options.paladinMode or 'distance', true)
     updatingOptions=false
     local movementAllowed=ready and snapshot.canConfigureMovement==true and snapshot.vocation~=4
     get('RunThreshold'):setEnabled(fresh and movementAllowed and g_game.isOnline())
     get('AlwaysRun'):setEnabled(fresh and movementAllowed and g_game.isOnline())
     for _,id in ipairs({'ToleranceLabel','RunThreshold','AlwaysRun','OptionsSeparator','MovementHelp'})do
         if movementAllowed then get(id):show()else get(id):hide()end
+    end
+    local paladin=movementAllowed and snapshot.vocation==3
+    get('PaladinMode'):setEnabled(fresh and paladin and g_game.isOnline())
+    for _,id in ipairs({'PaladinModeLabel','PaladinMode'})do
+        if paladin then get(id):show()else get(id):hide()end
+    end
+    if paladin then
+        get('AlwaysRun'):hide();get('AlwaysRun'):setEnabled(false)
+        get('MovementHelp'):setText('Paladin / Royal Paladin\n\nClose to box: hold 2 SQMs from the leader, leaving one SQM between you.\n2 SQMs: hold a free position two SQMs from the leader.\nCircle and attack: clockwise around the visible box, normally 3 to 5 SQMs away, pausing to attack.\n\nReady exevo mas san: move to a free north, south, east or west slot exactly 2 SQMs from the leader. Cast through the Shooter, then resume your movement mode.\n\nOther spells keep their real target/range and cooldowns.\nReaching the attacker count starts evasive circling even in the holding modes. Avoid creatures, walls and holes.')
+    else
+        get('MovementHelp'):setText(get('MovementHelp').defaultMovementText)
     end
     if ready and snapshot.vocation==4 then get('KnightNotice'):show()else get('KnightNotice'):hide()end
     local wait = cooldown()
@@ -128,7 +141,8 @@ local function changeOptions()
         g_clock.millis()-lastStatusAt>8000 then return end
     local selected=get('RunThreshold'):getCurrentOption()
     if not selected then return end
-    send('options',{runThreshold=selected.data,alwaysRun=get('AlwaysRun'):isChecked()})
+    send('options',{runThreshold=selected.data,alwaysRun=snapshot.vocation~=3 and get('AlwaysRun'):isChecked() or false,
+        paladinMode=snapshot.vocation==3 and get('PaladinMode'):getCurrentOption().data or nil})
 end
 function Hunt.showFloating(automatic)
     if not floating or not running and not isLeader() then return end
@@ -269,6 +283,11 @@ function Hunt.init(helperWindow)
         if ready and isLeader() and snapshot.canTeleport and not snapshot.tooMany and cooldown() == 0 then send('teleport') end
     end
     for value=1,6 do get('RunThreshold'):addOption(tostring(value),value) end
+    get('MovementHelp').defaultMovementText=get('MovementHelp'):getText()
+    get('PaladinMode'):addOption('Close to box','close')
+    get('PaladinMode'):addOption('2 SQMs from leader','distance')
+    get('PaladinMode'):addOption('Circle and attack','orbit')
+    get('PaladinMode').onOptionChange=changeOptions
     get('RunThreshold').onOptionChange=changeOptions
     get('AlwaysRun').onCheckChange=changeOptions
     get('Refresh').onClick = Hunt.refresh
