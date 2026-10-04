@@ -1168,6 +1168,7 @@ function refreshContainerItems(container)
         ItemsDatabase.setTier(itemWidget, container:getItem(slot))
         itemWidget:setShowDuration(g_game.getFeature(GameThingClock) and modules.client_options.getOption('showExpiryInContainers'))
         itemWidget:setShowCharges(g_game.getFeature(GameThingCounter) and modules.client_options.getOption('showExpiryInContainers'))
+        itemWidget.position = container:getSlotPosition(slot)
     end
 
     if container:hasPages() then
@@ -1384,6 +1385,31 @@ function onContainerOpen(container, previousContainer)
             end
         end
     end
+    local previousItem = previousContainer and previousContainer:getContainerItem()
+    local currentItem = container:getContainerItem()
+    if previousContainer and previousContainer.window and previousContainer.itemsPanel and
+        previousItem and currentItem and previousItem:getId() == GOLD_POUCH_ID and
+        currentItem:getId() == GOLD_POUCH_ID and
+        previousContainer:getCapacity() == container:getCapacity() and
+        previousContainer:hasPages() == container:hasPages() and
+        previousContainer:hasParent() == container:hasParent() and
+        previousContainer:isUnlocked() == container:isUnlocked() and
+        previousContainer:getName() == container:getName() then
+        -- Autoloot sends complete pouch snapshots. Keep the live grid, window
+        -- geometry and handlers instead of rebuilding them for every kill.
+        container.window = previousContainer.window
+        container.itemsPanel = previousContainer.itemsPanel
+        previousContainer.window = nil
+        previousContainer.itemsPanel = nil
+        container.window.container = container
+        container.window:getChildById('containerItemWidget'):setItem(currentItem)
+        refreshContainerItems(container)
+        if previousContainer:getFirstIndex() ~= container:getFirstIndex() then
+            saveContainerState(container, true)
+        end
+        return
+    end
+
     local savedState = getSavedContainerState(container)
     local containerWindow
     if previousContainer then
@@ -1397,13 +1423,15 @@ function onContainerOpen(container, previousContainer)
     else
         containerWindow = g_ui.createWidget('ContainerWindow')
     end
+    containerWindow.container = container
     containerWindow:setId('container' .. container:getId())
     local containerPanel = containerWindow:getChildById('contentsPanel')
     local containerItemWidget = containerWindow:getChildById('containerItemWidget')
     containerWindow.onClose = function()
-        container.manualClose = true
-        saveContainerState(container, false)
-        g_game.close(container)
+        local currentContainer = containerWindow.container
+        currentContainer.manualClose = true
+        saveContainerState(currentContainer, false)
+        g_game.close(currentContainer)
         containerWindow:hide()
     end
 
@@ -1417,7 +1445,7 @@ function onContainerOpen(container, previousContainer)
 
     local upButton = containerWindow:getChildById('upButton')
     upButton.onClick = function()
-        g_game.openParent(container)
+        g_game.openParent(containerWindow.container)
     end
     upButton:setVisible(container:hasParent())
 
@@ -1428,7 +1456,7 @@ function onContainerOpen(container, previousContainer)
             pagePanel.wasVisibleBeforeMinimize = true
             pagePanel:setVisible(false)
         end
-        saveContainerState(container, true)
+        saveContainerState(containerWindow.container, true)
     end
     
     containerWindow.onMaximize = function()
@@ -1437,11 +1465,11 @@ function onContainerOpen(container, previousContainer)
             pagePanel:setVisible(true)
             pagePanel.wasVisibleBeforeMinimize = nil
         end
-        saveContainerState(container, true)
+        saveContainerState(containerWindow.container, true)
     end
 
     containerWindow.onLockChange = function()
-        saveContainerState(container, true)
+        saveContainerState(containerWindow.container, true)
     end
 
 
@@ -1449,12 +1477,18 @@ function onContainerOpen(container, previousContainer)
     -- the next event-loop turn, after the destination panel accepted the drop,
     -- so the final column is persisted immediately instead of relying only on
     -- the later logout signal.
-    local inheritedDragLeave = containerWindow.onDragLeave
+    -- Keep the original handler once; wrapping the previous wrapper on every
+    -- snapshot would retain old containers and multiply scheduled saves.
+    if not containerWindow.containerDragLeaveHandler then
+        containerWindow.containerDragLeaveHandler = containerWindow.onDragLeave
+    end
+    local inheritedDragLeave = containerWindow.containerDragLeaveHandler
     containerWindow.onDragLeave = function(self, droppedWidget, mousePos)
         local result = inheritedDragLeave(self, droppedWidget, mousePos)
         scheduleEvent(function()
-            if container.window == self then
-                saveContainerState(container, true)
+            local currentContainer = self.container
+            if currentContainer and currentContainer.window == self then
+                saveContainerState(currentContainer, true)
                 g_settings.save()
             end
         end, 0)
@@ -1637,8 +1671,9 @@ function onContainerOpen(container, previousContainer)
     applySavedContainerState(container, containerWindow, savedState, not previousContainer)
     saveContainerState(container, true)
     containerWindow.onGeometryChange = function()
-        if container.window == containerWindow then
-            saveContainerState(container, true)
+        local currentContainer = containerWindow.container
+        if currentContainer and currentContainer.window == containerWindow then
+            saveContainerState(currentContainer, true)
         end
     end
     

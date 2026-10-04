@@ -73,6 +73,11 @@ local POTION_IDS = {
     [53162] = true, [53163] = true, [53164] = true,
 }
 local LOOT_POUCH_ID = 23721
+local TOKEN_RECHARGE_IDS = {
+    [29429] = true, [29428] = true, [31621] = true, [30401] = true,
+    [32636] = true, [39235] = true, [50156] = true, [39179] = true,
+    [39182] = true, [39185] = true, [39188] = true, [50150] = true,
+}
 
 local function getThingServerId(thing)
     if not thing or not thing:isItem() then return 0 end
@@ -1043,6 +1048,11 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
         shortcut = nil
     end
     if useThing then
+        if useThing:isItem() and TOKEN_RECHARGE_IDS[getThingServerId(useThing)] then
+            menu:addOption(tr('Encantar / Recarregar'), function()
+                g_game.use(useThing)
+            end)
+        end
         if useThing:isContainer() then
             if useThing:getParentContainer() then
                 menu:addOption(tr('Open'), function()

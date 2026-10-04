@@ -23,7 +23,14 @@
 #include "application.h"
 
 #include "asyncdispatcher.h"
+#if __has_include(<gitinfo.h>)
 #include <gitinfo.h>
+#else
+// Source archives and clean builds may not have generated Git metadata.
+#define GIT_BRANCH unknown
+#define GIT_VERSION 4.x
+#define GIT_COMMITS 0
+#endif
 
 #define ADD_QUOTES_HELPER(s) #s
 #define ADD_QUOTES(s) ADD_QUOTES_HELPER(s)

@@ -20,6 +20,8 @@ local stairsOnly = false
 local routeMap = false
 local corridorMap = false
 local diagonalMap = false
+local detourMap = false
+local detourSealed = false
 local wallMap = false
 local huntMap = false
 local huntStandOccupied = false
@@ -62,6 +64,7 @@ local function widget(id)
     function value:setTooltip(tooltip) self.tooltip = tooltip end
     function value:setOn(on) self.on = on end
     function value:setVisible(visible) self.visible = visible end
+    function value:isVisible()return self.visible==true end
     function value:setMarginTop(margin) self.marginTop = margin end
     function value:recursiveGetChildById(childId) return widget(childId) end
     function value:destroyChildren() self.children = {} end
@@ -195,6 +198,15 @@ g_game = {
 }
 g_map = {
     findPath = function(startPosition, goal, _, flags)
+        if detourMap then
+            if passageOccupied and startPosition.x <= 101 and flags ~= 20 then return nil end
+            local path = {}
+            for _ = 1, math.abs(startPosition.y - 100) do
+                path[#path + 1] = startPosition.y < 100 and South or North
+            end
+            for _ = startPosition.x + 1, goal.x do path[#path + 1] = East end
+            return path
+        end
         if not corridorMap then return nil end
         if passageWall or (passageOccupied and flags ~= 20) then return nil end
         if startPosition.y ~= 100 or goal.y ~= 100 or
@@ -204,6 +216,19 @@ g_map = {
         return path
     end,
     getTile = function(position)
+        if detourMap then
+            if position.z ~= 7 or position.x < 99 or position.x > 106 or
+                position.y < 99 or position.y > 101 or detourSealed and position.y ~= 100 then return nil end
+            local occupied = passageOccupied and position.x == 101 and position.y == 100
+            return {
+                getGround = function() return true end,
+                isWalkable = function(_, ignoreCreatures) return ignoreCreatures or not occupied end,
+                hasCreatures = function() return occupied end,
+                hasFloorChange = function() return false end,
+                hasElevation = function() return false end,
+                getItems = function() return {} end
+            }
+        end
         if huntMap then
             if position.z ~= 7 or position.x < 95 or position.x > 115 or
                 position.y < 97 or position.y > 103 then return nil end
@@ -334,15 +359,69 @@ local function monster(x, y)
     }
 end
 
+local cavebotCallbacks={}
+ProtocolGame={registerExtendedOpcode=function(code,callback)cavebotCallbacks[code]=callback end,
+    unregisterExtendedOpcode=function(code)cavebotCallbacks[code]=nil end}
+g_game.getProtocolGame=function()return {sendExtendedOpcode=function(_,code,buffer)
+    local request=json.decode(buffer)
+    if request.action~='ranking' then
+        cavebotCallbacks[code](nil,code,json.encode({action='status',remaining=10800,limitSeconds=10800,
+            active=request.action=='start' or request.action=='heartbeat'}))
+    end
+end}end
 dofile('modules/game_baiakeros_helper_v2/explorer.lua')
 BaiakHelperExplorerV2.init(window)
 BaiakHelperExplorerV2.onGameStart()
-assert(widget('v2CavebotTimerLabel').text == '01:00:00')
+assert(widget('v2CavebotTimerLabel').text == '03:00:00')
 assert(widget('v2CavebotProgress').percent == 100)
 assert(widget('v2CavebotAutoExploringButton').enabled == false,
     'Start must be disabled without waypoints')
 widget('v2CavebotAutoExploringButton').onClick()
 assert(not isAutoExplorerActive(), 'Start must reject an empty route even if invoked directly')
+
+if CAVEBOT_DETOUR_ONLY then
+    detourMap=true;monsters={}
+    playerPosition={x=120,y=100,z=7}
+    widget('v2CavebotNodeButton').onClick()
+    playerPosition={x=100,y=100,z=7}
+    widget('v2CavebotAutoExploringButton').onClick()
+    advance(50)
+    assert(playerPosition.x==101 and playerPosition.y==100 and lastWalkDirection==East,
+        'an unobstructed path must keep its straight cardinal step')
+    widget('v2CavebotAutoExploringButton').onClick()
+    playerPosition={x=100,y=100,z=7};passageOccupied=true
+    widget('v2CavebotAutoExploringButton').onClick()
+    advance(50)
+    assert(not (playerPosition.x==101 and playerPosition.y==100) and playerPosition.y~=100,
+        'a player blocking a distant Node must cause a side or diagonal detour, not indefinite waiting')
+    for _=1,12 do advance(100) end
+    assert(playerPosition.x>=105 and settings.explorer_test_auto_explorer_v2.waypointIndex==1 and
+        isAutoExplorerActive(),'rejoin the route beyond the blocker without skipping the off-screen waypoint')
+    widget('v2CavebotAutoExploringButton').onClick()
+    detourSealed=true;playerPosition={x=100,y=100,z=7}
+    widget('v2CavebotAutoExploringButton').onClick()
+    local before=walks
+    advance(50);advance(3000)
+    assert(walks==before and isAutoExplorerActive() and widget('v2CavebotStatus').text:find('Passage occupied'),
+        'a genuinely sealed passage still waits, without walking through the blocking player')
+    widget('v2CavebotAutoExploringButton').onClick()
+    BaiakHelperExplorerV2.terminate()
+    print('PASS: Cavebot bypasses a blocking player toward an off-screen Node, rejoins the route, keeps cardinal steps when clear and waits only without an exit')
+    return
+end
+
+if CAVEBOT_TIMER_ONLY then
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=7200,limitSeconds=10800,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='02:00:00' and widget('v2CavebotProgress').percent==66,
+        'authoritative used time stays deducted from the three-hour quota')
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=3600,limitSeconds=3600,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='01:00:00' and widget('v2CavebotProgress').percent==100,
+        'progress uses the server limit rather than a hard-coded client denominator')
+    cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=10800,limitSeconds=10800,active=false}))
+    assert(widget('v2CavebotTimerLabel').text=='03:00:00' and widget('v2CavebotProgress').percent==100)
+    print('PASS: Cavebot three-hour timer, authoritative quota, remaining time and progress')
+    return
+end
 
 -- The selected row is the next target, including after Stop or a manual walk.
 widget('v2CavebotNodeButton').onClick() -- 100,100
@@ -360,8 +439,8 @@ assert(settings.explorer_test_auto_explorer_v2.waypointIndex == 2)
 widget('v2CavebotAutoExploringButton').onClick()
 assert(detachedStarts == 1 and widget('v2CavebotAutoExploringButton').text == 'Stop',
     'Start must open the compact Cavebot window with a Stop button')
-assert(not attacks.autoTarget and not attacks.shooter,
-    'starting Cavebot must not enable Auto Target or Shooter Helper')
+assert(attacks.autoTarget and attacks.shooter,
+    'starting Cavebot enables Auto Target and Shooter Helper')
 advance(50)
 assert(playerPosition.x == 101, 'Start must follow the selected second waypoint')
 advance(50)

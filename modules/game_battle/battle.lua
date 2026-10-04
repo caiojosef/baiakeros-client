@@ -1437,10 +1437,6 @@ function init()
                 if lastBattleButtonSwitched == obj then
                     lastBattleButtonSwitched = nil
                 end
-                if lastCreatureSelected and obj.creature == lastCreatureSelected then
-                    lastCreatureSelected = nil
-                end
-
                 obj:resetState()
                 
                 local parent = obj:getParent()
@@ -2041,82 +2037,34 @@ function attackNext(previous)
 end
 
 -- Connector Callbacks
-function onAttack(creature) -- Update battleButton once you're attacking a target
+local function updateSelectionSquares()
+    local attacked = g_game.getAttackingCreature()
+    local followed = g_game.getFollowingCreature()
     if lastCreatureSelected then
-        lastCreatureSelected:hideStaticSquare()
-        lastCreatureSelected = nil
+        UICreatureButton.updateCreatureSquare(lastCreatureSelected, false)
     end
 
-    local foundBattleButton = false
-    
-    -- Update all battle list instances
+    -- Hidden lists must not retain stale target flags. Each row reads the
+    -- actual game selection before touching the shared creature marker.
     for _, instance in pairs(BattleListManager.instances) do
-        if instance.window and instance.window:isVisible() then
-            if creature then
-                -- Setting a new target
-                local battleButton = instance.battleButtons[creature:getId()]
-                if battleButton then
-                    battleButton.isTarget = true
-                    updateBattleButton(battleButton)
-                    foundBattleButton = true
-                end
-            else
-                -- No target (attack cancelled), clear all target flags
-                for _, battleButton in pairs(instance.battleButtons) do
-                    if battleButton.isTarget then
-                        battleButton.isTarget = false
-                        updateBattleButton(battleButton)
-                    end
-                end
+        for _, battleButton in pairs(instance.battleButtons) do
+            if battleButton.creature then
+                battleButton:update()
             end
         end
     end
-
-    -- If no battle button was found in any instance, show static square on creature
-    if not foundBattleButton and creature then
-        creature:showStaticSquare(UICreatureButton.getCreatureButtonColors().onTargeted.notHovered)
-    end
-
-    lastCreatureSelected = creature
+    -- Selections remain marked even if every list is hidden or filters them.
+    UICreatureButton.updateCreatureSquare(attacked, false)
+    UICreatureButton.updateCreatureSquare(followed, false)
+    lastCreatureSelected = attacked or followed
 end
 
-function onFollow(creature) -- Update battleButton once you're following a target
-    if lastCreatureSelected then
-        lastCreatureSelected:hideStaticSquare()
-        lastCreatureSelected = nil
-    end
+function onAttack(creature)
+    updateSelectionSquares()
+end
 
-    local foundBattleButton = false
-    
-    -- Update all battle list instances
-    for _, instance in pairs(BattleListManager.instances) do
-        if instance.window and instance.window:isVisible() then
-            if creature then
-                local battleButton = creature and instance.battleButtons[creature:getId()] or nil
-                if battleButton then
-                    battleButton.isFollowed = creature and true or false
-                    updateBattleButton(battleButton)
-                    foundBattleButton = true
-                    -- Don't break here - continue to update other instances
-                end
-            else
-                -- No follow (follow cancelled), clear all follow flags
-                for _, battleButton in pairs(instance.battleButtons) do
-                    if battleButton.isFollowed then
-                        battleButton.isFollowed = false
-                        updateBattleButton(battleButton)
-                    end
-                end
-            end
-        end
-    end
-
-    -- If no battle button was found in any instance, show static square on creature
-    if not foundBattleButton and creature then
-        creature:showStaticSquare(UICreatureButton.getCreatureButtonColors().onFollowed.notHovered)
-    end
-    
-    lastCreatureSelected = creature
+function onFollow(creature)
+    updateSelectionSquares()
 end
 
 function onCreatureOutfitChange(creature, outfit, oldOutfit) -- Insert/Remove creature when it becomes visible/invisible
@@ -2282,11 +2230,6 @@ function onCreaturePositionChange(creature, newPos, oldPos) -- Update battleButt
                                         end
                                     elseif newDistance < oldDistance then
                                         battleButton:setVisible(canBeSeen(creature))
-
-                                        if lastCreatureSelected == creature and not battleButton:isVisible() then
-                                            lastCreatureSelected:hideStaticSquare()
-                                            lastCreatureSelected = nil
-                                        end
 
                                         if index > 1 then
                                             for i = index, 2, -1 do

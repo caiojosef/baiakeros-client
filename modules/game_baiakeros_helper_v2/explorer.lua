@@ -1,6 +1,6 @@
 BaiakHelperExplorerV2 = {}
 
-local DAILY_LIMIT_MS = 60 * 60 * 1000
+local DAILY_LIMIT_MS = 3 * 60 * 60 * 1000
 local CAVEBOT_OPCODE = 92
 local HEARTBEAT_MS = 3000
 local serverStatusReady = false
@@ -513,12 +513,13 @@ local function openNeighbors(position, monsters, minimumDistance)
 end
 
 local function searchStep(startPosition, goal, monsters, minimumDistance, allowStairs,
-        allowGoalStair)
+        allowGoalStair, routeAnchors)
     local queue = { { position = startPosition, depth = 0 } }
     local seen = { [key(startPosition)] = true }
     local best, bestScore
     local roam, roamScore
     local stair, stairScore
+    local detour, detourScore
     local head = 1
     while head <= #queue and head <= MAX_SEARCH_NODES do
         local node = queue[head]
@@ -542,6 +543,15 @@ local function searchStep(startPosition, goal, monsters, minimumDistance, allowS
                         local depth = node.depth + 1
                         if goal and samePosition(nextPosition, goal) then
                             return first, firstPosition
+                        end
+                        -- A distant waypoint may be outside this visible search.
+                        -- Rejoin a reachable point ahead on the recorded route
+                        -- instead of waiting behind a player that can be bypassed.
+                        if routeAnchors and routeAnchors[nextKey] and not isStair then
+                            local score = routeAnchors[nextKey] * 1000 - depth * 10
+                            if not detour or score > detourScore then
+                                detour, detourScore = { first, firstPosition }, score
+                            end
                         end
                         if not goal and not isStair then
                             local visits = visited[nextKey] or 0
@@ -578,6 +588,7 @@ local function searchStep(startPosition, goal, monsters, minimumDistance, allowS
         local selected = best or stair or roam
         if selected then return selected[1], selected[2], selected[3] end
     end
+    if detour then return detour[1], detour[2] end
     return nil
 end
 
@@ -648,13 +659,14 @@ local function onCavebotOpcode(protocol, opcode, buffer)
         end
     elseif response.action == 'status' then
         serverStatusReady = true
-        local remaining = math.max(0, math.min(3600, tonumber(response.remaining) or 0))
+        DAILY_LIMIT_MS=math.max(1,tonumber(response.limitSeconds) or 10800)*1000
+        local remaining = math.max(0, math.min(DAILY_LIMIT_MS/1000, tonumber(response.remaining) or 0))
         usedMs = DAILY_LIMIT_MS - remaining * 1000
         lastChargeAt = g_clock.millis()
         if running and not routeController and response.active ~= true then
-            stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily hour exhausted')
+            stop(remaining > 0 and 'Cavebot session stopped by server' or 'Daily time exhausted')
         elseif not running then
-            setStatus(remaining > 0 and 'Ready to explore' or 'Daily hour exhausted')
+            setStatus(remaining > 0 and 'Ready to explore' or 'Daily time exhausted')
         end
         render()
     end
@@ -891,6 +903,7 @@ local function findVisibleEcho(position)
 end
 
 local function routePathStep(position, goal, monsters, allowGoalStair)
+    local routeAnchors
     if g_map.findPath then
         -- Allow decorative, non-pathable floor items; never allow solid blockers.
         local path = g_map.findPath(position, goal, 4000, 4)
@@ -909,8 +922,24 @@ local function routePathStep(position, goal, monsters, allowGoalStair)
                 end
             end
         end
+        -- Ignoring creatures supplies only route hints, never permission to
+        -- walk through them. The visible search still checks each destination.
+        local guide = g_map.findPath(position, goal, 4000, 4 + 16)
+        if guide then
+            routeAnchors = {}
+            local p = { x = position.x, y = position.y, z = position.z }
+            for index = 1, math.min(#guide, MAX_SEARCH_DEPTH) do
+                for _, option in ipairs(WAYPOINT_DIRECTIONS) do
+                    if option.walk == guide[index] then
+                        p = { x = p.x + option.x, y = p.y + option.y, z = p.z }
+                        routeAnchors[key(p)] = index
+                        break
+                    end
+                end
+            end
+        end
     end
-    return searchStep(position, goal, monsters, 1, false, allowGoalStair)
+    return searchStep(position, goal, monsters, 1, false, allowGoalStair, routeAnchors)
 end
 
 local function routeBlockedByCreature(position, goal)
@@ -1328,7 +1357,7 @@ local function tick()
         end
         if now - lastSaveAt >= 5000 then save() end
         if remainingMs() <= 0 then
-            stop('Daily hour exhausted')
+            stop('Daily time exhausted')
         else
             local player = g_game.getLocalPlayer()
             if not g_game.isOnline() or not player or player:isDead() then
@@ -1527,7 +1556,7 @@ end
 
 local function start()
     if running then stop() return end
-    if not routeController and PartyHuntV2 and PartyHuntV2.isActive() then
+    if not routeController and PartyHuntV2 and PartyHuntV2.isFollowing() then
         setStatus('Stop Party Hunt before starting Cavebot')
         return
     end
@@ -1539,7 +1568,7 @@ local function start()
         return
     end
     if not routeController and not serverStatusReady then setStatus('Waiting for server time') render() return end
-    if remainingMs() <= 0 then setStatus('Daily hour exhausted') render() return end
+    if remainingMs() <= 0 then setStatus('Daily time exhausted') render() return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() or player:hasState(PlayerStates.Pz) then
         setStatus('Leave the protection zone to explore')
