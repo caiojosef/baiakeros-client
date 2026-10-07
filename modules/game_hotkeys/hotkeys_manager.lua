@@ -529,6 +529,13 @@ function doKeyCombo(keyCombo)
         return
     end
 
+    local helper=modules.game_baiakeros_helper
+    if helper and helper.notifyManualAction and not hotKey.action then
+        if hotKey.itemId then helper.notifyManualAction('item')
+        elseif hotKey.autoSend and hotKey.value and Spells.getSpellDataByParamWords(hotKey.value) then
+            helper.notifyManualAction('spell')
+        end
+    end
     if g_clock.millis() - lastHotkeyTime < modules.client_options.getOption('hotkeyDelay') then
         return
     end

@@ -107,15 +107,6 @@ BaiakerosPartyHuntPanel < UIWidget
       margin-left: 5
       !tooltip: tr('Open the floating Party Hunt window')
 
-    SmallButton
-      id: partyTeleport
-      text: Teleport to leader
-      size: 280 25
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: partyStart.bottom
-      margin-top: 12
-      !tooltip: tr('Leader only. Everyone must be in protection zone. Cooldown: 10 minutes.')
-
     Label
       id: partyWarning
       color: #f0d48a
@@ -123,7 +114,7 @@ BaiakerosPartyHuntPanel < UIWidget
       text-auto-resize: true
       anchors.left: parent.left
       anchors.right: parent.right
-      anchors.top: partyTeleport.bottom
+      anchors.top: partyStart.bottom
       margin: 12 15 0 15
 
     Label
@@ -311,6 +302,32 @@ BaiakerosPartyHuntFloat < MainWindow
     anchors.top: partyFloatProgress.bottom
     margin-top: 6
 
+  UIWidget
+    id: partyFloatLeverControls
+    height: 44
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: partyFloatStop.bottom
+    margin-top: 6
+    visible: false
+
+    CheckBox
+      id: partyFloatBossLever
+      text: Boss lever
+      size: 136 18
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 8
+      !tooltip: tr('Stand on the first lever tile and face the remaining tiles. Party slots 2, 3 and 4 line up one SQM apart. Paused members do not move. Using the boss lever clears this option.')
+
+    SmallButton
+      id: partyFloatLeverHotkey
+      text: Set hotkey
+      size: 88 22
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin-right: 8
+
   Label
     id: partyFloatRoster
     text: 1. ---
@@ -318,7 +335,7 @@ BaiakerosPartyHuntFloat < MainWindow
     size: 240 72
     text-wrap: true
     anchors.horizontalCenter: parent.horizontalCenter
-    anchors.top: partyFloatStop.bottom
+    anchors.top: partyFloatLeverControls.bottom
     margin-top: 6
 
   UIWidget

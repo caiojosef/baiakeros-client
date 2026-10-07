@@ -199,9 +199,31 @@ function Movement.toTile(position, destination, monsters, walkable)
     end)
 end
 
+-- Normal Great Energy Beam is one tile wide. From the nearest cardinal axis,
+-- move one tile sideways and fire parallel to that axis through the fuller
+-- side of the EK's box. Beam Mastery uses the ordinary cardinal formation.
+function Movement.beamFormation(position,box,monsters,plan,radius,walkable,visible,previousSlot)
+    local route=visibleRoute(position,box,visible)
+    return search(position,function(p)
+        return Movement.distance(p,box)<=Movement.boxRadius and nearest(p,monsters)>=1 and walkable(p) and route(p)
+    end,function(p,depth)
+        local dx,dy=p.x-box.x,p.y-box.y
+        if not (math.abs(dx)==radius and math.abs(dy)==1 or math.abs(dy)==radius and math.abs(dx)==1) or
+            not inSight(p,box,visible) then return nil end
+        local axis={x=math.abs(dx)==radius and p.x or box.x,y=math.abs(dy)==radius and p.y or box.y,z=box.z}
+        local coverage=Movement.coverageFacing(plan,p,box,monsters,Movement.faceBox(p,box))
+        -- Prefer the nearest reachable axis, then the fuller of its two lanes.
+        -- The cardinal base itself may be occupied: only the lateral destination
+        -- and its route must be free, so a blocked base cannot stall the beam.
+        coverage.score=-Movement.distance(position,axis)*1000000+coverage.boxCount*10000-depth*8+
+            (previousSlot and Movement.same(p,previousSlot) and 1000 or 0)
+        return coverage
+    end)
+end
+
 -- Screen coordinates grow downwards, so a positive cross product is clockwise.
 -- Prefer the requested direction; reverse only if its reachable exits are blocked.
-function Movement.orbit(position, box, monsters, avoidDistance, walkable, clockwise,visible,castRadius,previousPosition,cornerWalkable)
+function Movement.orbit(position, box, monsters, avoidDistance, walkable, clockwise,visible,castRadius,previousPosition,cornerWalkable,plan)
     local radius=Movement.distance(position,box)
     if radius>Movement.boxRadius or not inSight(position,box,visible) then
         return Movement.follow(position,box,Movement.orbitRadius,monsters,walkable,visible)
@@ -231,7 +253,11 @@ function Movement.orbit(position, box, monsters, avoidDistance, walkable, clockw
                 local exit={x=p.x+d[1],y=p.y+d[2],z=p.z}
                 if Movement.distance(exit,box)<=Movement.boxRadius and walkable(exit) and inSight(exit,box,visible) then exits=exits+1 end
             end
+            local coverage=plan and Movement.coverage(plan,p,box,monsters)
+            local castScore=coverage and (coverage.boxCount*120+
+                (coverage.boxCount>0 and coverage.count>=(plan.minEnemies or 1) and 2000 or 0)) or 0
             return {score=math.min(nearest(p,monsters),5)*80+exits*12+
+                castScore+
                 math.abs(cross)*5+(stepCross~=0 and 35 or 0)-depth*25-
                 math.abs(Movement.distance(p,box)-preferred)*(castRadius and 300 or 120)-
                 (castRadius and firstStep and math.abs(Movement.distance(firstStep,box)-preferred)*300 or 0),

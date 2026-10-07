@@ -145,6 +145,12 @@ assert(getPartyHuntSpellPlan().words == earth.words)
 rotation()
 assert(#spoken==0 and #turns==0, 'Shooter must wait for the ED placement')
 positioned=true
+notifyManualAction('spell')
+assert(isManualActionPending() and getPartyHuntSpellPlan()==nil)
+rotation();assert(#spoken==0 and #turns==0,'manual hotkey suppresses automatic casting and spell positioning')
+now=now+500;notifyManualAction('spell');now=now+749
+rotation();assert(#spoken==0,'holding/repeating a hotkey renews its priority')
+now=now+1;assert(not isManualActionPending())
 rotation()
 assert(direction==North and #spoken==0, 'Shooter must confirm box-facing direction before casting')
 now=now+300
@@ -214,6 +220,21 @@ local party=modules.game_baiakeros_helper_v2.PartyHuntV2
 party.isActive=function()return true end
 party.getLeaderTarget=function()return leaderTarget end
 g_ui={getInputIdleMillis=function()error('active Party Hunt must bypass the manual-input AFK timer')end}
+local sharedTargetChecks=0
+party.syncLeaderTarget=function()
+    sharedTargetChecks=sharedTargetChecks+1
+    if leaderTarget then g_game.attack(leaderTarget) else g_game.cancelAttack() end
+    return true
+end
+autoAttackEnabled,attackRotationEnabled=false,false
+autoAttack()
+assert(actualTarget==leaderTarget and sharedTargetChecks==1,
+    'legacy Helper delegates shared targeting before the disabled Auto Attack gate')
+local selectedLeaderTarget=leaderTarget
+leaderTarget=nil;autoAttackEnabled=true;autoAttack()
+assert(actualTarget==nil and sharedTargetChecks==2,
+    'legacy Auto Attack must not fall back to a closer monster without a leader target')
+leaderTarget=selectedLeaderTarget;party.syncLeaderTarget=nil
 autoAttackEnabled,attackRotationEnabled,autoAttackMode=true,true,'A'
 autoAttack()
 assert(actualTarget==leaderTarget,'Helper must prefer the leader target over distance priority')
@@ -235,12 +256,21 @@ now=now+180000
 assert(not checkAttackAfkTimeout() and autoAttackEnabled and attackRotationEnabled,
     'one-hour Party Hunt must not disable combat after two idle minutes')
 -- Entering PZ suppresses combat without forgetting the active party settings.
+local pzSyncs=0
+party.onProtectionZoneChange=function()
+ pzSyncs=pzSyncs+1
+ autoAttackEnabled,attackRotationEnabled=not player:hasState(PlayerStates.Pz),not player:hasState(PlayerStates.Pz)
+ if player:hasState(PlayerStates.Pz) then g_game.cancelAttack() end
+end
 player.hasState=function()return true end
 callback('onLocalPlayerStatesChange')(player,1,0)
-assert(autoAttackEnabled and attackRotationEnabled,'PZ transition must preserve automatic Party Hunt helpers')
+assert(pzSyncs==1 and not autoAttackEnabled and not attackRotationEnabled and actualTarget==nil,
+ 'legacy PZ entry must dispatch to Party Hunt combat synchronization and clear the target')
 -- Drive the real Shooter and real follower together with asynchronous steps
 -- and delayed server cooldown packets. A moving player cannot cast mid-step.
 player.hasState=function()return false end
+callback('onLocalPlayerStatesChange')(player,0,1)
+assert(pzSyncs==2 and autoAttackEnabled and attackRotationEnabled,'PZ exit must also synchronize remembered leader choices')
 now=now+100000
 playerPosition={x=100,y=104,z=7};direction=South
 slots={
@@ -257,6 +287,7 @@ local packets,castByWords,lastCastAt={}, {}, {}
 local chasing=false
 local chaserPosition
 local incoming={vocation=2,leader={id=1,position=box},settings={runThreshold=3,alwaysRun=false},attackers={}}
+party.hasBeamMastery=function()return incoming.vocation==1 and incoming.spellUpgrades and incoming.spellUpgrades.beamMastery==true or false end
 player.getStepDuration=function()return 200 end
 player.isWalking=function()return walkTo~=nil end
 player.isAutoWalking=function()return false end
@@ -380,8 +411,12 @@ assert(steps>oldSteps+15 and (paladinCasts[targeted.words] or 0)>=oldTargetCasts
  'orbit must keep circling and repeatedly cast targeted spells instead of starving the Shooter')
 slots.attackSpellSlot1.attackEnabled=true;slots.attackSpellSlot3.attackEnabled=true
 simulate(360)
-assert(#masPositions>=2 and paladinCasts[holyTarget.words],
- 'orbit pauses at two SQMs for Mas San and also casts the real target-centered spell')
+assert(#masPositions>=2 and not paladinCasts[holyTarget.words],
+ 'strict priority returns to ready Mas San/Ethereal Spear instead of advancing to a lower-priority Grenade')
+slots.attackSpellSlot3.attackPriority=2;slots.attackSpellSlot2.attackPriority=3
+simulate(200)
+assert(paladinCasts[holyTarget.words],
+ 'moving Grenade above the always-ready Spear lets its real target-centered spell cast during orbit')
 -- PZ/travel and absent targets do not invent offensive movement or casts.
 player.hasState=function()return true end
 local oldPaladinCasts=#masPositions
@@ -415,3 +450,135 @@ simulate(180)
 assert(steps>oldSteps+10 and (paladinCasts[targeted.words] or 0)>oldTargetCasts,
  'three attackers trigger circling in holding mode while targeted attacks continue')
 print('Paladin Shooter passed: adjacent/two-SQM/orbit modes, targeted casts, cardinal Mas San, blocked slots, attacker threshold, target AoE and PZ')
+
+-- Master Sorcerer uses the same real Shooter with its own wave/ultimate slots.
+vocation=13;currentVocation={baseSpellVocation=1,promotedSpellVocation=5,promoted=true}
+incoming.vocation=1;incoming.attackers={};incoming.settings={runThreshold=3,alwaysRun=false}
+spectators={};for i=1,8 do spectators[i]=boxPack[i] end
+player.getMana=function()return 5000 end;player.getMaxMana=function()return 5000 end
+local function msSpell(id,name,words,exhaustion,group,needTarget)
+ return {id=id,name=name,words=words,type='Instant',mana=100,level=60,
+  vocations={1,5},group=group or {[1]=2000},exhaustion=exhaustion,needTarget=needTarget}
+end
+local energy=msSpell(13,'Energy Wave','exevo vis hur',8000)
+local fire=msSpell(240,'Great Fire Wave','exevo gran flam hur',4000)
+local core=msSpell(24,"Hell's Core",'exevo gran mas flam',40000,{[1]=4000,[7]=40000})
+local beam=msSpell(22,'Energy Beam','exevo vis lux',6000)
+local echo=msSpell(283,'Death Echo','exevo mort ora',12000,nil,true)
+local sorcererCasts={}
+local radii={[energy.words]=4,[fire.words]=4,[core.words]=2,[beam.words]=3}
+slots={}
+for i,spell in ipairs({energy,fire,core,beam,echo})do
+ slots['attackSpellSlot'..i]={assignedAttackSpell=spell,attackEnabled=true,attackPriority=i,
+  attackMinEnemies=(spell==beam or spell==echo) and 1 or (spell==energy or spell==fire) and 5 or 8}
+end
+g_game.talk=function(words)
+ assert(not walkTo,'MS casts after the step confirmation')
+ local selected=getPartyHuntSpellPlan()
+ assert(selected and selected.ready and selected.words==words,'MS and Shooter share the next ready spell')
+ local spell;for _,slot in pairs(slots)do if slot.assignedAttackSpell.words==words then spell=slot.assignedAttackSpell end end
+ assert(not lastCastAt[words] or now-lastCastAt[words]>=spell.exhaustion,'MS respects real individual cooldowns')
+ if not chasing and radii[words] then
+  assert(PartyHuntMovement.distance(playerPosition,box)==radii[words],'wrong MS radius for '..words)
+  if words=='exevo gran vis lux' and not party.hasBeamMastery() then
+   local dx,dy=math.abs(playerPosition.x-box.x),math.abs(playerPosition.y-box.y)
+   assert(dx==4 and dy==1 or dy==4 and dx==1,'normal Great Energy Beam moves one SQM sideways from the wave axis')
+  else
+   assert(playerPosition.x==box.x or playerPosition.y==box.y,'MS holds a cardinal slot')
+  end
+ end
+ sorcererCasts[words]=(sorcererCasts[words] or 0)+1;lastCastAt[words]=now
+ packets[#packets+1]={at=now+50,spell=spell}
+end
+chasing=false;walkTo=nil;packets={};now=now+100000;PartyFollower.reset();playerPosition={x=100,y=104,z=7}
+simulate(1400)
+for _,spell in ipairs({energy,fire,core,beam})do
+ assert(sorcererCasts[spell.words],'MS rotation did not cast '..spell.words)
+end
+assert(not sorcererCasts[echo.words],'ready higher-priority attacks must preempt lower-priority Death Echo')
+slots.attackSpellSlot5.attackPriority=4;slots.attackSpellSlot4.attackPriority=5
+simulate(300)
+assert(sorcererCasts[echo.words],'Death Echo casts when moved above the short-cooldown beam')
+local oldMsSteps=steps;local oldMsCasts=0;for _,n in pairs(sorcererCasts)do oldMsCasts=oldMsCasts+n end
+chasing=true;incoming.attackers={{id=11},{id=12},{id=13}}
+simulate(800)
+local msCasts=0;for _,n in pairs(sorcererCasts)do msCasts=msCasts+n end
+assert(steps>oldMsSteps+20 and msCasts>oldMsCasts+3,'MS keeps circling and casting under pressure: steps='..(steps-oldMsSteps)..', casts='..(msCasts-oldMsCasts))
+chasing=false;incoming.attackers={}
+for _,entry in ipairs({
+ {msSpell(19,'Fire Wave','exevo flam hur',4000),2,8},
+ {msSpell(253,'Scorch','exevo infir flam hur',4000),2,8},
+ {msSpell(23,'Great Energy Beam','exevo gran vis lux',6000),4,1},
+ {msSpell(277,'Great Death Beam','exevo max mort',6000),3,1},
+ {msSpell(119,'Rage of the Skies','exevo gran mas vis',40000,{[1]=4000,[7]=40000}),2,8}
+})do
+ local spell,radius,minEnemies=entry[1],entry[2],entry[3]
+ radii[spell.words]=radius
+ slots={attackSpellSlot1={assignedAttackSpell=spell,attackEnabled=true,attackPriority=1,attackMinEnemies=minEnemies}}
+ walkTo=nil;packets={};now=now+100000;PartyFollower.reset();playerPosition={x=103,y=100,z=7}
+ simulate(160)
+ assert(sorcererCasts[spell.words],'MS formation did not cast '..spell.words)
+end
+
+-- The real Shooter uses the server's wider area only while Beam Mastery is
+-- active. Cast from the Terra Wave axis and cover all eight box monsters.
+local greatBeam=msSpell(23,'Great Energy Beam','exevo gran vis lux',6000)
+slots={attackSpellSlot1={assignedAttackSpell=greatBeam,attackEnabled=true,attackPriority=1,attackMinEnemies=8}}
+incoming.spellUpgrades={beamMastery=true}
+walkTo=nil;packets={};now=now+100000;PartyFollower.reset();playerPosition={x=100,y=104,z=7}
+local beforeBeam=sorcererCasts[greatBeam.words] or 0
+simulate(180)
+assert((sorcererCasts[greatBeam.words] or 0)>beforeBeam,'Beam Mastery must cast with eight actual box hits')
+incoming.spellUpgrades.beamMastery=false
+now=now+100000
+local normalPlan=getPartyHuntSpellPlan()
+assert(normalPlan and not normalPlan.beamMastery and normalPlan.profile.area=='beam8',
+ 'removing Beam Mastery immediately restores the real one-tile beam area')
+local beforeRemoved=sorcererCasts[greatBeam.words]
+simulate(100)
+assert(sorcererCasts[greatBeam.words]==beforeRemoved,'normal beam cannot invent eight hits to satisfy the Helper minimum')
+for _,upgraded in ipairs({false,true})do
+ incoming.spellUpgrades.beamMastery=upgraded
+ slots.attackSpellSlot1.attackMinEnemies=upgraded and 8 or 3
+ incoming.attackers={{id=11},{id=12},{id=13}};chasing=true
+ now=now+100000;walkTo=nil;packets={};PartyFollower.reset();playerPosition={x=100,y=104,z=7}
+ local oldCount=sorcererCasts[greatBeam.words];local oldStepCount=steps
+ simulate(600)
+ assert(sorcererCasts[greatBeam.words]>oldCount+1 and steps>oldStepCount+10,
+  'Great Energy Beam must keep casting and circling under pressure, mastery='..tostring(upgraded))
+end
+chasing=false;incoming.attackers={}
+
+-- Asymmetric packs select the fuller lateral lane in every cardinal direction.
+local beamPlan={words=greatBeam.words,profile={shape='directional'},offsets={}}
+for y=1,7 do beamPlan.offsets[#beamPlan.offsets+1]={0,-y} end
+local function rotated(x,y,facing)
+ if facing==East then return -y,x elseif facing==South then return -x,-y elseif facing==West then return y,-x end
+ return x,y
+end
+for _,facing in ipairs({North,East,South,West})do
+ for _,fullSide in ipairs({-1,1})do
+  local pack={}
+  for _,offset in ipairs({{fullSide,-1},{fullSide,0},{fullSide,1},{-fullSide,0}})do
+   local x,y=rotated(offset[1],offset[2],facing)
+   pack[#pack+1]={x=box.x+x,y=box.y+y,z=7}
+  end
+  local sx,sy=rotated(0,4,facing)
+  local start={x=box.x+sx,y=box.y+sy,z=7}
+  local selected=PartyHuntMovement.beamFormation(start,box,pack,beamPlan,4,function()return true end,function()return true end)
+  local x,y=rotated(fullSide,4,facing)
+  assert(selected and selected.position.x==box.x+x and selected.position.y==box.y+y and
+   selected.facing==facing and selected.boxCount==3,'beam chooses the fuller three-monster side and faces parallel to the EK axis')
+  local blocked=selected.position
+  local fallback=PartyHuntMovement.beamFormation(start,box,pack,beamPlan,4,function(p)
+   return not PartyHuntMovement.same(p,blocked)
+  end,function()return true end)
+  assert(fallback and fallback.boxCount==1 and not PartyHuntMovement.same(fallback.position,blocked),
+   'unreachable fuller side falls back to the free lateral lane')
+  local occupiedAxis=PartyHuntMovement.beamFormation(start,box,pack,beamPlan,4,function(p)
+   return not (PartyHuntMovement.distance(p,box)==4 and (p.x==box.x or p.y==box.y))
+  end,function()return true end)
+  assert(occupiedAxis and occupiedAxis.boxCount==3,'occupied cardinal bases do not block the free lateral beam slot')
+ end
+end
+print('Master Sorcerer passed: four-SQM waves, normal beam fuller lateral lane in four directions, authoritative Beam Mastery area, cooldowns and pressure casting')

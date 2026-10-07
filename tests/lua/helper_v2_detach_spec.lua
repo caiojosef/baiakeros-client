@@ -100,9 +100,9 @@ BaiakHelperExplorerV2 = submodule()
 BaiakHelperExplorerV2.isAutoExplorerActive = function() return explorerActive end
 BaiakHelperExplorerV2.requestRanking = function() end
 BaiakHelperExplorerV2.onGameEnd = function() explorerActive = false end
-PartyHuntV2 = setmetatable({}, { __index = function(_, key)
-    error('disabled Party Hunt must not run: ' .. key)
-end })
+PartyHuntV2 = submodule()
+PartyHuntV2.isActive = function() return false end
+PartyHuntV2.refresh = function() end
 
 dofile('modules/game_baiakeros_helper_v2/helper_v2.lua')
 init()
@@ -118,8 +118,8 @@ assert(cavebotPage.visible and not attackPage.visible and
     widgets.cavebotTab.width == 116 and widgets.cavebotTab.text == 'Cavebot',
     'the Cavebot tab must own its full-size page and match Attack tab sizing')
 assert(scriptPanel.parent == scriptHome and scriptPanel.fillTarget == 'parent')
-assert(not widgets.partyHuntTab.visible and not widgets.partyHuntPage.visible,
-    'Party Hunt must stay hidden while its runtime is disabled')
+assert(widgets.partyHuntTab.visible ~= false and not widgets.partyHuntPage.visible,
+    'enabled Party Hunt keeps its tab available without covering Cavebot')
 
 detachButton.onClick()
 assert(panel.parent == floatSlot and floating.visible and not helper.visible,

@@ -214,13 +214,9 @@ function whenHealthChange()
             return
         end
         -- @
-        -- Fix By TheMaoci ~ if your server doesn't have this properly implemented,
-        -- it will cause alot of unnecessary deaths from players which will be unfair.
-        -- My friend reported me that while he was using his otcv8 and asked for a fix so here you go :)
-        local healthPercent = math.floor(g_game.getLocalPlayer():getHealth() / g_game.getLocalPlayer():getMaxHealth() *
-            100)
-        -- Old leaved for ppl who have that implemented correctly
-        --local healthPercent = math.floor(g_game.getLocalPlayer():getHealthPercent())
+        local player = g_game.getLocalPlayer()
+        if not player then return end
+        local appearance, healthPercent = UIStatsBar.getHealthAppearance(player:getHealth(), player:getMaxHealth())
 
         local yhppc = math.floor(imageSizeBroad * (1 - (healthPercent / 100)))
         local restYhppc = imageSizeBroad - yhppc
@@ -242,19 +238,7 @@ function whenHealthChange()
             height = yhppc
         })
 
-        if healthPercent > 92 then
-            healthCircleFront:setImageColor('#00BC00')
-        elseif healthPercent > 60 then
-            healthCircleFront:setImageColor('#50A150')
-        elseif healthPercent > 30 then
-            healthCircleFront:setImageColor('#A1A100')
-        elseif healthPercent > 8 then
-            healthCircleFront:setImageColor('#BF0A0A')
-        elseif healthPercent > 3 then
-            healthCircleFront:setImageColor('#910F0F')
-        else
-            healthCircleFront:setImageColor('#850C0C')
-        end
+        healthCircleFront:setImageColor(appearance.color)
     end
 end
 

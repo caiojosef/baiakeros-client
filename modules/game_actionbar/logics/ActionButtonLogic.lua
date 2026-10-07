@@ -363,13 +363,23 @@ end
 --- Executes the action assigned to a button
 function onExecuteAction(button, isPress)
     local cache = getButtonCache(button)
-    if cache.lastClick > g_clock.millis() then
-        return true
-    end
-
     if modules.game_interface.getMainRightPanel():isFocusable() or modules.game_interface.getLeftPanel():isFocusable() then
         return true
     end
+
+    -- Reserve before key-repeat/click throttling so holding a manual action
+    -- cannot let the Helper take the next available spell cooldown.
+    local helper=modules.game_baiakeros_helper
+    if helper and helper.notifyManualAction then
+        if cache.actionType==UseTypes['chatText'] and cache.sendAutomatic and cache.isSpell then
+            helper.notifyManualAction('spell')
+        elseif button.item and (cache.actionType==UseTypes['Use'] or cache.actionType==UseTypes['UseOnYourself'] or
+            cache.actionType==UseTypes['UseOnTarget'] or cache.actionType==UseTypes['SelectUseTarget'] or
+            cache.actionType==UseTypes['UseAtCursorPosition']) then
+            helper.notifyManualAction('item')
+        end
+    end
+    if cache.lastClick > g_clock.millis() then return true end
 
     if not isPress then
         button.cache.nextDownKey = g_clock.millis() + 500

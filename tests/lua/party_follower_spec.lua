@@ -45,6 +45,46 @@ dofile('modules/game_baiakeros_helper_v2/party_follower.lua')
 local F,M=PartyFollower,PartyHuntMovement
 local status={leader={id=1,position=box,transitions={}},attackers={}}
 local function update()local text=F.update(status,false);time=time+150;return text end
+-- Lever formation overrides combat positioning, follows exact party slots and holds there.
+for _,offset in ipairs({{1,0},{-1,0},{0,1},{0,-1}})do
+ for slot=1,3 do
+  F.reset();position={x=103,y=104,z=7}
+  local destination={x=box.x+offset[1]*slot,y=box.y+offset[2]*slot,z=box.z}
+  status.bossLever,status.formationTarget=true,destination
+  for i=1,32 do update()end
+  assert(M.same(position,destination),'each member must reach its assigned cardinal lever tile')
+  local before=moves;for i=1,4 do update()end
+  assert(moves==before,'member holds its own tile while lineup is enabled')
+  assert(not F.prepareSpell({words='exevo tera hur'}),'lineup never repositions for combat spells')
+ end
+end
+status.paused=true;local before=moves;for i=1,4 do update()end
+assert(moves==before,'paused members ignore lever formation too')
+status.paused,status.bossLever,status.formationTarget=nil,nil,nil
+-- PZ routing uses server tile flags, never combat/orbit slots outside the protected area.
+F.reset();position={x=100,y=105,z=7}
+status.vocation=3;status.settings={paladinMode='orbit',alwaysRun=true,runThreshold=1}
+status.leader.protectionZone=true
+status.protectionArea={x=94,y=94,z=7,rows={}}
+for y=94,106 do
+ local row={}
+ for x=94,106 do row[#row+1]=(x==100 and y>=100 and y<=105) and '1' or '0' end
+ status.protectionArea.rows[#status.protectionArea.rows+1]=table.concat(row)
+end
+for i=1,12 do
+ update();assert(position.x==100 and position.y>=100 and position.y<=105,'PZ routing cannot exit narrow protected tiles')
+end
+assert(M.distance(position,box)==2,'PZ members hold a near protected slot instead of orbiting')
+assert(not F.prepareSpell({words='exori frigo'}),'PZ waiting forbids the stale single-target spell fallback')
+local beforePz=moves
+status.protectionArea=nil;for i=1,4 do update()end
+assert(moves==beforePz,'missing PZ mask must fail closed')
+status.bossLever=true;status.formationTarget={x=102,y=100,z=7}
+for i=1,4 do update()end
+assert(moves==beforePz,'lever lineup cannot override the PZ boundary')
+status.bossLever,status.formationTarget=nil,nil
+status.leader.protectionZone,status.settings,status.vocation=nil,nil,nil
+F.reset();position={x=100,y=105,z=7}
 for i=1,8 do update()end
 assert(M.distance(position,box)==3 and moves>0 and spellQueries==0,
  'all-vocation members follow inside PZ, without Cavebot or querying the Druid rotation')

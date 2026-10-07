@@ -84,6 +84,8 @@ SpellInfo = { Default = {
     ['Balanced Brawl'] = support(280, 'Balanced Brawl',
         'exori mas res', { 9, 10 }, 10000),
     ['Levitate'] = support(81, 'Levitate', 'exani hur',
+        { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }),
+    ['Magic Rope'] = support(76, 'Magic Rope', 'exani tera',
         { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 })
 } }
 
@@ -161,5 +163,36 @@ now = now + 300
 assert(tryCastExplorerLevitate('up', West),
     'Levitate should cast after turning')
 assert(spoken[#spoken] == 'exani hur "up"')
+
+assert(not tryCastExplorerMagicRope(), 'Magic Rope must respect Levitate support cooldown')
+now = now + 2100
+assert(tryCastExplorerMagicRope() and spoken[#spoken] == 'exani tera')
+assert(not tryCastExplorerMagicRope(), 'Magic Rope must not flood repeated casts')
+local originalMana = player.getMana
+player.getMana = function() return 0 end
+now = now + 2100
+assert(not tryCastExplorerMagicRope(), 'Magic Rope requires sufficient mana')
+player.getMana = originalMana
+local ropeId, usedRope, ropeTarget
+g_game.findPlayerItem = function(id)
+    if id == ropeId then return { getId = function() return id end } end
+end
+g_game.useInventoryItemWith = function(id, target) usedRope, ropeTarget = id, target end
+local ground = {}
+g_map.getTile = function() return { getTopUseThing = function() return ground end } end
+assert(tryUseExplorerRope(playerPosition) and usedRope == 3003,
+    'closed backpack ropes are resolved through the server inventory hotkey')
+assert(not tryUseExplorerRope(playerPosition), 'Rope must not flood item packets while waiting')
+now = now + 2300
+assert(tryUseExplorerRope(playerPosition) and usedRope == 646,
+    'unknown closed backpack contents alternate between the two supported ropes')
+now = now + 2300
+ropeId = 3003
+assert(tryUseExplorerRope(playerPosition) and usedRope == 3003 and ropeTarget == ground)
+now = now + 2300
+ropeId = 646
+assert(tryUseExplorerRope(playerPosition) and usedRope == 646, 'Elvenhair Rope is supported')
+now = now + 2300
+assert(not tryUseExplorerRope({ x = 103, y = 100, z = 7 }), 'Rope must not be used outside adjacent reach')
 
 print('Helper Shooter lure regression passed')
