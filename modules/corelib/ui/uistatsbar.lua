@@ -1,6 +1,25 @@
 -- @docclass
 UIStatsBar = extends(UIWidget, 'UIStatsBar')
 
+-- Keep the original arc's bands (floor(percent) > 92/60/30/8/3) in both
+-- displays. Texture suffixes name the assets, not the new HP thresholds.
+-- Colors match their base fill, without the texture's gradient highlights.
+local healthAppearances = {
+    {minimum = 93, suffix = '100', color = '#00AF00'},
+    {minimum = 61, suffix = '95', color = '#649204'},
+    {minimum = 31, suffix = '60', color = '#B88C08'},
+    {minimum = 9, suffix = '30', color = '#AF2C2C'},
+    {minimum = 4, suffix = '10', color = '#AF0000'},
+    {minimum = 0, suffix = '4', color = '#570000'}
+}
+
+function UIStatsBar.getHealthAppearance(value, total)
+    local percent = total and total > 0 and math.min(100, math.max(0, (value or 0) * 100 / total)) or 0
+    for _, appearance in ipairs(healthAppearances) do
+        if percent >= appearance.minimum then return appearance, percent end
+    end
+end
+
 function UIStatsBar.create()
     local stats = UIStatsBar.internalCreate()
     stats.bar = stats:getChildById('bar')
@@ -125,27 +144,10 @@ function UIStatsBar:setValue(value, total)
     end
 
     -- Bar color
-    local percent = (value * 100) / total
     if self.statsType == 'health' then
-        if percent >= 100 then
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_100')
-        elseif percent >= 95 then
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_95')
-        elseif percent >= 60 then
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_60')
-        elseif percent >= 30 then
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_30')
-        elseif percent >= 10 then
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_10')
-        else
-            self.bar:setImageSource('/images/bars/' ..
-                self.statsOrientation .. '_health_progressbar_' .. self.statsSize .. '_4')
-        end
+        local appearance = UIStatsBar.getHealthAppearance(value, total)
+        self.bar:setImageSource('/images/bars/' .. self.statsOrientation ..
+            '_health_progressbar_' .. self.statsSize .. '_' .. appearance.suffix)
     elseif self.statsType == 'mana' then
         self.bar:setImageSource('/images/bars/' .. self.statsOrientation .. '_mana_progressbar_' .. self.statsSize)
     elseif self.statsType == 'manashield' then

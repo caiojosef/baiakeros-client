@@ -155,7 +155,7 @@ function whenMonkHealthChange()
     if not player then
         return
     end
-    local healthPercent = math.floor(player:getHealth() / player:getMaxHealth() * 100)
+    local appearance, healthPercent = UIStatsBar.getHealthAppearance(player:getHealth(), player:getMaxHealth())
     local yhppc = math.floor(monkImageSizeBroad * (1 - (healthPercent / 100)))
     local restYhppc = monkImageSizeBroad - yhppc
     monkHealthCircle:setY(monkCircleBackground:getY() + yhppc)
@@ -166,17 +166,7 @@ function whenMonkHealthChange()
         width = monkImageSizeThin,
         height = restYhppc
     })
-    if healthPercent > 92 then
-        monkHealthCircle:setImageColor('#00BC00')
-    elseif healthPercent > 60 then
-        monkHealthCircle:setImageColor('#50A150')
-    elseif healthPercent > 30 then
-        monkHealthCircle:setImageColor('#A1A100')
-    elseif healthPercent > 8 then
-        monkHealthCircle:setImageColor('#BF0A0A')
-    else
-        monkHealthCircle:setImageColor('#910F0F')
-    end
+    monkHealthCircle:setImageColor(appearance.color)
 end
 
 function whenMonkSereneChange(localplayer, serene)
