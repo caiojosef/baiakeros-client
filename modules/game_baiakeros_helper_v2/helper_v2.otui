@@ -1264,7 +1264,7 @@ BaiakerosHelperV2Window < MainWindow
             anchors.left: v2CavebotHurUpButton.right
             anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
             margin-left: 4
-            !tooltip: tr('Move to this SQM, then step in the selected direction without waiting for monsters. Center records an approach point.')
+            !tooltip: tr('Step in the selected direction and retry until the floor change is confirmed. Center records an approach point.')
 
           SmallButton
             id: v2CavebotHurDownButton
@@ -1275,6 +1275,27 @@ BaiakerosHelperV2Window < MainWindow
             anchors.verticalCenter: v2CavebotHurUpButton.verticalCenter
             margin-left: 4
             !tooltip: tr('Record this SQM and face the selected cardinal direction to cast Exani Hur Down after combat.')
+
+          SmallButton
+            id: v2CavebotRopeButton
+            text: Rope
+            color: #ffffff
+            size: 108 22
+            anchors.left: parent.horizontalCenter
+            anchors.top: v2CavebotHurUpButton.bottom
+            margin-left: -110
+            margin-top: 5
+            !tooltip: tr('Use a rope from your inventory on the selected tile. Center uses the tile under you. Retry until ascent is confirmed.')
+
+          SmallButton
+            id: v2CavebotExaniTeraButton
+            text: Exani Tera
+            color: #ffffff
+            size: 108 22
+            anchors.left: v2CavebotRopeButton.right
+            anchors.verticalCenter: v2CavebotRopeButton.verticalCenter
+            margin-left: 4
+            !tooltip: tr('Stand on the recorded rope spot and cast Exani Tera. Retry with mana and cooldown checks until ascent is confirmed.')
 
           SmallButton
             id: v2CavebotSaveRouteButton
@@ -1311,7 +1332,7 @@ BaiakerosHelperV2Window < MainWindow
             id: v2CavebotWaypointPanel
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.top: v2CavebotHurUpButton.bottom
+            anchors.top: v2CavebotRopeButton.bottom
             anchors.bottom: v2CavebotSaveRouteButton.top
             margin-left: 12
             margin-right: 12
@@ -1335,7 +1356,7 @@ BaiakerosHelperV2Window < MainWindow
 
             Label
               id: v2CavebotEmptyWaypoints
-              text: Add Node, Stand, Use or Hur
+              text: Add waypoints to begin
               anchors.centerIn: parent
               color: #ffffff
               phantom: true

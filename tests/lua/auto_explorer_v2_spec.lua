@@ -410,6 +410,139 @@ if CAVEBOT_DETOUR_ONLY then
     return
 end
 
+if CAVEBOT_TRANSITIONS_ONLY then
+    local function clear()
+        local list = widget('v2CavebotWaypointList')
+        while #list.children > 0 do list.children[1].removeButton.onClick() end
+        playerPosition = { x = 100, y = 100, z = 7 }
+        monsters = {}
+    end
+    local function finishRoute()
+        playerPosition = { x = 100, y = 100, z = 6 }
+        widget('v2CavebotNodeButton').onClick()
+        playerPosition = { x = 100, y = 100, z = 7 }
+        widget('v2CavebotWaypointList').children[1].onClick()
+        widget('v2CavebotAutoExploringButton').onClick()
+    end
+    local function index() return settings.explorer_test_auto_explorer_v2.waypointIndex end
+    local originalWalk, originalTile = g_game.walk, g_map.getTile
+    local entries = 0
+    stairsOnly = true
+    g_game.walk = function(d)
+        originalWalk(d)
+        if playerPosition.x == 101 then
+            entries = entries + 1
+            if entries <= 4 then playerPosition.z = 7 end
+        end
+    end
+    -- Some client item data does not identify the stair; a step alone is not success.
+    g_map.getTile = function(p)
+        local tile = originalTile(p)
+        if tile then tile.hasFloorChange = function() return false end end
+        return tile
+    end
+    clear()
+    widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'east')
+    widget('v2CavebotStairButton').onClick()
+    finishRoute()
+    advance(50); advance(200); advance(50)
+    assert(index() == 1 and playerPosition.z == 7, 'Stair must not advance on an unconfirmed step')
+    for _ = 1, 3 do
+        advance(2600); advance(250); advance(50); advance(50)
+        assert(index() == 1 and playerPosition.z == 7, 'failed stair must return to its base and persist beyond three attempts')
+    end
+    for _ = 1, 12 do
+        advance(500)
+        if index() == 2 then break end
+    end
+    assert(entries == 5 and index() == 2 and playerPosition.z == 6, 'Stair advances only on actual arrival upstairs')
+    widget('v2CavebotAutoExploringButton').onClick()
+    -- Center on a real floor-change tile must step off and enter again after failure.
+    g_map.getTile = originalTile
+    entries = 0
+    clear()
+    playerPosition.x = 101
+    widget('v2CavebotStairButton').onClick()
+    finishRoute()
+    for _ = 1, 70 do
+        advance(250)
+        if index() == 2 then break end
+    end
+    assert(entries == 5 and index() == 2, 'centered stair must leave and re-enter, without skipping after failure')
+    widget('v2CavebotAutoExploringButton').onClick()
+    g_game.walk = originalWalk
+    stairsOnly = false
+    clear()
+    -- Walking off an elevated stair can target a tile with no ground/item data.
+    g_map.getTile = function(p)
+        if p.x == 101 and p.y == 100 and p.z == 7 then return nil end
+        local tile = originalTile(p)
+        if tile then tile.hasElevation = function() return p.x == 100 and p.y == 100 end end
+        return tile
+    end
+    g_game.walk = function(d)
+        originalWalk(d)
+        if playerPosition.x == 101 then playerPosition.z = 6 end
+    end
+    widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'east')
+    widget('v2CavebotStairButton').onClick()
+    finishRoute()
+    playerPosition = { x = 99, y = 100, z = 7 }
+    advance(50); advance(50); advance(200); advance(50)
+    assert(index() == 2 and playerPosition.z == 6, 'recorded elevated Stair may exit toward missing ground but still requires floor confirmation')
+    widget('v2CavebotAutoExploringButton').onClick()
+    g_map.getTile, g_game.walk = originalTile, originalWalk
+    for _, kind in ipairs({ 'rope', 'exani_tera', 'hur_up', 'hur_down' }) do
+        clear()
+        local tries, available = 0, false
+        local function execute()
+            if not available then return false end
+            tries = tries + 1
+            if tries == 5 then
+                playerPosition = { x = 100, y = 100, z = kind == 'hur_down' and 8 or 6 }
+            elseif tries == 2 then
+                -- Failed action leaves the player displaced; return before retrying.
+                playerPosition = { x = 101, y = 100, z = 7 }
+            end
+            return true
+        end
+        modules.game_baiakeros_helper.tryUseExplorerRope = execute
+        modules.game_baiakeros_helper.tryCastExplorerMagicRope = execute
+        modules.game_baiakeros_helper.tryCastExplorerLevitate = execute
+        widget('v2CavebotDirectionBox').onOptionChange(nil, nil, 'east')
+        local ids = { rope = 'Rope', exani_tera = 'ExaniTera', hur_up = 'HurUp', hur_down = 'HurDown' }
+        widget('v2Cavebot' .. ids[kind] .. 'Button').onClick()
+        local recorded = settings.explorer_test_auto_explorer_v2.waypoints[1]
+        assert(recorded.kind == kind and (kind ~= 'exani_tera' or recorded.direction == 'center'))
+        finishRoute()
+        for _ = 1, 80 do advance(300) end
+        assert(index() == 1 and tries == 0, kind .. ' must wait for availability instead of skipping after 20 seconds')
+        available = true
+        advance(300)
+        for _ = 1, 90 do
+            advance(200)
+            if index() == 2 then break end
+            assert(index() == 1, kind .. ' must not skip an unsuccessful ascent')
+        end
+        assert(tries == 5 and index() == 2, kind .. ' retries until the correct floor is confirmed')
+        widget('v2CavebotAutoExploringButton').onClick()
+    end
+    -- Route JSON normalization must retain both new waypoint types after reload.
+    clear()
+    widget('v2CavebotRopeButton').onClick()
+    widget('v2CavebotExaniTeraButton').onClick()
+    local stored = json.decode(json.encode(settings.explorer_test_auto_explorer_v2))
+    BaiakHelperExplorerV2.onGameEnd()
+    settings.explorer_test_auto_explorer_v2 = stored
+    BaiakHelperExplorerV2.onGameStart()
+    local rows = widget('v2CavebotWaypointList').children
+    assert(#rows == 2 and rows[1].text:find('Rope') and rows[2].text:find('Exani Tera'),
+        'Rope and Exani Tera survive saved settings/JSON reload')
+    BaiakHelperExplorerV2.terminate()
+    print('PASS: Stair, centered stair, Rope, Exani Tera and Hur persist, return and confirm floors before advancing')
+    return
+end
+
 if CAVEBOT_TIMER_ONLY then
     cavebotCallbacks[92](nil,92,json.encode({action='status',remaining=7200,limitSeconds=10800,active=false}))
     assert(widget('v2CavebotTimerLabel').text=='02:00:00' and widget('v2CavebotProgress').percent==66,

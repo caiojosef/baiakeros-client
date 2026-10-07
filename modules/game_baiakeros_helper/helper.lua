@@ -28,6 +28,24 @@ lastAutoAttackTargetId = nil
 lastAutoAttackPacketAt = 0
 pendingAttackTurnDirection = nil
 lastAttackTurnAt = 0
+local manualSpellPriorityUntil, manualItemPriorityUntil = 0, 0
+local MANUAL_ACTION_PRIORITY_MS = 750
+
+function notifyManualAction(kind)
+    if not g_game.isOnline() then return end
+    local deadline=g_clock.millis()+MANUAL_ACTION_PRIORITY_MS
+    manualSpellPriorityUntil=deadline
+    if kind=='item' then manualItemPriorityUntil=deadline end
+    pendingAttackTurnDirection=nil
+end
+
+function isManualActionPending()
+    return g_clock.millis()<manualSpellPriorityUntil
+end
+
+local function isManualItemPending()
+    return g_clock.millis()<manualItemPriorityUntil
+end
 updatingEnabledCheckBox = false
 nextPotionAt = 0
 assignmentGrabber = nil
@@ -47,8 +65,6 @@ lastPartyRefreshAt = 0
 nextFriendHealingAt = 0
 spellCooldownsById = {}
 spellGroupCooldownsById = {}
-nextAttackSpellIndex = 1
-nextAttackRuneIndex = 1
 autoEatEvent = nil
 helperNotification = nil
 helperNotificationEvent = nil
@@ -285,6 +301,14 @@ local ATTACK_DIRECTIONAL_AREAS = {
         {0, -1}, {0, -2}, {0, -3}, {0, -4},
         {0, -5}, {0, -6}, {0, -7}
     },
+    -- Exact AREA_BEAM_MASTERY10 from the server, including the caster's sides.
+    beamMastery10 = (function()
+        local offsets={}
+        for y=0,9 do for x=-1,1 do
+            if x~=0 or y~=0 then offsets[#offsets+1]={x,-y} end
+        end end
+        return offsets
+    end)(),
     flurry = {
         {0, -2}, {-1, -1}, {0, -1}, {1, -1},
         {-1, 0}, {1, 0}, {-1, 1}, {1, 1}
@@ -319,7 +343,8 @@ local ATTACK_SPELL_AREAS = {
     ['exevo infir frigo hur'] = { shape = 'directional', area = 'wave4' },
     ['exevo gran flam hur'] = { shape = 'directional', area = 'wave7' },
     ['exevo gran frigo hur'] = { shape = 'directional', area = 'strongIceWave' },
-    ['exevo vis hur'] = { shape = 'directional', area = 'squareWave5' },
+    -- The server's normal Energy Wave uses the same 4-tile matrix as Strong Ice Wave.
+    ['exevo vis hur'] = { shape = 'directional', area = 'strongIceWave' },
     ['exevo tera hur'] = { shape = 'directional', area = 'squareWave5' },
     ['exevo vis lux'] = { shape = 'directional', area = 'beam5' },
     ['exevo gran vis lux'] = { shape = 'directional', area = 'beam8' },
@@ -808,6 +833,7 @@ function selectAttackPosture(kind, index)
 end
 
 local function castSelectedAttackPostures()
+    if isManualActionPending() then return end
     if attackPostureCastEvent then
         removeEvent(attackPostureCastEvent)
         attackPostureCastEvent = nil
@@ -825,7 +851,7 @@ local function castSelectedAttackPostures()
     if #casts > 1 then
         attackPostureCastEvent = scheduleEvent(function()
             attackPostureCastEvent = nil
-            if attackRotationEnabled and g_game.isOnline() then
+            if attackRotationEnabled and g_game.isOnline() and not isManualActionPending() then
                 g_game.talk(casts[2].words)
             end
         end, 2100)
@@ -916,6 +942,7 @@ end
 -- with healing and haste, whether or not the Cavebot is running.
 local nextExplorerTurnAt = 0
 function tryCastExplorerLureSpell(spellName, direction)
+    if isManualActionPending() then return false end
     if not g_game.isOnline() then return false end
     local player = g_game.getLocalPlayer()
     local vocation = detectVocation()
@@ -949,6 +976,7 @@ function tryCastExplorerLureSpell(spellName, direction)
 end
 
 function tryCastExplorerLevitate(level, direction)
+    if isManualActionPending() then return false end
     if level ~= 'up' and level ~= 'down' or not direction or
         not g_game.isOnline() then return false end
     local player = g_game.getLocalPlayer()
@@ -976,6 +1004,53 @@ function tryCastExplorerLevitate(level, direction)
     guardSpellCommand(spell, 3, now)
     spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
     spellGroupCooldownsById[3] = now + (spell.group[3] or 2000)
+    return true
+end
+
+function tryCastExplorerMagicRope()
+    if isManualActionPending() or not g_game.isOnline() then return false end
+    local player = g_game.getLocalPlayer()
+    local vocation = detectVocation()
+    local spell = SpellInfo.Default and SpellInfo.Default['Magic Rope']
+    if not player or not vocation or not spell or player:isDead() or
+        player:hasState(PlayerStates.Pz) or
+        player:getLevel() < (spell.level or 0) or
+        (spell.premium and not player:isPremium()) or
+        player:getMana() < (spell.mana or 0) or
+        not spellHasVocation(spell, vocation.promoted and
+            vocation.promotedSpellVocation or vocation.baseSpellVocation) then
+        return false
+    end
+    local now = g_clock.millis()
+    if not isSpellCooldownReady(spell, now) then return false end
+    g_game.talk(spell.words)
+    guardSpellCommand(spell, 3, now)
+    spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
+    spellGroupCooldownsById[3] = now + (spell.group[3] or 2000)
+    return true
+end
+
+local nextExplorerRopeAt = 0
+local explorerRopeFallbackId = 3003
+function tryUseExplorerRope(position)
+    if isManualActionPending() or not g_game.isOnline() then return false end
+    local now = g_clock.millis()
+    if now < nextExplorerRopeAt or now < nextPotionAt then return false end
+    local player = g_game.getLocalPlayer()
+    if not player or player:isDead() or not position then return false end
+    local playerPosition = player:getPosition()
+    if playerPosition.z ~= position.z or math.abs(playerPosition.x - position.x) > 1 or
+        math.abs(playerPosition.y - position.y) > 1 then return false end
+    local tile = g_map.getTile(position)
+    local target = tile and (tile:getTopUseThing() or tile:getGround())
+    local rope = g_game.findPlayerItem(3003, -1, 0) or g_game.findPlayerItem(646, -1, 0)
+    if not target then return false end
+    -- Closed backpacks are not exposed by findPlayerItem. Inventory hotkeys
+    -- resolve the item on the server; try the two supported tools in turn.
+    local ropeId = rope and rope:getId() or explorerRopeFallbackId
+    if not rope then explorerRopeFallbackId = ropeId == 3003 and 646 or 3003 end
+    g_game.useInventoryItemWith(ropeId, target, -1)
+    nextExplorerRopeAt = now + 2200
     return true
 end
 
@@ -2016,8 +2091,6 @@ function setAttackPriority(slotId, priority)
     priority = tonumber(priority)
     if not slot or not priority then return end
     slot.attackPriority = math.max(1, math.min(ATTACK_MAX_PRIORITY, priority))
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     refreshAttackSlot(slot)
     saveAttackSlot(slot)
 end
@@ -2032,8 +2105,6 @@ end
 
 local function restoreAttackSlots()
     restoringAttackSlots = true
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     local profile = getVocationProfile()
     local visibleCount = profile and ATTACK_SPELL_SLOT_COUNTS[profile.key] or 0
     local visibleRuneCount = profile and ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
@@ -2136,8 +2207,6 @@ function setAttackPreset(preset)
     attackPreset = preset
     g_settings.set(attackPresetConfigKey(), attackPreset)
     g_settings.save()
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     restoreAttackSlots()
     refreshAttackPresetBox()
     showHelperNotification('Attack Preset: ' ..
@@ -2491,6 +2560,7 @@ function handleManaTrainingSlotClick(mousePosition, mouseButton)
 end
 
 function checkManaTraining()
+    if isManualActionPending() then return end
     if not g_game.isOnline() or not MANA_TRAINING.enabled then return end
     local player = g_game.getLocalPlayer()
     local spell = MANA_TRAINING.selectedSpell
@@ -3201,6 +3271,7 @@ local function findFoodInKnownContainers()
 end
 
 local function checkAutoEatFood()
+    if isManualItemPending() then return end
     if not g_game.isOnline() or not g_settings.getBoolean(autoEatConfigKey(), false) then
         return
     end
@@ -3226,6 +3297,7 @@ local function checkAutoEatFood()
 end
 
 function checkAutoHaste()
+    if isManualActionPending() then return end
     if not g_game.isOnline() or
         not g_settings.getBoolean(autoHasteEnabledConfigKey(), false) then
         return
@@ -3369,6 +3441,7 @@ local function getMassFriendHealingCandidate()
 end
 
 local function tryMassFriendHealing(now)
+    if isManualActionPending() then return false end
     local profile = getVocationProfile()
     if not profile or not profile.massFriendHealing then return false end
     local spell = SpellInfo.Default and SpellInfo.Default["Nature's Embrace"]
@@ -3383,6 +3456,7 @@ local function tryMassFriendHealing(now)
 end
 
 local function tryFriendHealing(now)
+    if isManualActionPending() then return false end
     local profile = getVocationProfile()
     if not profile or not profile.friendHealing or profile.friendKind == 'uh' then
         return false
@@ -3412,6 +3486,7 @@ local function checkHealing()
     local manaPercent = getManaPercent(player)
 
     local function usePotion(resource)
+        if isManualItemPending() then return end
         if now < nextPotionAt then return end
         local selected = getPotionCandidates(healthPercent, manaPercent, resource)[1]
         if selected then
@@ -3428,7 +3503,7 @@ local function checkHealing()
     -- Life potions take priority on the shared item cooldown. Spell healing
     -- remains available on its independent cooldown while potions recover.
     usePotion('health')
-    if isCooldownReady(spellGroupCooldownsById, 2, now) then
+    if not isManualActionPending() and isCooldownReady(spellGroupCooldownsById, 2, now) then
         local selected = getHealingCandidates(player, healthPercent, now)[1]
         if selected then
             local spell = selected.spell
@@ -3649,11 +3724,20 @@ local function getChainedMonsters(monsters, target, playerPosition, profile)
     return affected
 end
 
+local function getAttackSpellProfile(words)
+    local explorer=modules.game_baiakeros_helper_v2
+    local party=explorer and explorer.PartyHuntV2
+    if words=='exevo gran vis lux' and party and party.hasBeamMastery and party.hasBeamMastery() then
+        return {shape='directional',area='beamMastery10'}
+    end
+    return ATTACK_SPELL_AREAS[words]
+end
+
 local function getSpellAffectedMonsters(spell, monsters, player, playerPosition, target)
     local affected = {}
     if not spell or not playerPosition then return affected end
     local words = tostring(spell.words or ''):lower()
-    local profile = ATTACK_SPELL_AREAS[words]
+    local profile = getAttackSpellProfile(words)
 
     if profile and profile.shape == 'chain' then
         return getChainedMonsters(monsters, target, playerPosition, profile)
@@ -3808,6 +3892,9 @@ local function isInProtectionZone(player, states)
 end
 
 local function checkAutoAttack()
+    local partyModule=modules.game_baiakeros_helper_v2
+    local party=partyModule and partyModule.PartyHuntV2
+    if party and party.syncLeaderTarget and party.syncLeaderTarget() then return end
     if checkAttackAfkTimeout() then return end
     if not autoAttackEnabled or not g_game.isOnline() then return end
     local player = g_game.getLocalPlayer()
@@ -3891,7 +3978,7 @@ local function checkAutoAttack()
     g_game.attack(best)
 end
 
-local function getOrderedAttackSpellSlots(preferArea)
+local function getOrderedAttackSpellSlots()
     local profile = getVocationProfile()
     local count = profile and ATTACK_SPELL_SLOT_COUNTS[profile.key] or 0
     local ordered = {}
@@ -3900,11 +3987,6 @@ local function getOrderedAttackSpellSlots(preferArea)
         if slot then ordered[#ordered + 1] = { slot = slot, index = i } end
     end
     table.sort(ordered, function(a, b)
-        if preferArea then
-            local aArea = a.slot.assignedAttackSpell ~= nil and not isSingleTargetAttackSpell(a.slot.assignedAttackSpell)
-            local bArea = b.slot.assignedAttackSpell ~= nil and not isSingleTargetAttackSpell(b.slot.assignedAttackSpell)
-            if aArea ~= bArea then return aArea == true end
-        end
         local aPriority, bPriority = a.slot.attackPriority or a.index, b.slot.attackPriority or b.index
         if aPriority ~= bPriority then return aPriority < bPriority end
         return a.index < b.index
@@ -3915,27 +3997,29 @@ end
 -- Position planning reads the Shooter's configured rotation and all server
 -- cooldowns. Casting still goes through checkAttackRotation and all its gates.
 function getPartyHuntSpellPlan()
+    if isManualActionPending() then return nil end
     if not attackRotationEnabled or not helperWindow or not g_game.isOnline() then return nil end
+    local explorer=modules.game_baiakeros_helper_v2
+    local party=explorer and explorer.PartyHuntV2
+    if party and party.isRunesOnly and party.isRunesOnly() then return nil end
     local player = g_game.getLocalPlayer()
     if not player then return nil end
-    local ordered = getOrderedAttackSpellSlots(false)
-    local count = #ordered
-    local startIndex = math.max(1, math.min(count, nextAttackSpellIndex or 1))
+    local ordered = getOrderedAttackSpellSlots()
     local now, manaPercent = g_clock.millis(), getManaPercent(player)
     local monsters=getVisibleMonsters(player:getPosition())
     local target=g_game.getAttackingCreature()
-    for offset = 0, count - 1 do
-        local entry = ordered[((startIndex + offset - 1) % count) + 1]
+    for _,entry in ipairs(ordered) do
         local slot, spell = entry.slot, entry.slot.assignedAttackSpell
         if spell and slot.attackEnabled ~= false and manaPercent >= (slot.attackMinMana or 0) and
             (spell.mana or 0) <= player:getMana() and isAttackSpellAvailable(spell, player, currentVocation) and
             hasRequiredAttackSpellHarmony(spell, player) and
             #monsters >= (slot.attackMinEnemies or 1) and (not spell.needTarget or target) and
             (not isSingleTargetAttackSpell(spell) or slot.attackAllowMultiple==true or #monsters==1) then
-            local profile = ATTACK_SPELL_AREAS[spell.words]
+            local profile = getAttackSpellProfile(spell.words)
             if isSpellCooldownReady(spell, now) then
                 local affected=getSpellAffectedMonsters(spell,monsters,player,player:getPosition(),target)
                 return { words = spell.words, id = spell.id, profile = profile,
+                    beamMastery = spell.words=='exevo gran vis lux' and profile and profile.area=='beamMastery10' or false,
                     offsets = profile and ATTACK_DIRECTIONAL_AREAS[profile.area],
                     minEnemies = slot.attackMinEnemies or 1, ready = true,
                     needTarget = spell.needTarget == true, targetPosition = target and target:getPosition(),
@@ -3948,6 +4032,7 @@ function getPartyHuntSpellPlan()
 end
 
 local function checkAttackRotation()
+    if isManualActionPending() then return end
     if not attackRotationEnabled or not g_game.isOnline() then return end
     local player = g_game.getLocalPlayer()
     if not player or player:isDead() then return end
@@ -3959,8 +4044,6 @@ local function checkAttackRotation()
     -- Support lure spells belong to the Shooter, not to Cavebot movement.
     if checkShooterLureSpell(player, monsters, playerPosition) then return end
     local explorer = modules.game_baiakeros_helper_v2
-    local preferArea = #monsters > 1 and explorer and
-        explorer.preferAreaExplorerAttack and explorer.preferAreaExplorerAttack()
     local singleTargetOnly = explorer and explorer.isSingleTargetExplorerHunt and
         explorer.isSingleTargetExplorerHunt()
     local now = g_clock.millis()
@@ -3968,26 +4051,24 @@ local function checkAttackRotation()
     local manaPercent = getManaPercent(player)
     local target = g_game.getAttackingCreature()
     local profile = getVocationProfile()
-    local orderedSpellSlots = getOrderedAttackSpellSlots(preferArea)
-
-    local orderedSpellCount = #orderedSpellSlots
-    local spellStartIndex = preferArea and 1 or orderedSpellCount > 0 and
-        math.max(1, math.min(orderedSpellCount, nextAttackSpellIndex or 1)) or 1
-    for offset = 0, orderedSpellCount - 1 do
-        local orderedIndex = ((spellStartIndex + offset - 1) % orderedSpellCount) + 1
-        local entry = orderedSpellSlots[orderedIndex]
+    local partyHunt = explorer and explorer.PartyHuntV2
+    local runesOnly=partyHunt and partyHunt.isRunesOnly and partyHunt.isRunesOnly()
+    -- The highest ready priority also owns Party Hunt movement. Do not fire a
+    -- lower spell or a rune while it is waiting for its position/confirmed turn.
+    local partyPlan=partyHunt and partyHunt.isFollowing and partyHunt.isFollowing() and getPartyHuntSpellPlan()
+    local orderedSpellSlots = not runesOnly and getOrderedAttackSpellSlots() or {}
+    for _,entry in ipairs(orderedSpellSlots) do
         local slot = entry.slot
         if slot and slot.attackEnabled ~= false and
             manaPercent >= (slot.attackMinMana or 0) then
             local spell = slot.assignedAttackSpell
             local affectedMonsters, castDirection = getSpellAffectedMonsters(
                 spell, monsters, player, playerPosition, target)
-            local partyHunt = explorer and explorer.PartyHuntV2
             local positioned = true
             if partyHunt and spell and isSpellCooldownReady(spell,now) then
                 local partyDirection
                 positioned, partyDirection = partyHunt.prepareSpell(spell)
-                local area = spell and ATTACK_SPELL_AREAS[spell.words]
+                local area = spell and getAttackSpellProfile(spell.words)
                 if positioned and partyDirection and area and area.shape=='directional' then
                     castDirection = partyDirection
                     affectedMonsters = getDirectionalAffectedMonsters(monsters, player,
@@ -4001,7 +4082,8 @@ local function checkAttackRotation()
                 (singleTargetOnly and monstersInRange >= 1) or
                 (slot.attackAllowMultiple == true and monstersInRange >= 1) or
                 (slot.attackAllowMultiple ~= true and monstersInRange == 1)
-            if positioned and spell and (not singleTargetOnly or singleTarget) and
+            if positioned and spell and (not partyPlan or partyPlan.words==spell.words) and
+                (not singleTargetOnly or singleTarget) and
                 #affectedMonsters >= (slot.attackMinEnemies or 1) and
                 singleTargetCondition and
                 isAttackSpellAvailable(spell, player, currentVocation) and
@@ -4025,16 +4107,15 @@ local function checkAttackRotation()
                 -- The server packet replaces this short duplicate guard with
                 -- the exact spell, primary and secondary group cooldowns.
                 guardSpellCommand(spell, 1, now)
-                -- Continue at the following configured priority when the
-                -- attack group is ready again. Every tick still scans the
-                -- complete list and skips entries whose creature, mana,
-                -- vocation, target or individual cooldown condition fails.
-                nextAttackSpellIndex = (orderedIndex % orderedSpellCount) + 1
+                -- Every selection restarts at priority one. A recovered first
+                -- spell preempts later entries instead of waiting for a lap.
                 if partyHunt then partyHunt.onSpellCast(spell) end
                 return
             end
         end
     end
+
+    if partyPlan then return end
 
     local runeSlotCount = profile and ATTACK_RUNE_SLOT_COUNTS[profile.key] or 0
     local orderedRuneSlots = {}
@@ -4043,22 +4124,12 @@ local function checkAttackRotation()
         if slot then table.insert(orderedRuneSlots, { slot = slot, index = i }) end
     end
     table.sort(orderedRuneSlots, function(a, b)
-        if preferArea then
-            local aArea = a.slot.assignedAttackRune ~= nil and a.slot.assignedAttackRune.area == true
-            local bArea = b.slot.assignedAttackRune ~= nil and b.slot.assignedAttackRune.area == true
-            if aArea ~= bArea then return aArea == true end
-        end
         local aPriority = a.slot.attackPriority or a.index
         local bPriority = b.slot.attackPriority or b.index
         if aPriority ~= bPriority then return aPriority < bPriority end
         return a.index < b.index
     end)
-    local orderedRuneCount = #orderedRuneSlots
-    local runeStartIndex = preferArea and 1 or orderedRuneCount > 0 and
-        math.max(1, math.min(orderedRuneCount, nextAttackRuneIndex or 1)) or 1
-    for offset = 0, orderedRuneCount - 1 do
-        local orderedIndex = ((runeStartIndex + offset - 1) % orderedRuneCount) + 1
-        local entry = orderedRuneSlots[orderedIndex]
+    for _,entry in ipairs(orderedRuneSlots) do
         local slot = entry.slot
         if slot and slot.attackEnabled ~= false and
             manaPercent >= (slot.attackMinMana or 0) then
@@ -4069,7 +4140,6 @@ local function checkAttackRotation()
                 #affectedMonsters >= (slot.attackMinEnemies or 1) and target then
                 g_game.useInventoryItemWith(rune.id, target, -1)
                 guardSpellCommand(nil, 1, now)
-                nextAttackRuneIndex = (orderedIndex % orderedRuneCount) + 1
                 return
             end
         end
@@ -4186,6 +4256,10 @@ function checkAttackAfkTimeout()
 end
 
 local function onLocalPlayerStatesChange(player, states, oldStates)
+    local explorer = modules.game_baiakeros_helper_v2
+    local party = explorer and explorer.PartyHuntV2
+    local partyActive = party and party.isActive() and party.onProtectionZoneChange
+    if partyActive then party.onProtectionZoneChange() end
     if not isInProtectionZone(player, states) then return end
 
     if g_game.getAttackingCreature() then g_game.cancelAttack() end
@@ -4194,10 +4268,7 @@ local function onLocalPlayerStatesChange(player, states, oldStates)
     pendingAttackTurnDirection = nil
     lastAttackTurnAt = 0
 
-    -- Party Hunt stays armed while crossing PZ; combat callbacks already
-    -- suppress attacks there and resume after the group leaves it.
-    local explorer = modules.game_baiakeros_helper_v2
-    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive() then return end
+    if partyActive then return end
 
     if not autoAttackEnabled and not attackRotationEnabled then return end
 
@@ -4214,8 +4285,6 @@ function setAttackRotationEnabled(enabled)
     if updatingAutoAttackControls then return end
     local wasEnabled = attackRotationEnabled
     attackRotationEnabled = enabled == true and g_game.isOnline()
-    if attackRotationEnabled and not wasEnabled then nextAttackSpellIndex = 1 end
-    if attackRotationEnabled and not wasEnabled then nextAttackRuneIndex = 1 end
     if attackRotationEnabled and not wasEnabled then
         castSelectedAttackPostures()
     elseif not attackRotationEnabled and attackPostureCastEvent then
@@ -4226,6 +4295,10 @@ function setAttackRotationEnabled(enabled)
     g_settings.save()
     updateAutoAttackControls()
     resetAttackAfkTimer()
+    local explorer=modules.game_baiakeros_helper_v2
+    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.onCombatOptionChange then
+        explorer.PartyHuntV2.onCombatOptionChange('shooter',enabled)
+    end
 end
 
 function setAutoAttackEnabled(enabled)
@@ -4237,6 +4310,10 @@ function setAutoAttackEnabled(enabled)
     g_settings.save()
     updateAutoAttackControls()
     resetAttackAfkTimer()
+    local explorer=modules.game_baiakeros_helper_v2
+    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.onCombatOptionChange then
+        explorer.PartyHuntV2.onCombatOptionChange('auto',enabled)
+    end
 end
 
 function setAutoAttackMode(mode)
@@ -4298,8 +4375,6 @@ function restoreCurrentHelperPreset()
     closeSelector()
     nextPotionAt = 0
     nextFriendHealingAt = 0
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     lastAutoAttackTargetId = nil
     lastAutoAttackPacketAt = 0
     AUTO_HASTE.nextAt = 0
@@ -4735,13 +4810,12 @@ function showHelperTab(tabName)
 end
 
 local function online()
+    manualSpellPriorityUntil,manualItemPriorityUntil=0,0
     nextPotionAt = 0
     nextFriendHealingAt = 0
     lastPartyRefreshAt = 0
     spellCooldownsById = {}
     spellGroupCooldownsById = {}
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     lastAutoAttackTargetId = nil
     lastAutoAttackPacketAt = 0
     pendingAttackTurnDirection = nil
@@ -4794,6 +4868,7 @@ local function onLocalPlayerVocationChange(player, newVocation, oldVocation)
 end
 
 local function offline()
+    manualSpellPriorityUntil,manualItemPriorityUntil=0,0
     cancelExtrasToggleReset()
     if attackPostureCastEvent then
         removeEvent(attackPostureCastEvent)
@@ -4817,8 +4892,6 @@ local function offline()
     partySessionActive = false
     spellCooldownsById = {}
     spellGroupCooldownsById = {}
-    nextAttackSpellIndex = 1
-    nextAttackRuneIndex = 1
     lastAutoAttackTargetId = nil
     lastAutoAttackPacketAt = 0
     pendingAttackTurnDirection = nil

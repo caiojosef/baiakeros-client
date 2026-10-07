@@ -196,10 +196,12 @@ local function normalizedWaypoints(source)
         if type(waypoint) == 'table' and
             (waypoint.kind == 'node' or waypoint.kind == 'stand' or
                 waypoint.kind == 'use' or waypoint.kind == 'hur_up' or
-                waypoint.kind == 'hur_down' or waypoint.kind == 'stair') then
+                waypoint.kind == 'hur_down' or waypoint.kind == 'stair' or
+                waypoint.kind == 'rope' or waypoint.kind == 'exani_tera') then
             local x, y, z = tonumber(waypoint.x), tonumber(waypoint.y), tonumber(waypoint.z)
             if x and y and z and x >= 0 and y >= 0 and z >= 0 and z <= 15 then
                 local direction = waypointDirection(waypoint.direction)
+                if waypoint.kind == 'exani_tera' then direction = WAYPOINT_DIRECTIONS[1] end
                 x, y, z = math.floor(x), math.floor(y), math.floor(z)
                 if waypoint.kind ~= 'hur_up' and waypoint.kind ~= 'hur_down' or
                     cardinalDirection(direction) then
@@ -249,6 +251,8 @@ local function renderWaypoints()
             waypoint.kind == 'node' and 'Node' or
             waypoint.kind == 'hur_up' and 'Hur Up' or
             waypoint.kind == 'hur_down' and 'Hur Down' or
+            waypoint.kind == 'rope' and 'Rope' or
+            waypoint.kind == 'exani_tera' and 'Exani Tera' or
             waypoint.kind == 'stair' and 'Stair' or 'Stand'
         local row = g_ui.createWidget('HelperV2WaypointRow', list)
         local prefix = running and index == waypointIndex and '> ' or '  '
@@ -354,6 +358,8 @@ render = function()
     window:recursiveGetChildById('v2CavebotHurUpButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotHurDownButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotStairButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotRopeButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
+    window:recursiveGetChildById('v2CavebotExaniTeraButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotSaveRouteButton'):setEnabled(
         not running and not dialogBusy and characterKey ~= nil and #waypoints > 0)
     window:recursiveGetChildById('v2CavebotLoadRouteButton'):setEnabled(
@@ -685,7 +691,10 @@ end
 local function walkOneStep(player, direction, destination, delay, explicitStair, kiteStep)
     if not player:canWalk() then return false end
     local tile = g_map.getTile(destination)
-    if not tile or (not explicitStair and not tile:getGround()) or not tile:isWalkable() then
+    local source = explicitStair and g_map.getTile(player:getPosition())
+    local elevatedExit = explicitStair and source and source:hasElevation(3) and
+        (not tile or not tile:getGround())
+    if not elevatedExit and (not tile or (not explicitStair and not tile:getGround()) or not tile:isWalkable()) then
         if isOccupiedWalkableTile(tile) then
             setStatus('Passage occupied: waiting for it to clear')
         else
@@ -693,7 +702,7 @@ local function walkOneStep(player, direction, destination, delay, explicitStair,
         end
         return false
     end
-    if isFloorTransition(destination, tile) then
+    if tile and isFloorTransition(destination, tile) then
         -- Normal route and combat movement must never enter a floor transition.
         -- Only the recorded stair action may authorize this particular step.
         if hasRoute() and not explicitStair then return false end
@@ -748,7 +757,8 @@ local function recordPosition(position)
         local waypoint = waypoints[waypointIndex]
         lastFloorTransition = {
             entry = pendingStep or oldPosition, exit = position, at = g_clock.millis(),
-            kind = waypoint and (waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down') and waypoint.kind or 'stair',
+            kind = waypoint and (waypoint.kind == 'rope' or waypoint.kind == 'exani_tera') and 'rope' or
+                waypoint and (waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down') and waypoint.kind or 'stair',
             direction = waypoint and waypointDirection(waypoint.direction).walk or nil
         }
         if pendingStep then
@@ -1089,21 +1099,47 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     }
     local combatCount = routeCombatCount(monsters, position)
     local stair = waypoint.kind == 'stair'
-    if stair then
+    local rope = waypoint.kind == 'rope' or waypoint.kind == 'exani_tera'
+    local transition = stair or rope or waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down'
+    local expectedFloor = (rope or waypoint.kind == 'hur_up') and waypoint.z - 1 or
+        waypoint.kind == 'hur_down' and waypoint.z + 1 or nil
+    if stair or rope then
         if options.huntStyle ~= 'lure' then
             phase = 'gather'
             setChaseEngaged(false)
         end
     end
     if routeAction then
-        if position.z ~= waypoint.z or
+        if (position.z ~= waypoint.z and (not expectedFloor or position.z == expectedFloor)) or
             (routeAction.kind == 'stand' and not routeAction.expectFloor and
                 samePosition(position, target)) then
             advanceWaypoint()
             return true
         end
+        if position.z ~= waypoint.z then
+            setStatus('Unexpected floor: waiting for floor ' .. expectedFloor)
+            return true
+        end
         local elapsed = now - routeAction.issuedAt
-        if routeAction.kind == 'use' and elapsed >= 600 then
+        if routeAction.kind == 'stair_reset' then
+            local base = { x = waypoint.x, y = waypoint.y, z = waypoint.z }
+            if not samePosition(position, base) then
+                routeAction = nil
+            elseif elapsed >= 2600 then
+                -- A centered stair that failed needs a fresh entry, not another
+                -- walk into the tile the player is already standing on.
+                for _, exit in ipairs(DIRECTIONS) do
+                    local candidate = { x = base.x + exit[1], y = base.y + exit[2], z = base.z }
+                    local tile = g_map.getTile(candidate)
+                    if tile and not isFloorTransition(candidate, tile) and
+                        walkOneStep(player, exit[3], candidate, 300) then
+                        routeAction.issuedAt = now
+                        break
+                    end
+                end
+                setStatus('Stair: stepping back to retry waypoint ' .. waypointIndex)
+            end
+        elseif routeAction.kind == 'use' and elapsed >= 600 then
             local tile = g_map.getTile(target)
             if routeAction.wasWalkable or (tile and tile:isWalkable()) then
                 advanceWaypoint()
@@ -1113,14 +1149,14 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                 routeAction = nil
                 pendingStep = nil
             end
-        elseif routeAction.kind == 'stair_approach' and elapsed >= 1800 then
-            skipWaypoint('stair did not change floor', now)
-        elseif (routeAction.kind == 'stand' or routeAction.kind == 'hur') and
+        elseif (routeAction.kind == 'stair_approach' or routeAction.kind == 'stand' or
+            routeAction.kind == 'hur' or routeAction.kind == 'rope') and
             elapsed >= 2600 then
-            if routeAttempts >= 3 then
+            if not transition and routeAction.kind == 'stand' and not routeAction.expectFloor and routeAttempts >= 3 then
                 skipWaypoint('stair did not complete the floor change', now)
             else
-                routeAction = nil
+                routeAction = routeAction.kind == 'stair_approach' and
+                    { kind = 'stair_reset', issuedAt = now - 2600 } or nil
                 pendingStep = nil
                 nextMoveAt = now + 200
                 setStatus('Retrying stair waypoint ' .. waypointIndex)
@@ -1212,7 +1248,11 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                     stair and samePosition(nextPosition, standPosition)) then
                 local nextTile = g_map.getTile(nextPosition)
                 if samePosition(nextPosition, standPosition) and nextTile and
-                    isFloorTransition(nextPosition, nextTile) then
+                    isFloorTransition(nextPosition, nextTile) and not
+                    (stair and direction.value ~= 'center' and nextTile:hasElevation(3) and
+                        not nextTile:hasFloorChange()) then
+                    -- Elevated stairs change floor on the directional exit,
+                    -- rather than when reaching their top tile.
                     routeAction = { kind = 'stair_approach', issuedAt = now,
                         expectFloor = true }
                 end
@@ -1226,7 +1266,7 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                 setStatus('Passage occupied: waiting for waypoint ' .. waypointIndex)
             else
                 routeStuckSince = routeStuckSince or now
-                if now - routeStuckSince > 2000 then
+                if now - routeStuckSince > 2000 and not transition then
                     skipWaypoint('no accessible path', now)
                 else
                     setStatus('Finding route to waypoint ' .. waypointIndex)
@@ -1244,6 +1284,23 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
     end
     if waypoint.kind == 'node' then
         advanceWaypoint()
+        return true
+    end
+    if rope then
+        local helper = modules.game_baiakeros_helper
+        local executed = helper and (waypoint.kind == 'rope' and
+            helper.tryUseExplorerRope and helper.tryUseExplorerRope(target) or
+            waypoint.kind == 'exani_tera' and helper.tryCastExplorerMagicRope and
+                helper.tryCastExplorerMagicRope())
+        if executed then
+            routeAttempts = routeAttempts + 1
+            routeAction = { kind = 'rope', issuedAt = now, expectFloor = true }
+            setStatus('Waiting for confirmed ascent: ' .. (waypoint.kind == 'rope' and 'Rope' or 'Exani Tera'))
+        else
+            nextMoveAt = now + 300
+            setStatus(waypoint.kind == 'rope' and 'Rope: waiting for rope and a usable rope spot' or
+                'Exani Tera: waiting for mana, cooldown or spell availability')
+        end
         return true
     end
     if waypoint.kind == 'stand' or stair or waypoint.kind == 'hur_up' or
@@ -1272,7 +1329,8 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
         if waypoint.kind == 'hur_up' or waypoint.kind == 'hur_down' then
             local helper = modules.game_baiakeros_helper
             if not helper or not helper.tryCastExplorerLevitate then
-                skipWaypoint('Levitate is unavailable', now)
+                nextMoveAt = now + 300
+                setStatus('Waiting for Levitate support')
             elseif helper.tryCastExplorerLevitate(
                     waypoint.kind == 'hur_up' and 'up' or 'down', direction.walk) then
                 routeAttempts = routeAttempts + 1
@@ -1282,16 +1340,18 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
                     ': ' .. direction.name)
             else
                 routeStuckSince = routeStuckSince or now
-                if now - routeStuckSince >= 20000 then
-                    skipWaypoint('Levitate unavailable', now)
-                else
-                    setStatus('Waiting to cast Hur ' ..
-                        (waypoint.kind == 'hur_up' and 'Up' or 'Down'))
-                end
+                nextMoveAt = now + 300
+                setStatus('Waiting to cast Hur ' ..
+                    (waypoint.kind == 'hur_up' and 'Up' or 'Down'))
             end
             return true
         end
         if direction.value == 'center' then
+            local tile = g_map.getTile(base)
+            if stair and isFloorTransition(base, tile) then
+                routeAction = { kind = 'stair_reset', issuedAt = now - 2600 }
+                return true
+            end
             advanceWaypoint()
             return true
         end
@@ -1306,18 +1366,26 @@ local function followWaypoint(player, position, monsters, visibleCount, now)
             setStatus((stair and 'Stair' or 'Stand') .. ': facing ' .. direction.name)
             return true
         end
-        if not tile or not tile:isWalkable() then
+        local baseTile = stair and g_map.getTile(base)
+        local elevatedExit = stair and baseTile and baseTile:hasElevation(3) and
+            (not tile or not tile:getGround())
+        if not elevatedExit and (not tile or not tile:isWalkable()) then
             if isOccupiedWalkableTile(tile) then
                 setStatus('Stand passage occupied: waiting for it to clear')
             else
-                skipWaypoint('Stand direction is blocked', now)
+                if stair then
+                    nextMoveAt = now + 500
+                    setStatus('Stair passage blocked: waiting to retry')
+                else
+                    skipWaypoint('Stand direction is blocked', now)
+                end
             end
             return true
         end
         if walkOneStep(player, direction.walk, target, nil, stair) then
             routeAttempts = routeAttempts + 1
             routeAction = { kind = 'stand', issuedAt = now,
-                expectFloor = isFloorTransition(target, tile) }
+                expectFloor = stair or isFloorTransition(target, tile) }
             setStatus((stair and 'Stair' or 'Stand') .. ': stepping ' .. direction.name)
         end
         return true
@@ -1797,7 +1865,7 @@ function BaiakHelperExplorerV2.init(helperWindow)
             setStatus('Route limit: 200 waypoints')
             return
         end
-        local direction = kind == 'node' and WAYPOINT_DIRECTIONS[1] or
+        local direction = (kind == 'node' or kind == 'exani_tera') and WAYPOINT_DIRECTIONS[1] or
             waypointDirection(selectedDirection)
         if (kind == 'hur_up' or kind == 'hur_down') and
             not cardinalDirection(direction) then
@@ -1838,6 +1906,12 @@ function BaiakHelperExplorerV2.init(helperWindow)
     end
     window:recursiveGetChildById('v2CavebotStairButton').onClick = function()
         addWaypoint('stair')
+    end
+    window:recursiveGetChildById('v2CavebotRopeButton').onClick = function()
+        addWaypoint('rope')
+    end
+    window:recursiveGetChildById('v2CavebotExaniTeraButton').onClick = function()
+        addWaypoint('exani_tera')
     end
     local function chooseRouteFile(saveDialog, onChosen)
         if not g_platform.startJsonFileDialog or not g_platform.isJsonFileDialogPending or

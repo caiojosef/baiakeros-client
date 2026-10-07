@@ -17,6 +17,16 @@ local DRUID_FORMATION = {
     ['exevo gran mas frigo']=2, ['exevo gran mas tera']=2,
     ['exevo ulus frigo']=3, ['exevo ulus tera']=3
 }
+local SORCERER_FORMATION = {
+    ['exevo vis hur']=DRUID_FORMATION['exevo tera hur'], ['exevo gran flam hur']=DRUID_FORMATION['exevo tera hur'],
+    ['exevo flam hur']=2, ['exevo infir flam hur']=2,
+    ['exevo vis lux']=3, ['exevo gran vis lux']=DRUID_FORMATION['exevo tera hur'], ['exevo max mort']=3,
+    ['exevo gran mas flam']=2, ['exevo gran mas vis']=2
+}
+local function spellRadius(druid, sorcerer, plan)
+    local positions=druid and DRUID_FORMATION or sorcerer and SORCERER_FORMATION
+    return positions and plan and positions[plan.words] or 3
+end
 local function key(p) return p.x..':'..p.y..':'..p.z end
 local function now() return g_clock.millis() end
 local function explorer() return BaiakHelperExplorerV2 end
@@ -54,19 +64,27 @@ local function pressure(player, position, box, monsters, attackers, settings)
 end
 local function heldFormation(position,box,monsters,plan,radius,safe,visible)
     local words=plan and plan.words or "default"
-    if not formation or formation.words~=words or formation.radius~=radius or not M.same(formation.box,box) or
+    local lateral=words=='exevo gran vis lux' and not plan.beamMastery
+    local selector=lateral and function(p,b,m,r,s,v) return M.beamFormation(p,b,m,plan,r,s,v) end or M.cardinal
+    if not formation or formation.words~=words or formation.radius~=radius or formation.lateral~=lateral or not M.same(formation.box,box) or
         M.distance(formation.position,box)~=radius or not visible(formation.position,box) or
         not M.same(formation.position,position) and not safe(formation.position) then
-        local selected=M.cardinal(position,box,monsters,radius,safe,visible)
-        formation=selected and {words=words,radius=radius,box={x=box.x,y=box.y,z=box.z},position=selected.position} or nil
+        local selected=selector(position,box,monsters,radius,safe,visible)
+        formation=selected and {words=words,radius=radius,lateral=lateral,box={x=box.x,y=box.y,z=box.z},position=selected.position} or nil
     end
     if not formation then return nil end
+    if lateral then
+        -- Re-evaluate both sides when the box pack changes, keeping the current
+        -- side on a tie instead of oscillating between two equal beam lanes.
+        local selected=M.beamFormation(position,box,monsters,plan,radius,safe,visible,formation.position)
+        if selected then formation.position=selected.position end
+    end
     local route=not M.same(position,formation.position) and M.toTile(position,formation.position,monsters,function(p)
         return M.distance(p,box)<=M.boxRadius and safe(p) and
             (not visible(position,box) or visible(p,box))
     end) or nil
     if not M.same(position,formation.position) and (not route or not M.same(route.position,formation.position)) then
-        local selected=M.cardinal(position,box,monsters,radius,safe,visible)
+        local selected=selector(position,box,monsters,radius,safe,visible)
         if not selected then formation=nil;return nil end
         formation.position=selected.position;route=selected
     end
@@ -169,6 +187,7 @@ local function usePassage(transition)
 end
 function Follower.update(snapshot, druid)
     local player=g_game.getLocalPlayer()
+    if snapshot.paused then Follower.reset();return 'Acompanhamento pausado' end
     if not player or player:isDead() or not snapshot.leader then Follower.reset();return 'Aguardando leader' end
     if previousChase==nil then previousChase=g_game.getChaseMode() end
     if g_game.getChaseMode()~=DontChase then g_game.setChaseMode(DontChase) end
@@ -178,6 +197,15 @@ function Follower.update(snapshot, druid)
     if lastPosition and not M.same(position,lastPosition) then previousPosition=lastPosition end
     lastPosition={x=position.x,y=position.y,z=position.z}
     settlePending(player,position)
+    local leaderPz=snapshot.leader.protectionZone==true
+    local function protected(p)
+        if not leaderPz then return true end
+        local area=snapshot.protectionArea
+        if not area or p.z~=area.z then return false end
+        local row=area.rows[p.y-area.y+1]
+        local column=p.x-area.x+1
+        return row and column>=1 and row:sub(column,column)=='1' or false
+    end
     local monsters=monstersAt(player,position)
     local settings=snapshot.settings or {}
     local paladin=snapshot.vocation==3
@@ -202,13 +230,44 @@ function Follower.update(snapshot, druid)
         return sightCache[sightKey]
     end
     local function safe(p)
-        if safeCache[key(p)]==nil then safeCache[key(p)]=walkable(p) end
+        if safeCache[key(p)]==nil then safeCache[key(p)]=protected(p) and walkable(p) end
         return safeCache[key(p)]
     end
     local function cornerSafe(p)
         -- A creature beside a diagonal step does not occupy its destination.
         -- Check the flanking terrain, while the destination still checks creatures.
-        return walkable(p,false,true)
+        return protected(p) and walkable(p,false,true)
+    end
+    if leaderPz then
+        state={protection=true,at=now()}
+        formation,castWindow=nil,nil
+        holdUntil=0
+        if pending and not protected(pending.to) then
+            if g_game.stop then g_game.stop() end
+            pending=nil
+        end
+        if position.z~=box.z or not protected(position) then
+            return 'Leader em PZ: aguardando retorno para uma posicao protegida'
+        end
+        if not snapshot.bossLever then
+            -- Stay near the leader without attack formation, orbit or floor changes.
+            local choice=M.follow(position,box,2,{},safe,visible)
+            move(player,position,choice)
+            return 'Aguardando o leader sair do PZ'
+        end
+    end
+    if snapshot.bossLever and snapshot.formationTarget then
+        state={lineup=true,protection=leaderPz,at=now()}
+        formation,castWindow=nil,nil
+        holdUntil=0
+        local destination=snapshot.formationTarget
+        if position.z~=destination.z then return 'Fila da alavanca em outro andar: aguardando' end
+        if not M.same(position,destination) then
+            local choice=M.toTile(position,destination,{},safe)
+            move(player,position,choice)
+            return 'Enfileirando na posicao da party'
+        end
+        return 'Pronto na fila da alavanca'
     end
     if position.z~=box.z then
         state,formation=nil,nil
@@ -243,6 +302,8 @@ function Follower.update(snapshot, druid)
                 end
             elseif (transition.kind=='hur_up' or transition.kind=='hur_down' or transition.kind=='rope') and now()>=nextPassageAt and
                 not pending and not player:isWalking() and not player:isAutoWalking() then
+                local helper=modules.game_baiakeros_helper
+                if helper.isManualActionPending and helper.isManualActionPending() then return 'Aguardando hotkey manual' end
                 if transition.kind=='rope' then
                     g_game.talk('exani tera');nextPassageAt=now()+2200
                 elseif player:getDirection()~=transition.direction then
@@ -261,7 +322,8 @@ function Follower.update(snapshot, druid)
         return 'Seguindo a passagem de andar do leader'
     end
     local combat=modules.game_baiakeros_helper
-    local ranged=druid or snapshot.vocation==1 or paladin
+    local sorcerer=snapshot.vocation==1
+    local ranged=druid or sorcerer or paladin
     local plan=ranged and combat.getPartyHuntSpellPlan and combat.getPartyHuntSpellPlan()
     if plan and not plan.ready then plan=nil end
     if not lastBox then lastBoxMovedAt=now()-500
@@ -281,9 +343,9 @@ function Follower.update(snapshot, druid)
         -- A ready Divine Caldera takes its two-SQM cardinal slot even in orbit.
     elseif fighting and danger then
         formation=nil
-        local castRadius=plan and (druid and DRUID_FORMATION[plan.words] or 3)
+        local castRadius=plan and spellRadius(druid,sorcerer,plan)
         if now()>=reverseUntil then orbitClockwise=true end
-        choice=M.orbit(position,box,monsters,avoid,safe,orbitClockwise,visible,castRadius,previousPosition,cornerSafe)
+        choice=M.orbit(position,box,monsters,avoid,safe,orbitClockwise,visible,castRadius,previousPosition,cornerSafe,sorcerer and plan or nil)
         if choice and choice.clockwise~=nil and choice.clockwise~=orbitClockwise then
             orbitClockwise=choice.clockwise
             reverseUntil=orbitClockwise and 0 or now()+2000
@@ -301,21 +363,21 @@ function Follower.update(snapshot, druid)
             formation=nil
             choice={position=position,facing=M.faceBox(position,box)}
         else
-            local radius=druid and plan and DRUID_FORMATION[plan.words] or 3
+            local radius=spellRadius(druid,sorcerer,plan)
             choice=heldFormation(position,box,monsters,plan,radius,safe,visible)
         end
     else
         formation=nil
         choice=M.follow(position,box,M.orbitRadius,monsters,safe,visible)
     end
-    state={druid=druid,paladin=paladin,ranged=ranged,snapshot=snapshot,position=position,box=box,monsters=monsters,plan=plan,
+    state={druid=druid,sorcerer=sorcerer,paladin=paladin,ranged=ranged,snapshot=snapshot,position=position,box=box,monsters=monsters,plan=plan,
         choice=choice,danger=danger,alwaysRun=not paladin and snapshot.vocation~=4 and settings.alwaysRun==true,fighting=fighting,at=now()}
     if castWindow and (now()>=castWindow.expires or not plan or plan.words~=castWindow.words) then castWindow=nil end
     if fighting and danger and (paladin or settings.alwaysRun~=true) and plan and plan.ready and not pending and
         not player:isWalking() and not player:isAutoWalking() and now()>=nextCastWindowAt and visible(position,box) then
         local coverage=M.coverage(plan,position,box,monsters)
         if coverage.boxCount>0 and coverage.count>=(plan.minEnemies or 1) or
-            paladin and plan.needTarget and plan.canCastHere then
+            ranged and plan.needTarget and plan.canCastHere then
             -- Reserve a confirmed step boundary before walking again. Adjacent
             -- attackers do not suppress the Shooter; healing remains independent.
             castWindow={words=plan.words,expires=now()+450}
@@ -336,6 +398,7 @@ function Follower.update(snapshot, druid)
         plan and (paladin and 'Paladin: posicionando para ' or druid and 'Druid: posicionando para ' or 'Sorcerer: posicionando para ')..plan.words or 'Mantendo a formacao da box') or 'Seguindo o leader'
 end
 function Follower.prepareSpell(spell)
+    if state and (state.lineup or state.protection) then return false end
     if not state or now()-state.at>500 then
         return spell.words and spell.words:match('^exori ') ~= nil
     end
@@ -352,9 +415,16 @@ function Follower.prepareSpell(spell)
     local player=g_game.getLocalPlayer()
     if not player then return false end
     local position=player:getPosition()
+    if state.sorcerer and spell.words=='exevo gran vis lux' then
+        local dx,dy=math.abs(position.x-state.box.x),math.abs(position.y-state.box.y)
+        local radius=SORCERER_FORMATION[spell.words]
+        local width=state.plan and state.plan.beamMastery and 0 or 1
+        if not (dx==radius and dy==width or dy==radius and dx==width) then return false end
+    end
     -- Single-target spells do not require the wave formation, but retain safety.
     local profile=state.plan and state.plan.profile
-    local formationSpell=DRUID_FORMATION[spell.words]~=nil or state.paladin and spell.words=='exevo mas san'
+    local formationSpell=state.druid and DRUID_FORMATION[spell.words]~=nil or
+        state.sorcerer and SORCERER_FORMATION[spell.words]~=nil or state.paladin and spell.words=='exevo mas san'
     if formationSpell and (not state.plan or state.plan.words~=spell.words) then return false end
     if not profile or profile.shape~='directional' and profile.shape~='circle' and profile.shape~='ring' then
         return not pending and not player:isWalking()

@@ -6,24 +6,38 @@ local running, pendingStart, ready = false, false, false
 local snapshot, lastStatusAt, lastRequestAt, pendingStartAt = {}, 0, 0, 0
 local stateText = 'Aguardando dados da party do servidor...'
 local previousCombat, lastTransition = nil, nil
+local leaderCombat, applyingCombat = nil, false
+local lastProtectionZone
+local lastTargetId,lastTargetPacketAt,leaderTargetDirty=nil,0,false
 local lastLeaderWalk
 local updatingOptions = false
+local minimized = true
+local HOTKEY_CATEGORY, HOTKEY_ACTION = 'Baiakeros Party Hunt', 'Boss lever formation'
 local function restoreCombat()
     if not previousCombat then return end
     local combat=modules.game_baiakeros_helper
+    applyingCombat=true
     if combat.restorePartyCombatState then combat.restorePartyCombatState(previousCombat)
     else
         combat.setAutoAttackEnabled(previousCombat.auto)
         combat.setAttackRotationEnabled(previousCombat.shooter)
     end
+    applyingCombat=false
     if not previousCombat.auto and g_game.isOnline() and g_game.cancelAttack then g_game.cancelAttack() end
-    previousCombat=nil
+    previousCombat,leaderCombat=nil,nil
 end
 local function get(id) return panel:recursiveGetChildById('party' .. id) end
 local function send(action, options)
     if not g_game.isOnline() then return end
     local protocol = g_game.getProtocolGame()
     local data={action=action}
+    local player=g_game.getLocalPlayer()
+    if (action=='start' or action=='heartbeat') and player and snapshot.leader and snapshot.leader.id==player:getId() then
+        local combat=modules.game_baiakeros_helper
+        local choices=leaderCombat or {auto=combat.autoAttackEnabled==true,shooter=combat.attackRotationEnabled==true}
+        data.autoAttack,data.shooter=choices.auto,choices.shooter
+    end
+    if action=='boss_lever' then data.enabled=options.enabled end
     if action=='options' then
         data.runThreshold,data.alwaysRun=options.runThreshold,options.alwaysRun
         data.paladinMode=options.paladinMode
@@ -42,12 +56,52 @@ local function isLeader()
     local player = g_game.getLocalPlayer()
     return player and snapshot.leader and snapshot.leader.id == player:getId()
 end
+local function localProtectionZone()
+    local player=g_game.getLocalPlayer()
+    if player and player.hasState and PlayerStates then return player:hasState(PlayerStates.Pz) end
+    return snapshot.protectionZone==true
+end
+local function combatAllowed()
+    return not localProtectionZone() and (isLeader() or not snapshot.leader or snapshot.leader.protectionZone~=true)
+end
+local function syncCombat()
+    if not running or snapshot.paused then return end
+    local combat=modules.game_baiakeros_helper
+    if not previousCombat then
+        previousCombat={auto=combat.autoAttackEnabled==true,shooter=combat.attackRotationEnabled==true}
+        if isLeader() then leaderCombat={auto=previousCombat.auto,shooter=previousCombat.shooter} end
+    end
+    local choices=isLeader() and leaderCombat or snapshot.leader and snapshot.leader.combat or {}
+    local allowed=combatAllowed()
+    local auto,shooter=allowed and choices.auto==true,allowed and choices.shooter==true
+    applyingCombat=true
+    if combat.autoAttackEnabled~=auto then combat.setAutoAttackEnabled(auto) end
+    if combat.attackRotationEnabled~=shooter then combat.setAttackRotationEnabled(shooter) end
+    applyingCombat=false
+    -- Disabling Auto Attack must not cancel the leader's manual attack or the
+    -- independent shared target of a follower. PZ still cancels all attacks.
+    if not allowed and g_game.getAttackingCreature and g_game.getAttackingCreature() and g_game.cancelAttack then g_game.cancelAttack() end
+end
+function Hunt.onCombatOptionChange(option, enabled)
+    if applyingCombat or not running then return end
+    if isLeader() then
+        leaderCombat=leaderCombat or {auto=false,shooter=false}
+        leaderCombat[option]=enabled==true
+        previousCombat={auto=leaderCombat.auto,shooter=leaderCombat.shooter}
+        syncCombat()
+        send('heartbeat')
+    elseif not snapshot.paused then syncCombat() end
+end
+function Hunt.onProtectionZoneChange()
+    local protected=localProtectionZone()
+    local changed=lastProtectionZone~=protected
+    lastProtectionZone=protected
+    syncCombat()
+    if running and isLeader() and changed then send('heartbeat') end
+end
 local function remaining()
     return math.max(0, (tonumber(snapshot.remaining) or 0) -
         (running and math.floor((g_clock.millis() - lastStatusAt) / 1000) or 0))
-end
-local function cooldown()
-    return math.max(0, (tonumber(snapshot.teleportRemaining) or 0) - math.floor((g_clock.millis() - lastStatusAt) / 1000))
 end
 local function render()
     if not panel then return end
@@ -85,13 +139,10 @@ local function render()
         get('MovementHelp'):setText(get('MovementHelp').defaultMovementText)
     end
     if ready and snapshot.vocation==4 then get('KnightNotice'):show()else get('KnightNotice'):hide()end
-    local wait = cooldown()
-    get('Teleport'):setText(wait > 0 and string.format('Teleport to leader (%d:%02d)', math.floor(wait / 60), wait % 60) or 'Teleport to leader')
-    get('Teleport'):setEnabled(control and snapshot.canTeleport == true and wait == 0)
     local attacking=#(snapshot.attackers or {})
     get('Warning'):setText(snapshot.tooMany and 'Funciona somente com ate 4 pessoas, incluindo o leader.' or
         (running and snapshot.vocation~=4 and attacking>=(options.runThreshold or 2) and 'Pressao alta: '..attacking..' monstros atacando voce.' or
-        (ready and snapshot.leader and not isLeader() and 'Somente o leader pode iniciar e parar.' or ''))
+        (ready and snapshot.leader and not isLeader() and 'Use Stop Party Hunt na janela flutuante para pausar apenas voce.' or ''))
         )
     local statusText = not ready and 'Aguardando dados da party do servidor...' or
         (not fresh and 'Sem resposta do servidor. Atualizando a party...' or stateText)
@@ -105,7 +156,15 @@ local function render()
         f('Time'):setText(text)
         f('Progress'):setPercent(math.min(100,math.floor(seconds * 100 / dailyLimit)))
         f('Status'):setText(statusText)
-        f('Stop'):setEnabled(control and running)
+        f('Stop'):setEnabled(fresh and running and not snapshot.tooMany)
+        updatingOptions=true
+        f('BossLever'):setChecked(snapshot.bossLever==true)
+        updatingOptions=false
+        f('BossLever'):setEnabled(control and running)
+        f('LeverHotkey'):setEnabled(control and running)
+        f('LeverControls'):setHeight(isLeader() and 44 or 0)
+        if isLeader() then f('LeverControls'):show() else f('LeverControls'):hide() end
+        floating:setHeight(minimized and (isLeader() and 318 or 270) or (isLeader() and 398 or 350))
         f('Guide'):setText(snapshot.leader and snapshot.leader.name .. ' [Leader]' or 'No leader')
         local roster={}
         for index=1,4 do
@@ -113,22 +172,64 @@ local function render()
             roster[#roster+1]=member and (index..'. '..member.name..(member.leader and ' [Leader]' or '')) or index..'. ---'
         end
         f('Roster'):setText(table.concat(roster,'\n'))
-        f('Stop'):setText(isLeader() and 'Stop Party Hunt' or 'Following leader')
+        f('Stop'):setText(not isLeader() and snapshot.paused and 'Resume Party Hunt' or 'Stop Party Hunt')
     end
 end
 function Hunt.isActive() return running end
-function Hunt.isFollowing() return running and snapshot.following==true and not isLeader() end
+function Hunt.hasBeamMastery()
+    return ready and g_clock.millis()-lastStatusAt<=8000 and snapshot.vocation==1 and
+        snapshot.spellUpgrades and snapshot.spellUpgrades.beamMastery==true or false
+end
+function Hunt.isFollowing() return running and not snapshot.paused and snapshot.following==true and not isLeader() end
+function Hunt.isRunesOnly()
+    return Hunt.isFollowing() and snapshot.vocation~=3 and snapshot.settings and snapshot.settings.alwaysRun==true or false
+end
 function Hunt.isChangingFloor()
     local player=g_game.getLocalPlayer()
     return Hunt.isFollowing() and player and snapshot.leader.position and
         player:getPosition().z~=snapshot.leader.position.z or false
 end
 function Hunt.getLeaderTarget()
-    if not Hunt.isFollowing() or not snapshot.leader.targetId then return nil end
-    return g_map.getCreatureById(snapshot.leader.targetId)
+    if not Hunt.isFollowing() or not combatAllowed() or snapshot.bossLever or not snapshot.leader.targetId then return nil end
+    local target=g_map.getCreatureById(snapshot.leader.targetId)
+    if not target or not target:isMonster() or target:isDead() then return nil end
+    local player=g_game.getLocalPlayer()
+    if player and player.getPosition and target.getPosition then
+        local p,t=player:getPosition(),target:getPosition()
+        if not p or not t or p.z~=t.z then return nil end
+    end
+    return target
+end
+-- Own the party target even with Auto Attack disabled. Return true while
+-- following so the legacy target selector cannot pick a different monster.
+function Hunt.syncLeaderTarget()
+    if not Hunt.isFollowing() then return false end
+    if not g_game.isOnline() then return true end
+    local player=g_game.getLocalPlayer()
+    local target=player and (not player.isDead or not player:isDead()) and Hunt.getLeaderTarget() or nil
+    local current=g_game.getAttackingCreature()
+    if not target then
+        lastTargetId,lastTargetPacketAt=nil,0
+        if current then g_game.cancelAttack() end
+        return true
+    end
+    local id=target:getId()
+    if current and current:getId()==id then return true end
+    local now=g_clock.millis()
+    if now-lastTargetPacketAt<(lastTargetId==id and 500 or 100) then return true end
+    lastTargetId,lastTargetPacketAt=id,now
+    g_game.attack(target)
+    return true
+end
+function Hunt.onAttackingCreatureChange()
+    -- Game emits this before sending the attack packet. Publish on the next
+    -- tick, after the server has received the real manual/automatic selection.
+    if running and isLeader() then leaderTargetDirty=true end
 end
 -- Attack, spells and healing remain entirely under Helper control.
 function Hunt.prepareSpell(spell)
+    if running and not snapshot.paused and not combatAllowed() then return false end
+    if running and snapshot.bossLever then return false end
     if Hunt.isFollowing() and PartyFollower then return PartyFollower.prepareSpell(spell) end
     return true
 end
@@ -154,13 +255,15 @@ function Hunt.showFloating(automatic)
     if not automatic then floating:focus() end
 end
 function Hunt.minimize()
-    floating:setHeight(270)
+    minimized=true
+    floating:setHeight(isLeader() and 318 or 270)
     floating:recursiveGetChildById('partyFloatDetails'):hide()
     floating:recursiveGetChildById('partyFloatMinimize'):hide()
     floating:recursiveGetChildById('partyFloatExpand'):show()
 end
 function Hunt.expand()
-    floating:setHeight(350)
+    minimized=false
+    floating:setHeight(isLeader() and 398 or 350)
     floating:recursiveGetChildById('partyFloatDetails'):show()
     floating:recursiveGetChildById('partyFloatMinimize'):show()
     floating:recursiveGetChildById('partyFloatExpand'):hide()
@@ -173,9 +276,37 @@ end
 function Hunt.closeFloating()
     if running then Hunt.minimize() else floating:hide() end
 end
+function Hunt.setFollowingPaused(paused)
+    if not running or isLeader() then return end
+    snapshot.paused, snapshot.following = paused, not paused
+    lastTargetId,lastTargetPacketAt=nil,0
+    if PartyFollower then PartyFollower.reset() end
+    if g_game.stop then g_game.stop() end
+    if paused then
+        restoreCombat()
+        if g_game.cancelFollow then g_game.cancelFollow() end
+        if g_game.setChaseMode then g_game.setChaseMode(DontChase) end
+    end
+    stateText=paused and 'Acompanhamento pausado. Movimento manual; sem teleporte.' or 'Retomando acompanhamento...'
+    send(paused and 'stop' or 'resume')
+    render()
+end
+function Hunt.setBossLever(enabled)
+    if not running or not isLeader() or not snapshot.canControl or g_clock.millis()-lastStatusAt>8000 then return end
+    send('boss_lever',{enabled=enabled})
+end
+function Hunt.toggleBossLever()
+    Hunt.setBossLever(snapshot.bossLever~=true)
+end
+function Hunt.setLeverHotkey()
+    if not isLeader() or not modules.client_options then return end
+    modules.client_options.editKeybindActionPrimary(HOTKEY_CATEGORY,HOTKEY_ACTION,Keybind.chatMode)
+end
 function Hunt.stop(reason, fromServer)
+    if not fromServer and running and not isLeader() then Hunt.setFollowingPaused(true);return end
     local wasActive = running or pendingStart
     running, pendingStart = false, false
+    lastTargetId,lastTargetPacketAt,leaderTargetDirty=nil,0,false
     if PartyFollower then PartyFollower.reset() end
     restoreCombat()
     if floating then floating:hide() end
@@ -189,25 +320,28 @@ local function onOpcode(_, _, buffer)
     local wasFollowing,wasRunning,oldRun,oldRescue=Hunt.isFollowing(),running,snapshot.run,snapshot.rescueSerial
     snapshot, lastStatusAt, ready = response, g_clock.millis(), true
     if pendingStart then pendingStart = false end
-    running = response.active == true and (isLeader() or response.following==true) and not response.tooMany
-    if wasFollowing and not Hunt.isFollowing() and PartyFollower then PartyFollower.reset() end
+    running = response.active == true and (isLeader() or response.following==true or response.paused==true) and not response.tooMany
+    if wasFollowing~=Hunt.isFollowing() then
+        lastTargetId,lastTargetPacketAt=nil,0
+        if wasFollowing and PartyFollower then PartyFollower.reset() end
+    end
     if Hunt.isFollowing() and PartyFollower and (response.rescueSerial or 0)>0 and response.rescueSerial~=oldRescue then
         PartyFollower.reset()
     end
+    if response.paused then restoreCombat() end
     if wasRunning and not running then
         restoreCombat()
         if floating then floating:hide() end
     end
     if running and (not wasRunning or oldRun~=response.run) then
         if wasRunning then restoreCombat() end
-        local combat=modules.game_baiakeros_helper
-        previousCombat={auto=combat.autoAttackEnabled==true,shooter=combat.attackRotationEnabled==true}
-        combat.setAutoAttackEnabled(true)
-        combat.setAttackRotationEnabled(true)
         lastTransition,lastLeaderWalk=nil,nil
+        lastTargetId,lastTargetPacketAt,leaderTargetDirty=nil,0,false
         Hunt.minimize()
         Hunt.showFloating(true)
     end
+    syncCombat()
+    Hunt.syncLeaderTarget()
     stateText = type(response.reason) == 'string' and response.reason ~= '' and response.reason or
         (running and (isLeader() and 'Leader ativo: party acompanhando.' or 'Acompanhando o leader') or
             (response.leader and 'Party pronta' or 'Entre em uma party para comecar'))
@@ -219,10 +353,14 @@ local function tick()
         local now = g_clock.millis()
         if pendingStart and now - pendingStartAt >= 8000 then Hunt.stop('Start confirmation timed out') end
         if running and now - lastStatusAt > 8000 then Hunt.stop('Party Hunt connection expired', true) end
-        if now - lastRequestAt >= (running and 500 or 3000) then
+        if now - lastRequestAt >= (running and 500 or 3000) or
+            running and leaderTargetDirty and now-lastRequestAt>=150 then
             if running then send('heartbeat') else send('status') end
             lastRequestAt = now
+            leaderTargetDirty=false
         end
+        syncCombat()
+        Hunt.syncLeaderTarget()
         if Hunt.isFollowing() and PartyFollower then
             stateText=PartyFollower.update(snapshot,snapshot.vocation==2)
         end
@@ -233,6 +371,7 @@ end
 function Hunt.onGameStart()
     if PartyFollower then PartyFollower.reset() end
     lastTransition,lastLeaderWalk=nil,nil
+    lastProtectionZone=nil
     snapshot, ready, running, pendingStart = {}, false, false, false
     lastRequestAt = 0
     Hunt.refresh()
@@ -279,9 +418,6 @@ function Hunt.init(helperWindow)
         pendingStart, pendingStartAt = true, g_clock.millis()
         send('start'); render()
     end
-    get('Teleport').onClick = function()
-        if ready and isLeader() and snapshot.canTeleport and not snapshot.tooMany and cooldown() == 0 then send('teleport') end
-    end
     for value=1,6 do get('RunThreshold'):addOption(tostring(value),value) end
     get('MovementHelp').defaultMovementText=get('MovementHelp'):getText()
     get('PaladinMode'):addOption('Close to box','close')
@@ -292,20 +428,29 @@ function Hunt.init(helperWindow)
     get('AlwaysRun').onCheckChange=changeOptions
     get('Refresh').onClick = Hunt.refresh
     get('Float').onClick = Hunt.showFloating
-    floating:recursiveGetChildById('partyFloatStop').onClick = function() if isLeader() then Hunt.stop() end end
+    floating:recursiveGetChildById('partyFloatStop').onClick = function()
+        if isLeader() then Hunt.stop() else Hunt.setFollowingPaused(not snapshot.paused) end
+    end
+    floating:recursiveGetChildById('partyFloatBossLever').onCheckChange=function(_,checked)
+        if not updatingOptions then Hunt.setBossLever(checked) end
+    end
+    floating:recursiveGetChildById('partyFloatLeverHotkey').onClick=Hunt.setLeverHotkey
+    Keybind.new(HOTKEY_CATEGORY,HOTKEY_ACTION,'','')
+    Keybind.bind(HOTKEY_CATEGORY,HOTKEY_ACTION,{{type=KEY_DOWN,callback=Hunt.toggleBossLever}})
     floating:recursiveGetChildById('partyFloatBack').onClick = Hunt.openHelper
     floating:recursiveGetChildById('partyFloatMinimize').onClick = Hunt.minimize
     floating:recursiveGetChildById('partyFloatExpand').onClick = Hunt.expand
     if LocalPlayer then connect(LocalPlayer,{onPositionChange=Hunt.onPositionChange,onCancelWalk=Hunt.onCancelWalk}) end
-    connect(g_game,{onWalk=Hunt.onWalk})
+    connect(g_game,{onWalk=Hunt.onWalk,onAttackingCreatureChange=Hunt.onAttackingCreatureChange})
     tickEvent = scheduleEvent(tick, 50)
     render()
 end
 function Hunt.terminate()
+    Keybind.delete(HOTKEY_CATEGORY,HOTKEY_ACTION)
     Hunt.onGameEnd()
     ProtocolGame.unregisterExtendedOpcode(OPCODE)
     if LocalPlayer then disconnect(LocalPlayer,{onPositionChange=Hunt.onPositionChange,onCancelWalk=Hunt.onCancelWalk}) end
-    disconnect(g_game,{onWalk=Hunt.onWalk})
+    disconnect(g_game,{onWalk=Hunt.onWalk,onAttackingCreatureChange=Hunt.onAttackingCreatureChange})
     if tickEvent then removeEvent(tickEvent); tickEvent = nil end
     if floating then modules.game_walk.unbindMovementKeysFromWidget(floating); floating:destroy(); floating = nil end
     if panel then panel:destroy(); panel = nil end
