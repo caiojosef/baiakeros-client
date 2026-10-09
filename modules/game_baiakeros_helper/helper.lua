@@ -49,6 +49,7 @@ end
 updatingEnabledCheckBox = false
 nextPotionAt = 0
 assignmentGrabber = nil
+local assigningHelperItem
 assigningPotionSlot = nil
 assigningExerciseWeapon = false
 assignmentCursorEvent = nil
@@ -2283,7 +2284,7 @@ end
 
 function keepAssignmentCursor()
     if not assignmentGrabber or not g_ui.isMouseGrabbed() or
-        (not assigningPotionSlot and not assigningExerciseWeapon) then
+        (not assigningPotionSlot and not assigningExerciseWeapon and not assigningHelperItem) then
         return
     end
     if modules.client_options and modules.client_options.getOption('nativeCursor') then
@@ -2320,10 +2321,11 @@ function endItemAssignmentCursor()
 end
 
 cancelItemAssignment = function()
-    if not assigningPotionSlot and not assigningExerciseWeapon then return false end
+    if not assigningPotionSlot and not assigningExerciseWeapon and not assigningHelperItem then return false end
 
     assigningPotionSlot = nil
     assigningExerciseWeapon = false
+    assigningHelperItem = nil
     endItemAssignmentCursor()
     showHelperAfterAssignment()
     modules.game_textmessage.displayStatusMessage('Item selection cancelled.')
@@ -2347,6 +2349,32 @@ local function getClickedItem(mousePosition)
         clickedWidget = clickedWidget:getParent()
     end
     return nil
+end
+
+-- Shared item picker used by equipment as well as the existing potion cursor.
+function beginHelperItemAssignment(acceptItem, instruction)
+    if not assignmentGrabber or g_ui.isMouseGrabbed() then return false end
+    assigningHelperItem=acceptItem
+    hideHelperForAssignment()
+    beginItemAssignmentCursor()
+    modules.game_textmessage.displayStatusMessage(instruction)
+    return true
+end
+
+local function finishHelperItemAssignment(mousePosition, mouseButton)
+    if mouseButton==MouseRightButton then return cancelItemAssignment() end
+    if mouseButton~=MouseLeftButton then keepAssignmentCursor();return true end
+    local item=getClickedItem(mousePosition)
+    local accepted,reason=assigningHelperItem(item)
+    if not accepted then
+        modules.game_textmessage.displayFailureMessage(reason or 'Selecione um item válido.')
+        keepAssignmentCursor()
+        return true
+    end
+    assigningHelperItem=nil
+    endItemAssignmentCursor()
+    showHelperAfterAssignment()
+    return true
 end
 
 local function finishPotionAssignment(mousePosition, mouseButton)
@@ -3473,13 +3501,56 @@ local function tryFriendHealing(now)
     return true
 end
 
+-- Defensive equipment uses the same authoritative cooldowns as the other
+-- Helper actions, including the shared potion timer and manual hotkey guard.
+local equipmentShieldPendingUntil = 0
+function tryCastEquipmentShield(cancel)
+    if not g_game.isOnline() or isManualActionPending() then return false end
+    local player = g_game.getLocalPlayer()
+    local profile = detectVocation()
+    local spell = SpellInfo.Default[cancel and 'Cancel Magic Shield' or 'Magic Shield']
+    if not player or not profile or (profile.baseSpellVocation ~= 1 and profile.baseSpellVocation ~= 2) or
+        player:getHealth() <= 0 or player:hasState(PlayerStates.Pz) or not spell or
+        player:getLevel() < spell.level or player:getMana() < spell.mana then return false end
+    local now = g_clock.millis()
+    if not isSpellCooldownReady(spell, now) then return false end
+    g_game.talk(spell.words)
+    guardSpellCommand(spell, 3, now)
+    spellCooldownsById[spell.id] = now + (spell.exhaustion or 2000)
+    equipmentShieldPendingUntil = now + 750
+    return true
+end
+
+function tryUseEquipmentShieldPotion()
+    if not g_game.isOnline() or isManualActionPending() or isManualItemPending() then return false end
+    local player = g_game.getLocalPlayer()
+    local profile = detectVocation()
+    local spell = SpellInfo.Default['Magic Shield']
+    local now = g_clock.millis()
+    if not player or not profile or (profile.baseSpellVocation ~= 1 and profile.baseSpellVocation ~= 2) or
+        player:getHealth() <= 0 or player:getLevel() < 14 or player:hasState(PlayerStates.Pz) or
+        now < nextPotionAt or now < equipmentShieldPendingUntil or not spell or
+        player:hasState(PlayerStates.ManaShield) or player:hasState(PlayerStates.NewManaShield) or
+        isCooldownReady(spellCooldownsById, spell.id, now) or
+        player:getInventoryCount(35563, 0) <= 0 then return false end
+    g_game.useInventoryItemWith(35563, player, -1)
+    nextPotionAt = now + POTION_COOLDOWN
+    equipmentShieldPendingUntil = now + POTION_COOLDOWN
+    return true
+end
+
+local function checkEquipmentShield()
+    local v2 = modules.game_baiakeros_helper_v2
+    if v2 and v2.BaiakHelperEquipmentV2 then v2.BaiakHelperEquipmentV2.checkShield() end
+end
+
 local function checkHealing()
     if not g_game.isOnline() then return end
     updatePartySession()
     refreshPartyMemberList(false)
-    if not healingEnabled then return end
     local player = g_game.getLocalPlayer()
     if not player or player:getHealth() <= 0 then return end
+    if not healingEnabled then checkEquipmentShield(); return end
 
     local now = g_clock.millis()
     local healthPercent = getHealthPercent(player)
@@ -3512,6 +3583,7 @@ local function checkHealing()
             setStatus(string.format('%d%%  %s', healthPercent, spell.words), '#78d878')
         end
     end
+    checkEquipmentShield()
     usePotion('mana')
     if isCooldownReady(spellGroupCooldownsById, 2, now) and not tryMassFriendHealing(now) then
         tryFriendHealing(now)
@@ -4953,6 +5025,7 @@ function init()
         -- Store Inbox items may begin their own drag handling before mouse
         -- release. Accept the assignment on press so the grabbed selection
         -- cannot be lost to the container widget.
+        if assigningHelperItem then return finishHelperItemAssignment(mousePosition, mouseButton) end
         if assigningExerciseWeapon then
             return finishExerciseWeaponAssignment(mousePosition, mouseButton)
         end
@@ -4962,6 +5035,7 @@ function init()
         return true
     end
     assignmentGrabber.onMouseRelease = function(self, mousePosition, mouseButton)
+        if assigningHelperItem then return finishHelperItemAssignment(mousePosition, mouseButton) end
         if assigningExerciseWeapon then
             return finishExerciseWeaponAssignment(mousePosition, mouseButton)
         end

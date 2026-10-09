@@ -163,7 +163,7 @@ end
 
 function showHelperV2Tab(tabName)
     if not helperV2Window then return end
-    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'cavebot' and
+    if tabName ~= 'healing' and tabName ~= 'attack' and tabName ~= 'equipment' and tabName ~= 'cavebot' and
         not (PARTY_HUNT_ENABLED and tabName == 'party') then
         tabName = 'healing'
     end
@@ -180,6 +180,8 @@ function showHelperV2Tab(tabName)
             label = 'Healing & Tools', width = 162 },
         { name = 'attack', page = attackPage, button = attackTab,
             label = 'Attack', width = 116 },
+        { name = 'equipment', page = helperV2Window:recursiveGetChildById('equipmentPage'),
+            button = helperV2Window:recursiveGetChildById('equipmentTab'), label = 'Amulets & Rings', width = 180 },
         { name = 'cavebot', page = cavebotPage, button = cavebotTab,
             label = 'Cavebot', width = 116 }
     }
@@ -240,11 +242,13 @@ function toggle()
 end
 
 local function onGameStart()
+    BaiakHelperEquipmentV2.onGameStart()
     BaiakHelperExplorerV2.onGameStart()
     if PARTY_HUNT_ENABLED then PartyHuntV2.onGameStart() end
 end
 
 local function onGameEnd()
+    BaiakHelperEquipmentV2.onGameEnd()
     if PARTY_HUNT_ENABLED then PartyHuntV2.onGameEnd() end
     BaiakHelperExplorerV2.onGameEnd()
     attachCavebot(true)
@@ -278,6 +282,7 @@ function init()
     BaiakHelperTrainingV2.init(helperV2Window)
     BaiakHelperToolsV2.init(helperV2Window)
     BaiakHelperAttackV2.init(helperV2Window)
+    BaiakHelperEquipmentV2.init(helperV2Window)
     BaiakHelperExplorerV2.init(helperV2Window)
     if PARTY_HUNT_ENABLED then PartyHuntV2.init(helperV2Window) end
 
@@ -301,6 +306,7 @@ function terminate()
     BaiakHelperTrainingV2.terminate()
     BaiakHelperToolsV2.terminate()
     BaiakHelperAttackV2.terminate()
+    BaiakHelperEquipmentV2.terminate()
     if PARTY_HUNT_ENABLED then PartyHuntV2.terminate() end
     BaiakHelperExplorerV2.terminate()
 

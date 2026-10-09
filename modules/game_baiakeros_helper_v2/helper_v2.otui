@@ -287,6 +287,25 @@ BaiakerosHelperV2Window < MainWindow
         phantom: true
 
     HelperV2TabButton
+      id: equipmentTab
+      anchors.top: prev.top
+      anchors.left: prev.right
+      margin-left: 1
+      size: 34 36
+      text: ''
+      !tooltip: tr('Amulets & Rings')
+      @onClick: modules.game_baiakeros_helper_v2.showHelperV2Tab('equipment')
+
+      UIWidget
+        size: 24 24
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 5
+        image-source: /images/baiakeros/helper_v2_equipment
+        image-smooth: true
+        phantom: true
+
+    HelperV2TabButton
       id: cavebotTab
       anchors.top: prev.top
       anchors.left: prev.right
@@ -333,6 +352,11 @@ BaiakerosHelperV2Window < MainWindow
     anchors.bottom: bottomSeparator.top
     margin-top: 7
     margin-bottom: 7
+
+    UIWidget
+      id: equipmentPage
+      anchors.fill: parent
+      visible: false
 
     UIWidget
       id: partyHuntPage
@@ -919,21 +943,21 @@ BaiakerosHelperV2Window < MainWindow
             anchors.top: parent.top
             margin-left: 14
             margin-top: 35
-            size: 102 16
+            size: 94 16
             text-offset: 18 0
 
           SmallButton
             id: v2AutoTargetHotkeyButton
             text: Set Hotkey
             size: 70 20
-            anchors.left: v2AutoAttackEnabledBox.right
+            anchors.right: parent.right
             anchors.verticalCenter: v2AutoAttackEnabledBox.verticalCenter
-            margin-left: 7
+            margin-right: 6
 
           QtComboBox
             id: v2AutoAttackModeBox
             size: 44 22
-            anchors.left: v2AutoTargetHotkeyButton.right
+            anchors.left: v2AutoAttackEnabledBox.right
             anchors.verticalCenter: v2AutoAttackEnabledBox.verticalCenter
             margin-left: 7
             mouse-scroll: false
@@ -1363,8 +1387,8 @@ BaiakerosHelperV2Window < MainWindow
 
         Label
           id: v2CavebotStatus
-          text: Ready to explore
-          size: 230 30
+          visible: false
+          size: 230 0
           anchors.horizontalCenter: v2CavebotRuntimeColumn.horizontalCenter
           anchors.bottom: parent.bottom
           margin-bottom: 6
@@ -1377,9 +1401,9 @@ BaiakerosHelperV2Window < MainWindow
           anchors.left: v2CavebotRuntimeColumn.left
           anchors.right: v2CavebotRuntimeColumn.right
           anchors.top: v2CavebotAutoExploringButton.bottom
-          anchors.bottom: v2CavebotStatus.top
+          anchors.bottom: v2CavebotRuntimeColumn.bottom
           margin-top: 13
-          margin-bottom: 7
+          margin-bottom: 6
 
         VerticalSeparator
           id: v2CavebotMainDivider
