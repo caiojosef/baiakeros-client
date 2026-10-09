@@ -29,6 +29,11 @@ scheduleEvent = function(callback, delay)
 end
 removeEvent = function(event) event.cancelled = true end
 destroyCreateAccount = function() end
+tr = function(value) return value end
+local loginErrorDestroyed = false
+displayErrorBox = function()
+    return {destroy=function() loginErrorDestroyed = true end}
+end
 
 dofile('modules/client_entergame/characterlist.lua')
 CharacterList.init()
@@ -46,6 +51,14 @@ disconnect()
 assert(scheduled and scheduled.delay == 2500, 'Helper-enabled disconnect must schedule Enter')
 scheduled.callback()
 assert(loginAttempts == 1, 'Helper-enabled disconnect must retry the selected character')
+
+scheduled = nil
+callbacks.onGameStart()
+callbacks.onLoginError('You are already connected through another client. Please use only one client at a time!')
+now = now + 1000
+callbacks.onGameEnd()
+assert(not scheduled, 'session replacement must never reconnect the previous client')
+assert(not loginErrorDestroyed, 'session replacement must preserve its explanation')
 
 scheduled = nil
 callbacks.onGameStart()

@@ -88,6 +88,7 @@ local SHOW_PREMIUM_WIDGETS = false
 local autoReconnectButton
 local autoReconnectEvent
 local manualLogoutRequested = false
+local serverRejectedSession = false
 local function removeAutoReconnectEvent() --prevent
     if autoReconnectEvent then
         removeEvent(autoReconnectEvent)
@@ -739,6 +740,7 @@ local function showMandatoryUpdateBox(message)
 end
 
 function onGameLoginError(message)
+    serverRejectedSession = true
     CharacterList.destroyLoadBox()
     stopReconnect(true)
     if type(message) == 'string' and message:sub(1, #UPDATE_REQUIRED_PREFIX) == UPDATE_REQUIRED_PREFIX then
@@ -814,6 +816,7 @@ local function onGameStart()
     autoReconnectSessionEligible = false
     reconnectCancelUntil = 0
     manualLogoutRequested = false
+    serverRejectedSession = false
     CharacterList.destroyLoadBox()
     stopReconnect(true)
 end
@@ -821,13 +824,13 @@ end
 local function onGameEnd()
     -- Any established game session is eligible. Requiring 15 minutes here
     -- prevented a second Server Save reconnect shortly after the first one.
-    autoReconnectSessionEligible = onlineSessionStartedAt > 0
+    autoReconnectSessionEligible = onlineSessionStartedAt > 0 and not serverRejectedSession
     onlineSessionStartedAt = 0
 
     -- A socket failure can create the regular connection-error box just
     -- before onGameEnd. For an eligible unexpected disconnect, dismiss it so
     -- the character list can perform the same action as pressing Enter.
-    local unexpectedDisconnect = not manualLogoutRequested
+    local unexpectedDisconnect = not manualLogoutRequested and not serverRejectedSession
     if autoReconnectSessionEligible and unexpectedDisconnect and
         isAutoReconnectEnabled() and errorBox then
         errorBox:destroy()
