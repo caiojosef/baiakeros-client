@@ -145,99 +145,143 @@ BaiakerosPartyHuntPanel < UIWidget
     anchors.bottom: parent.bottom
     margin-left: 10
 
-    SmallButton
-      id: partyExtrasTab
-      text: Extras
-      size: 110 25
+    Label
+      text: Party Hunt
+      color: #ffffff
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top
-      margin-top: 7
-      on: true
-      enabled: false
+      margin-top: 5
 
-    HorizontalSeparator
+    UIWidget
+      id: partyVocationSection
+      height: 205
       anchors.left: parent.left
       anchors.right: parent.right
-      anchors.top: partyExtrasTab.bottom
-      margin: 8 10 0 10
+      anchors.top: parent.top
+      margin: 36 20 0 20
+
+      Label
+        id: partyDruidOptionsTitle
+        text: Configurações da vocação
+        color: #f0d48a
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        text-align: left
+        margin: 0 0 0 0
+
+      Label
+        id: partyToleranceLabel
+        text: Correr a partir de (monstros)
+        anchors.left: partyDruidOptionsTitle.left
+        anchors.top: partyDruidOptionsTitle.bottom
+        margin-top: 18
+
+      ComboBox
+        id: partyRunThreshold
+        size: 54 22
+        anchors.left: partyToleranceLabel.right
+        anchors.verticalCenter: partyToleranceLabel.verticalCenter
+        margin-left: 12
+        !tooltip: tr('Começa a circular ao atingir esta quantidade de monstros causando dano, incluindo ataques em área. Exemplo: 3 começa a correr no terceiro atacante.')
+
+      CheckBox
+        id: partyAlwaysRun
+        text: Sempre correr (somente runas)
+        size: 240 18
+        anchors.left: partyDruidOptionsTitle.left
+        anchors.top: partyRunThreshold.bottom
+        margin-top: 18
+
+      HorizontalSeparator
+        id: partyOptionsSeparator
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: partyRunThreshold.bottom
+        margin: 52 0 0 0
+
+      Label
+        id: partyPaladinModeLabel
+        text: Posição do Paladin
+        anchors.left: partyDruidOptionsTitle.left
+        anchors.top: partyRunThreshold.bottom
+        margin-top: 18
+        visible: false
+
+      ComboBox
+        id: partyPaladinMode
+        size: 180 22
+        anchors.left: partyPaladinModeLabel.right
+        anchors.verticalCenter: partyPaladinModeLabel.verticalCenter
+        margin-left: 12
+        !tooltip: tr('Escolha a movimentação do Paladin. Exevo mas san pronta usa uma posição livre a 2 SQMs do líder, no norte, sul, leste ou oeste.')
+        visible: false
+
+      Label
+        id: partyMonkModeLabel
+        text: Posição do Monk
+        anchors.left: partyDruidOptionsTitle.left
+        anchors.top: partyRunThreshold.bottom
+        margin-top: 18
+        visible: false
+
+      ComboBox
+        id: partyMonkMode
+        size: 180 22
+        anchors.left: partyMonkModeLabel.right
+        anchors.verticalCenter: partyMonkModeLabel.verticalCenter
+        margin-left: 12
+        !tooltip: tr('Fique a 2 SQMs virado para a box ou circule e pare nessa distância para lançar cada magia pronta do Shooter.')
+        visible: false
+
+      Label
+        id: partyMovementHelp
+        !text: tr('O mage para virado para a box e ajusta a posição à próxima magia pronta do Shooter.\n\nAo atingir a quantidade escolhida de atacantes, circula ao redor da box, normalmente entre 3 e 5 SQMs, e pausa para lançar magias. Sempre correr mantém o movimento e usa somente runas.')
+        color: #d0d0d0
+        text-wrap: true
+        text-auto-resize: true
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: partyOptionsSeparator.bottom
+        margin: 12 0 0 0
+
+      Label
+        id: partyKnightNotice
+        text: Knight e Elite Knight não possuem configurações de distância. O líder controla o caminho; ataque e cura são configurados no Helper.
+        color: #d0d0d0
+        text-wrap: true
+        text-auto-resize: true
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: partyDruidOptionsTitle.bottom
+        margin: 14 0 0 0
+        visible: false
+
+    HorizontalSeparator
+      id: partyTutorialSeparator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: partyVocationSection.bottom
+      margin: 12 20 0 20
 
     Label
-      id: partyDruidOptionsTitle
-      text: Personal Movement
+      id: partyTutorialTitle
+      text: Como usar o Party Hunt
       color: #f0d48a
-      anchors.left: parent.left
-      anchors.top: partyExtrasTab.bottom
-      margin: 30 20 0 20
+      anchors.left: partyTutorialSeparator.left
+      anchors.top: partyTutorialSeparator.bottom
+      margin-top: 14
 
     Label
-      id: partyToleranceLabel
-      text: Run from (monsters)
-      anchors.left: partyDruidOptionsTitle.left
-      anchors.top: partyDruidOptionsTitle.bottom
-      margin-top: 18
-
-    ComboBox
-      id: partyRunThreshold
-      size: 54 22
-      anchors.left: partyToleranceLabel.right
-      anchors.verticalCenter: partyToleranceLabel.verticalCenter
-      margin-left: 12
-      !tooltip: tr('Start circling when this many monsters have recently damaged you, including area attacks. For example, 3 means run from the third attacker; 1 or 2 remain below the limit.')
-
-    CheckBox
-      id: partyAlwaysRun
-      text: Always run (runes)
-      size: 240 18
-      anchors.left: partyDruidOptionsTitle.left
-      anchors.top: partyRunThreshold.bottom
-      margin-top: 18
-
-    HorizontalSeparator
-      id: partyOptionsSeparator
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: partyRunThreshold.bottom
-      margin: 58 20 0 20
-
-    Label
-      id: partyPaladinModeLabel
-      text: Paladin position
-      anchors.left: partyDruidOptionsTitle.left
-      anchors.top: partyRunThreshold.bottom
-      margin-top: 18
-      visible: false
-
-    ComboBox
-      id: partyPaladinMode
-      size: 180 22
-      anchors.left: partyPaladinModeLabel.right
-      anchors.verticalCenter: partyPaladinModeLabel.verticalCenter
-      margin-left: 12
-      !tooltip: tr('Personal Paladin movement. A ready exevo mas san always uses a free cardinal slot 2 SQMs from the leader, then returns to the selected mode.')
-      visible: false
-
-    Label
-      id: partyMovementHelp
-      !text: tr('Each player configures their own movement. Knight and Elite Knight do not have distance options.\n\nBelow the chosen count: hold and face the box.\nAt or above it: circle clockwise, 3 to 5 SQMs from the visible box. Setting 3 means run from the third attacker. Reverse only to avoid obstacles; use free diagonal exits. Pause between steps to cast.\n\nAlways run: keep moving and use the runes configured in Attack.\n\nOnly ready Shooter spells change your casting position; individual and all group cooldowns apply.\nDruid / Sorcerer: nearest cardinal slot at 3 SQMs.\nDruid - Earth Wave: 4 SQMs.\nDruid - Strong Ice Wave and Ulus: 3 SQMs.\nDruid - Gran Mas Frigo / Tera: 2 SQMs when holding; at least 3 while circling.\nRescue: another floor, over 10 SQMs away or hidden for 3 seconds; return to a visible free tile 3 SQMs away.')
+      id: partyTutorialText
+      !text: tr('1. Forme uma party com até 4 jogadores. O líder aperta Start; os membros seguem automaticamente, sem abrir o Helper. O líder anda manualmente ou pelo Cavebot.\n\n2. Configure cura, magias e runas no Helper de cada jogador. Fora da protection zone, Auto Target e Shooter seguem as opções do líder; o alvo também é compartilhado.\n\n3. Cada membro ajusta sua movimentação acima. No minimizado, Stop pausa só esse membro; Resume retoma. O Stop do líder para todos.\n\n4. Os membros só saem da protection zone após o líder. PvP (PZ lock/skull), queda ou morte do líder interrompem o Party Hunt.')
       color: #d0d0d0
       text-wrap: true
       text-auto-resize: true
       anchors.left: parent.left
       anchors.right: parent.right
-      anchors.top: partyOptionsSeparator.bottom
-      margin: 14 20 0 20
-
-    Label
-      id: partyKnightNotice
-      text: Knight and Elite Knight do not have distance options.
-      color: #d0d0d0
-      text-wrap: true
-      text-auto-resize: true
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: partyDruidOptionsTitle.bottom
-      margin: 18 20 0 20
-      visible: false
+      anchors.top: partyTutorialTitle.bottom
+      margin: 12 20 0 20
 
 BaiakerosPartyHuntFloat < MainWindow
   text: Party Hunt

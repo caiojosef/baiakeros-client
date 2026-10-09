@@ -582,3 +582,165 @@ for _,facing in ipairs({North,East,South,West})do
  end
 end
 print('Master Sorcerer passed: four-SQM waves, normal beam fuller lateral lane in four directions, authoritative Beam Mastery area, cooldowns and pressure casting')
+
+-- Monk uses the real Shooter, confirmed steps and actual offensive areas.
+vocation=15;currentVocation={baseSpellVocation=9,promotedSpellVocation=10,promoted=true}
+player.getHarmony=function()return 5 end
+incoming.vocation=9;incoming.spellUpgrades=nil;incoming.attackers={}
+incoming.settings={runThreshold=3,alwaysRun=false,monkMode='hold'}
+spectators={};for i=1,8 do spectators[i]=boxPack[i]end
+actualTarget=spectators[8]
+local function monkSpell(id,name,words,exhaustion,needTarget,range)
+ return {id=id,name=name,words=words,type='Instant',mana=100,level=90,vocations={9,10},
+  group={[1]=2000},exhaustion=exhaustion,needTarget=needTarget,range=range}
+end
+local flurry=monkSpell(287,'Flurry of Blows','exori mas pug',4000)
+local greater=monkSpell(289,'Greater Flurry of Blows','exori gran mas pug',10000)
+local sweeping=monkSpell(294,'Sweeping Takedown','exori mas nia',8000)
+local chained=monkSpell(288,'Chained Penance','exori med pug',4000)
+local outburst=monkSpell(295,'Spiritual Outburst','exori gran mas nia',60000)
+local monkCasts,monkCastSteps={},{}
+local function monkSlots(spells)
+ slots={}
+ for i,spell in ipairs(spells)do
+  slots['attackSpellSlot'..i]={assignedAttackSpell=spell,attackEnabled=true,attackPriority=i,
+   attackMinEnemies=1,attackAllowMultiple=true}
+ end
+end
+g_game.talk=function(words)
+ assert(not walkTo,'Monk casts only after its step is confirmed')
+ local selected=getPartyHuntSpellPlan()
+ assert(selected and selected.ready and selected.words==words,'Monk must cast the next ready Shooter spell')
+ assert(PartyHuntMovement.distance(playerPosition,box)==2 and
+  (playerPosition.x==box.x or playerPosition.y==box.y),'every Monk spell uses an exact cardinal two-SQM slot')
+ assert(direction==PartyHuntMovement.faceBox(playerPosition,box),'Monk faces the box before each cast')
+ local spell
+ for _,slot in pairs(slots)do if slot.assignedAttackSpell.words==words then spell=slot.assignedAttackSpell;break end end
+ assert(spell and (not lastCastAt[words] or now-lastCastAt[words]>=spell.exhaustion),'Monk respects each spell cooldown')
+ if spell.needTarget then
+  assert(actualTarget and PartyHuntMovement.distance(playerPosition,actualTarget:getPosition())<=spell.range,
+   'Monk melee spells retain their actual target range')
+ end
+ lastCastAt[words]=now;monkCasts[words]=(monkCasts[words] or 0)+1
+ monkCastSteps[#monkCastSteps+1]=steps
+ packets[#packets+1]={at=now+50,spell=spell}
+end
+local function resetMonk(position)
+ now=now+100000;walkTo=nil;packets={};PartyFollower.reset();playerPosition=position
+end
+for index,start in ipairs({{x=100,y=104,z=7},{x=104,y=100,z=7},{x=100,y=96,z=7},{x=96,y=100,z=7}})do
+ vocation=index<=2 and 5 or 15
+ currentVocation={baseSpellVocation=9,promotedSpellVocation=10,promoted=index>2}
+ monkSlots({flurry,greater,sweeping});resetMonk(start);simulate(240)
+ assert(PartyHuntMovement.distance(playerPosition,box)==2 and
+  (playerPosition.x==box.x or playerPosition.y==box.y),'holding finds a cardinal slot from every side')
+ local heldSteps=steps;simulate(80)
+ assert(steps==heldSteps,'holding does not wander while spells cool down')
+end
+vocation=15;currentVocation={baseSpellVocation=9,promotedSpellVocation=10,promoted=true}
+for _,spell in ipairs({flurry,greater,sweeping})do assert(monkCasts[spell.words],'Monk area was never cast: '..spell.words)end
+for _,spell in ipairs({chained,outburst})do
+ monkSlots({spell});resetMonk({x=100,y=104,z=7});simulate(120)
+ assert(monkCasts[spell.words],'Monk chain area was never cast: '..spell.words)
+end
+monkSlots({flurry,greater,sweeping});incoming.settings.monkMode='orbit'
+resetMonk({x=100,y=104,z=7})
+local beforeMonkSteps=steps;local beforeMonkCasts=#monkCastSteps
+simulate(500)
+assert(steps>beforeMonkSteps+30 and #monkCastSteps>beforeMonkCasts+3,
+ 'Monk repeatedly approaches, casts, leaves and circles instead of staying at the casting slot')
+for i=beforeMonkCasts+2,#monkCastSteps do
+ assert(monkCastSteps[i]>monkCastSteps[i-1],'each orbit cast must be separated by confirmed movement')
+end
+-- A single-target melee spell selects a slot within range of the leader target.
+local jab=monkSpell(285,'Double Jab','exori pug',4000,true,1)
+monkSlots({jab});resetMonk({x=100,y=104,z=7});simulate(180)
+assert(monkCasts[jab.words],'Monk target spell must find a two-SQM slot within its one-SQM target range')
+-- Block all four casting slots: continue orbit without wrong-distance casts.
+monkSlots({flurry});resetMonk({x=100,y=104,z=7})
+g_map.getTile=function(p)
+ local tile=originalTile(p)
+ if PartyHuntMovement.distance(p,box)==2 and (p.x==box.x or p.y==box.y) then
+  tile.isWalkable=function()return false end
+ end
+ return tile
+end
+beforeMonkSteps=steps;beforeMonkCasts=#monkCastSteps;simulate(160)
+assert(steps>beforeMonkSteps+10 and #monkCastSteps==beforeMonkCasts,'blocked Monk slots keep circling without invalid fallback casts')
+-- Open a single different axis and prove the route can recover to it.
+g_map.getTile=function(p)
+ local tile=originalTile(p)
+ if PartyHuntMovement.distance(p,box)==2 and (p.x==box.x or p.y==box.y) and p.x~=box.x-2 then
+  tile.isWalkable=function()return false end
+ end
+ return tile
+end
+simulate(200);assert(#monkCastSteps>beforeMonkCasts,'Monk recovers to the only free cardinal casting slot')
+g_map.getTile=originalTile
+-- Global attacker pressure also protects the holding mode, while spells continue.
+incoming.settings.monkMode='hold';incoming.attackers={{id=11},{id=12},{id=13}}
+resetMonk({x=100,y=104,z=7});beforeMonkSteps=steps;beforeMonkCasts=#monkCastSteps
+simulate(240)
+assert(steps>beforeMonkSteps+10 and #monkCastSteps>beforeMonkCasts,'attacker threshold keeps Monk moving and casting in holding mode')
+player.hasState=function()return true end;beforeMonkCasts=#monkCastSteps;simulate(80)
+assert(#monkCastSteps==beforeMonkCasts,'Monk never casts offensive spells in PZ')
+player.hasState=function()return false end
+incoming.attackers={};incoming.settings.monkMode='orbit'
+resetMonk({x=100,y=104,z=7});notifyManualAction('spell');beforeMonkCasts=#monkCastSteps
+simulate(14);assert(#monkCastSteps==beforeMonkCasts,'manual hotkeys retain priority over Monk positioning/casting')
+simulate(140);assert(#monkCastSteps>beforeMonkCasts,'Monk resumes the real Shooter after manual hotkey priority ends')
+-- Prefer the actual leader target's side, even with all spells cooling down
+-- and a cached formation on the opposite side. Retarget without a reset.
+local originalCreatureById=g_map.getCreatureById
+incoming.leader.targetId=901
+g_map.getCreatureById=function(id)
+ if id==901 then return actualTarget end
+ return originalCreatureById(id)
+end
+local function targetAt(dx,dy)
+ for _,creature in ipairs(spectators)do
+  local p=creature:getPosition()
+  if p.x==box.x+dx and p.y==box.y+dy then return creature end
+ end
+ error('Missing target in box')
+end
+incoming.settings.monkMode='hold';monkSlots({flurry})
+resetMonk({x=100,y=104,z=7})
+spellCooldown(flurry.id,180000);groupCooldown(1,180000)
+beforeMonkCasts=#monkCastSteps
+for _,offset in ipairs({{0,-1},{1,0},{0,1},{-1,0}})do
+ actualTarget=targetAt(offset[1],offset[2]);simulate(180)
+ assert(playerPosition.x==box.x+offset[1]*2 and playerPosition.y==box.y+offset[2]*2,
+  'Monk holding must move to the current leader target side, even from a nearer opposite slot')
+end
+assert(#monkCastSteps==beforeMonkCasts,'retargeting formation does not bypass spell cooldowns')
+-- A diagonal target prefers either matching axis, never its opposite side.
+actualTarget=targetAt(1,-1);simulate(180)
+assert(playerPosition.x==box.x+2 and playerPosition.y==box.y or
+ playerPosition.x==box.x and playerPosition.y==box.y-2,'diagonal target prefers north or east')
+actualTarget=targetAt(0,-1)
+g_map.getTile=function(p)
+ local tile=originalTile(p)
+ if p.x==box.x and p.y==box.y-2 then tile.isWalkable=function()return false end end
+ return tile
+end
+slots.attackSpellSlot1.attackEnabled=false;resetMonk({x=100,y=104,z=7});simulate(180)
+assert(PartyHuntMovement.distance(playerPosition,box)==2 and playerPosition.y~=box.y-2,
+ 'blocked preferred side must fall back to another reachable exact two-SQM slot')
+g_map.getTile=originalTile;simulate(180)
+assert(playerPosition.x==box.x and playerPosition.y==box.y-2,
+ 'Monk returns to the preferred target side when it opens without resetting its cached formation')
+-- The same preference applies to each ready cast in circle-and-attack mode.
+incoming.settings.monkMode='orbit';monkSlots({flurry})
+now=now+200000;resetMonk({x=100,y=104,z=7})
+local originalMonkTalk=g_game.talk
+g_game.talk=function(words)
+ assert(playerPosition.x==box.x and playerPosition.y==box.y-2,'Monk orbit casts from the leader target side')
+ originalMonkTalk(words)
+end
+beforeMonkCasts=#monkCastSteps;beforeMonkSteps=steps;simulate(500)
+assert(#monkCastSteps>beforeMonkCasts+2 and steps>beforeMonkSteps+20,
+ 'target-side casting keeps the orbit moving between repeated casts')
+g_game.talk=originalMonkTalk;g_map.getCreatureById=originalCreatureById;incoming.leader.targetId=nil
+PartyFollower.reset();assert(not PartyFollower.prepareSpell(flurry,true),'Monk fails closed while its movement state is unavailable')
+print('Monk Shooter passed: cardinal holding, leader target-side priority, live retarget, diagonal targets, blocked-side recovery, real spells/cooldowns, target-side orbit casts, pressure, PZ and manual hotkeys')

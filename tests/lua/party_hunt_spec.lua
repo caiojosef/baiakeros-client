@@ -77,7 +77,7 @@ g_game={isOnline=function()return true end,getLocalPlayer=function()return {
    leaderOptions={auto=req.autoAttack==true,shooter=req.shooter==true}
    leaderTargetId=actualTarget and actualTarget:getId() or nil
   end
-  if req.action=='options' and selfVocation~=4 then personalSettings[selfId]={runThreshold=req.runThreshold,alwaysRun=req.alwaysRun,paladinMode=req.paladinMode}end
+  if req.action=='options' and selfVocation~=4 then personalSettings[selfId]={runThreshold=req.runThreshold,alwaysRun=req.alwaysRun,paladinMode=req.paladinMode,monkMode=req.monkMode}end
   if req.action=='start' then active=true elseif req.action=='stop' then if selfId==1 then active=false else paused=true end
   elseif req.action=='resume' then paused=false elseif req.action=='boss_lever' then bossLever=req.enabled end
   if not silent then respond() end
@@ -170,8 +170,18 @@ for _,mode in ipairs({'close','distance','orbit'})do
  assert(settings().paladinMode==mode and not settings().alwaysRun)
 end
 assert(widget('partyMovementHelp').text:find('exevo mas san'))
+selfVocation=9;respond()
+assert(widget('partyMonkMode').visible and widget('partyMonkMode').enabled and
+ not widget('partyPaladinMode').visible and not widget('partyAlwaysRun').visible and not widget('partyStart').enabled,
+ 'Monk members configure their own two movement modes without controlling the leader')
+assert(widget('partyMonkMode').option.data=='hold','Monk defaults to holding two SQMs')
+for _,mode in ipairs({'hold','orbit'})do
+ widget('partyMonkMode'):setCurrentOptionByData(mode);widget('partyMonkMode').onOptionChange()
+ assert(settings().monkMode==mode and not settings().alwaysRun)
+end
+assert(widget('partyMovementHelp').text:find('Monk / Exalted Monk'))
 selfVocation=2;respond()
-assert(not widget('partyPaladinMode').visible and widget('partyAlwaysRun').visible and
+assert(not widget('partyPaladinMode').visible and not widget('partyMonkMode').visible and widget('partyAlwaysRun').visible and
  widget('partyMovementHelp').text=='Shared movement help','changing vocation restores shared help and controls')
 selfId=1;tooMany=true;respond();assert(not widget('partyStart').enabled and widget('partyWarning').text:find('4 pessoas'))
 tooMany=false
@@ -189,6 +199,9 @@ PartyFollower={update=function()followerUpdates=followerUpdates+1;return 'Follow
 helperV2Window:hide()
 selfId=2;follower=true;leaderOptions={auto=true,shooter=true};respond()
 assert(PartyHuntV2.isFollowing() and not widget('partyStart').enabled)
+selfVocation=9;settings().alwaysRun=true;respond()
+assert(not PartyHuntV2.isRunesOnly(),'stale rune-only preference cannot suppress Monk spells while circling')
+selfVocation=2;respond()
 widget('partyAlwaysRun'):setChecked(true);widget('partyAlwaysRun').onCheckChange()
 assert(PartyHuntV2.isRunesOnly(),'following Druid Always Run exposes the explicit rune-only mode to the Shooter')
 widget('partyAlwaysRun'):setChecked(false);widget('partyAlwaysRun').onCheckChange()

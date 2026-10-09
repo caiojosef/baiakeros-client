@@ -96,6 +96,7 @@ BaiakHelperHealingV2 = submodule()
 BaiakHelperTrainingV2 = submodule()
 BaiakHelperToolsV2 = submodule()
 BaiakHelperAttackV2 = submodule()
+BaiakHelperEquipmentV2 = submodule()
 BaiakHelperExplorerV2 = submodule()
 BaiakHelperExplorerV2.isAutoExplorerActive = function() return explorerActive end
 BaiakHelperExplorerV2.requestRanking = function() end

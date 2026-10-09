@@ -1,0 +1,304 @@
+HelperEquipmentRule < UIWidget
+  height: 64
+
+  UIButton
+    id: assign
+    size: 38 38
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 12
+    image-source: /images/game/actionbar/actionbarslot
+
+  UIItem
+    id: item
+    anchors.fill: assign
+    virtual: true
+    phantom: true
+
+  UIWidget
+    id: spell
+    anchors.fill: assign
+    phantom: true
+    visible: false
+
+  Label
+    id: name
+    anchors.left: assign.right
+    anchors.right: enabled.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 8
+    margin-right: 6
+    height: 38
+    text-wrap: true
+    text-auto-resize: false
+    color: #eeeeee
+
+  QtCheckBox
+    id: enabled
+    size: 18 18
+    anchors.right: decrease.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+    !tooltip: tr('Enable this rule')
+
+  HelperV2RegenStep
+    id: decrease
+    text: <
+    size: 16 24
+    anchors.right: value.left
+    anchors.verticalCenter: parent.verticalCenter
+
+  HelperV2AttackValuePanel
+    id: value
+    size: 46 24
+    anchors.right: increase.left
+    anchors.verticalCenter: parent.verticalCenter
+
+    Label
+      id: percent
+      anchors.fill: parent
+      text-align: center
+
+  HelperV2RegenStep
+    id: increase
+    text: >
+    size: 16 24
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 12
+
+HelperEquipmentCompactRule < UIWidget
+  height: 64
+
+  UIButton
+    id: assign
+    size: 38 38
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 10
+    image-source: /images/game/actionbar/actionbarslot
+
+  UIItem
+    id: item
+    anchors.fill: assign
+    virtual: true
+    phantom: true
+
+  UIWidget
+    id: spell
+    anchors.fill: assign
+    phantom: true
+    visible: false
+
+  Label
+    id: name
+    anchors.left: assign.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin: 9 6 0 7
+    height: 14
+    text-auto-resize: false
+    color: #eeeeee
+
+  HelperV2RegenStep
+    id: decrease
+    text: <
+    size: 14 24
+    anchors.left: assign.right
+    anchors.bottom: assign.bottom
+    margin-left: 7
+
+  HelperV2AttackValuePanel
+    id: value
+    size: 46 24
+    anchors.left: decrease.right
+    anchors.top: decrease.top
+
+    Label
+      id: percent
+      anchors.fill: parent
+      text-align: center
+
+  HelperV2RegenStep
+    id: increase
+    text: >
+    size: 14 24
+    anchors.left: value.right
+    anchors.top: decrease.top
+
+  QtCheckBox
+    id: enabled
+    size: 18 18
+    anchors.left: increase.right
+    anchors.top: decrease.top
+    margin-left: 8
+    margin-top: 3
+    !tooltip: tr('Enable this rule')
+
+HelperEquipmentPanel < UIWidget
+  anchors.fill: parent
+
+  HelperV2Section
+    id: equipmentSection
+    anchors.left: parent.left
+    anchors.right: parent.horizontalCenter
+    anchors.top: parent.top
+    height: 205
+    margin-left: 6
+    margin-right: 5
+
+    UIWidget
+      id: belowSection
+      anchors.left: parent.left
+      anchors.right: parent.horizontalCenter
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+
+      Label
+        text: Equip when Life < %
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 8
+
+      UIWidget
+        id: belowRules
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 128
+        margin-top: 34
+        layout:
+          type: verticalBox
+
+    UIWidget
+      id: equipmentDivider
+      anchors.horizontalCenter: parent.horizontalCenter
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      margin-top: 29
+      margin-bottom: 38
+      width: 1
+      background-color: #777777
+
+    UIWidget
+      id: aboveSection
+      anchors.left: parent.horizontalCenter
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+
+      Label
+        text: Equip when Life > %
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        margin-top: 8
+
+      UIWidget
+        id: aboveRules
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 128
+        margin-top: 34
+        layout:
+          type: verticalBox
+
+    Label
+      text: Emergency equipment has priority.
+      anchors.left: parent.left
+      anchors.bottom: parent.bottom
+      margin-left: 12
+      margin-bottom: 15
+      color: #f0d48a
+
+  HelperV2Section
+    id: equipmentInfo
+    anchors.left: parent.horizontalCenter
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 205
+    margin-left: 5
+    margin-right: 7
+
+    Label
+      text: Equipment Rules
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 8
+
+    Label
+      id: equipmentHelp
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      margin: 35 14 0 14
+      height: 100
+      text-wrap: true
+      color: #bbbbbb
+
+    Label
+      id: equipmentCombatStatus
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      margin: 0 14 12 14
+      height: 40
+      text-wrap: true
+      color: #bbbbbb
+
+  HelperV2Section
+    id: shieldSection
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: equipmentSection.bottom
+    height: 222
+    margin: 12 7 0 6
+
+    Label
+      text: Mana Shield - Druids & Sorcerers
+      anchors.top: parent.top
+      anchors.horizontalCenter: parent.horizontalCenter
+      margin-top: 8
+
+    UIWidget
+      id: shieldRules
+      anchors.left: parent.left
+      anchors.right: parent.horizontalCenter
+      anchors.top: parent.top
+      margin-right: 5
+      height: 192
+      margin-top: 30
+      layout:
+        type: verticalBox
+
+    Label
+      id: shieldHelp
+      text-wrap: true
+      anchors.left: shieldRules.right
+      anchors.right: parent.right
+      anchors.top: shieldRules.top
+      margin: 20 20 0 24
+      height: 170
+      color: #bbbbbb
+
+  Label
+    id: nonMageNote
+    text: Mana Shield controls are available to Druids and Sorcerers.
+    anchors.top: equipmentSection.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 55
+    color: #bbbbbb
+
+  Label
+    id: equipmentFooter
+    height: 28
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-left: 12
+    margin-right: 12
+    margin-bottom: 6
+    text-align: center
+    text-wrap: true
+    color: #bbbbbb
+
