@@ -179,7 +179,7 @@ function Movement.coverageFacing(plan,position,box,monsters,facing)
 end
 -- The closest reachable cardinal slot wins. Spell coverage cannot pull the
 -- caster away from the explicit formation chosen for this hunt strategy.
-function Movement.cardinal(position,box,monsters,radius,walkable,visible)
+function Movement.cardinal(position,box,monsters,radius,walkable,visible,plan,exact,preferredTarget)
     local route=visibleRoute(position,box,visible)
     return search(position,function(p)
         return Movement.distance(p,box)<=Movement.boxRadius and nearest(p,monsters)>=1 and walkable(p) and route(p)
@@ -187,8 +187,33 @@ function Movement.cardinal(position,box,monsters,radius,walkable,visible)
         local d=Movement.distance(p,box)
         if d<1 or d>Movement.boxRadius or nearest(p,monsters)<1 or
             (p.x~=box.x and p.y~=box.y) or not inSight(p,box,visible) then return nil end
-        return {score=-math.abs(d-radius)*1000-depth*10,facing=Movement.faceBox(p,box)}
+        if exact and (d~=radius or not Movement.canUseFormation(plan,p,box,monsters,visible)) then return nil end
+        local targetBias=0
+        if exact and preferredTarget and preferredTarget.z==box.z then
+            local dx,dy=preferredTarget.x-box.x,preferredTarget.y-box.y
+            local span=math.max(math.abs(dx),math.abs(dy))
+            if span>0 then
+                -- Prefer the target's side before path length. A diagonal
+                -- target gives equal priority to its two cardinal sides.
+                targetBias=((p.x-box.x)*dx+(p.y-box.y)*dy)/(d*span)*10000
+            end
+        end
+        return {score=targetBias-math.abs(d-radius)*1000-depth*10,facing=Movement.faceBox(p,box)}
     end)
+end
+
+-- The Monk's slot is exact, including single-target spell range. This filters
+-- destinations only: the route may pass through other safe, visible tiles.
+function Movement.canUseFormation(plan,p,box,monsters,visible)
+    if not plan then return true end
+    if plan.needTarget and (not plan.targetPosition or Movement.distance(p,plan.targetPosition)>(plan.castRange or 1) or
+        not inSight(p,plan.targetPosition,visible)) then return false end
+    local shape=plan.profile and plan.profile.shape
+    if shape=='directional' or shape=='circle' or shape=='ring' then
+        local coverage=Movement.coverageFacing(plan,p,box,monsters,Movement.faceBox(p,box))
+        return coverage.boxCount>0 and coverage.count>=(plan.minEnemies or 1)
+    end
+    return true
 end
 
 function Movement.toTile(position, destination, monsters, walkable)

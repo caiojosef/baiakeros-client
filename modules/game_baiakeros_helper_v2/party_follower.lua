@@ -12,6 +12,7 @@ local castWindow
 local catchingUp=false
 local lastPosition,previousPosition
 local orbitClockwise,reverseUntil=true,0
+local monkDepartUntil=0
 local DRUID_FORMATION = {
     ['exevo tera hur']=4, ['exevo gran frigo hur']=3,
     ['exevo gran mas frigo']=2, ['exevo gran mas tera']=2,
@@ -62,12 +63,15 @@ local function pressure(player, position, box, monsters, attackers, settings)
     local avoid=heavy and 4 or (attacking>=threshold+1 or health<60 or mana<25) and 3 or 2
     return true,avoid,heavy
 end
-local function heldFormation(position,box,monsters,plan,radius,safe,visible)
+local function heldFormation(position,box,monsters,plan,radius,safe,visible,exact,preferredTarget)
     local words=plan and plan.words or "default"
     local lateral=words=='exevo gran vis lux' and not plan.beamMastery
-    local selector=lateral and function(p,b,m,r,s,v) return M.beamFormation(p,b,m,plan,r,s,v) end or M.cardinal
+    local selector=lateral and function(p,b,m,r,s,v) return M.beamFormation(p,b,m,plan,r,s,v) end or
+        function(p,b,m,r,s,v) return M.cardinal(p,b,m,r,s,v,exact and plan or nil,exact,preferredTarget) end
     if not formation or formation.words~=words or formation.radius~=radius or formation.lateral~=lateral or not M.same(formation.box,box) or
         M.distance(formation.position,box)~=radius or not visible(formation.position,box) or
+        exact and not M.canUseFormation(plan,formation.position,box,monsters,visible) or
+        exact and preferredTarget or
         not M.same(formation.position,position) and not safe(formation.position) then
         local selected=selector(position,box,monsters,radius,safe,visible)
         formation=selected and {words=words,radius=radius,lateral=lateral,box={x=box.x,y=box.y,z=box.z},position=selected.position} or nil
@@ -122,6 +126,7 @@ function Follower.reset()
     catchingUp=false
     lastPosition,previousPosition=nil,nil
     orbitClockwise,reverseUntil=true,0
+    monkDepartUntil=0
 end
 function Follower.onCancelWalk()
     if pending then rejected[key(pending.to)]=now()+1000 end
@@ -209,14 +214,21 @@ function Follower.update(snapshot, druid)
     local monsters=monstersAt(player,position)
     local settings=snapshot.settings or {}
     local paladin=snapshot.vocation==3
+    local monk=snapshot.vocation==9
+    local monkMode=settings.monkMode=='orbit' and 'orbit' or 'hold'
+    local preferredTarget
+    if monk and snapshot.leader.targetId then
+        local target=g_map.getCreatureById(snapshot.leader.targetId)
+        if target and target:isMonster() and not target:isDead() then preferredTarget=target:getPosition() end
+    end
     local paladinMode=settings.paladinMode
     if paladinMode~='close' and paladinMode~='orbit' then paladinMode='distance' end
     local danger,avoid,heavy=false,1,false
     if snapshot.vocation~=4 then danger,avoid,heavy=pressure(player,position,box,monsters,snapshot.attackers,settings) end
-    if paladin then
-        -- Paladin orbit permits spells. The legacy runes-only switch is not
-        -- its movement mode and must not suppress its configured Shooter.
-        local movementSettings={runThreshold=settings.runThreshold,alwaysRun=paladinMode=='orbit'}
+    if paladin or monk then
+        -- These orbit modes permit spells; the legacy runes-only preference
+        -- must not suppress the configured Shooter.
+        local movementSettings={runThreshold=settings.runThreshold,alwaysRun=paladin and paladinMode=='orbit' or monk and monkMode=='orbit'}
         danger,avoid,heavy=pressure(player,position,box,monsters,snapshot.attackers,movementSettings)
     end
     local safeCache={}
@@ -323,9 +335,10 @@ function Follower.update(snapshot, druid)
     end
     local combat=modules.game_baiakeros_helper
     local sorcerer=snapshot.vocation==1
-    local ranged=druid or sorcerer or paladin
+    local ranged=druid or sorcerer or paladin or monk
     local plan=ranged and combat.getPartyHuntSpellPlan and combat.getPartyHuntSpellPlan()
     if plan and not plan.ready then plan=nil end
+    if monk and now()<monkDepartUntil then plan=nil end
     if not lastBox then lastBoxMovedAt=now()-500
     elseif not M.same(box,lastBox) then lastBoxMovedAt=now() end
     lastBox={x=box.x,y=box.y,z=box.z}
@@ -335,15 +348,15 @@ function Follower.update(snapshot, druid)
     local fighting=not leaderMoving and #monsters>0 and M.distance(position,box)<=M.boxRadius and not player:hasState(PlayerStates.Pz)
     local choice
     local masSan=paladin and plan and plan.words=='exevo mas san'
-    if fighting and masSan then
-        choice=heldFormation(position,box,monsters,plan,2,safe,visible)
+    if fighting and (masSan or monk and plan) then
+        choice=heldFormation(position,box,monsters,plan,2,safe,visible,monk,preferredTarget)
         if danger and (not choice or M.distance(choice.position,box)~=2) then choice=nil end
     end
     if choice then
-        -- A ready Divine Caldera takes its two-SQM cardinal slot even in orbit.
+        -- A ready Monk spell or Divine Caldera takes its cardinal slot in orbit.
     elseif fighting and danger then
         formation=nil
-        local castRadius=plan and spellRadius(druid,sorcerer,plan)
+        local castRadius=not monk and plan and spellRadius(druid,sorcerer,plan)
         if now()>=reverseUntil then orbitClockwise=true end
         choice=M.orbit(position,box,monsters,avoid,safe,orbitClockwise,visible,castRadius,previousPosition,cornerSafe,sorcerer and plan or nil)
         if choice and choice.clockwise~=nil and choice.clockwise~=orbitClockwise then
@@ -352,6 +365,8 @@ function Follower.update(snapshot, druid)
         end
         if choice then local coverage=M.coverage(plan,choice.position,box,monsters)
             choice.boxCount,choice.count=coverage.boxCount,coverage.count end
+    elseif monk and not leaderMoving and M.distance(position,box)<=M.boxRadius then
+        choice=heldFormation(position,box,monsters,nil,2,safe,visible,true,preferredTarget)
     elseif paladin then
         formation=nil
         choice=M.paladin(position,box,monsters,2,
@@ -368,12 +383,12 @@ function Follower.update(snapshot, druid)
         end
     else
         formation=nil
-        choice=M.follow(position,box,M.orbitRadius,monsters,safe,visible)
+        choice=M.follow(position,box,monk and 2 or M.orbitRadius,monsters,safe,visible)
     end
-    state={druid=druid,sorcerer=sorcerer,paladin=paladin,ranged=ranged,snapshot=snapshot,position=position,box=box,monsters=monsters,plan=plan,
-        choice=choice,danger=danger,alwaysRun=not paladin and snapshot.vocation~=4 and settings.alwaysRun==true,fighting=fighting,at=now()}
+    state={druid=druid,sorcerer=sorcerer,paladin=paladin,monk=monk,ranged=ranged,snapshot=snapshot,position=position,box=box,monsters=monsters,plan=plan,
+        choice=choice,danger=danger,alwaysRun=not paladin and not monk and snapshot.vocation~=4 and settings.alwaysRun==true,fighting=fighting,at=now()}
     if castWindow and (now()>=castWindow.expires or not plan or plan.words~=castWindow.words) then castWindow=nil end
-    if fighting and danger and (paladin or settings.alwaysRun~=true) and plan and plan.ready and not pending and
+    if fighting and danger and not monk and (paladin or settings.alwaysRun~=true) and plan and plan.ready and not pending and
         not player:isWalking() and not player:isAutoWalking() and now()>=nextCastWindowAt and visible(position,box) then
         local coverage=M.coverage(plan,position,box,monsters)
         if coverage.boxCount>0 and coverage.count>=(plan.minEnemies or 1) or
@@ -385,7 +400,7 @@ function Follower.update(snapshot, druid)
         end
     end
     -- Ready spells face the box; while cooling down, keep the current slot.
-    if not leaderMoving and ranged and not danger and choice and M.same(position,choice.position) and
+    if not leaderMoving and ranged and (not danger or monk) and choice and M.same(position,choice.position) and
         not pending and not player:isWalking() and not player:isAutoWalking() and
         choice.facing~=nil and player:getDirection()~=choice.facing and now()>=nextFacingAt then
         -- Direction is server-confirmed. Avoid sending a turn on every 50 ms
@@ -395,14 +410,28 @@ function Follower.update(snapshot, druid)
     end
     if choice then move(player,position,choice) end
     return fighting and (danger and (choice and choice.clockwise==false and 'Contornando obstaculo no sentido anti-horario' or 'Contornando no sentido horario') or
-        plan and (paladin and 'Paladin: posicionando para ' or druid and 'Druid: posicionando para ' or 'Sorcerer: posicionando para ')..plan.words or 'Mantendo a formacao da box') or 'Seguindo o leader'
+        plan and (monk and 'Monk: posicionando para ' or paladin and 'Paladin: posicionando para ' or druid and 'Druid: posicionando para ' or 'Sorcerer: posicionando para ')..plan.words or 'Mantendo a formacao da box') or 'Seguindo o leader'
 end
-function Follower.prepareSpell(spell)
+function Follower.prepareSpell(spell,monk)
     if state and (state.lineup or state.protection) then return false end
     if not state or now()-state.at>500 then
+        if monk or state and state.monk then return false end
         return spell.words and spell.words:match('^exori ') ~= nil
     end
     if state.alwaysRun then return false end
+    if state.monk then
+        local player=g_game.getLocalPlayer()
+        local p=player and player:getPosition()
+        if not state.fighting or not p or not state.plan or not state.plan.ready or state.plan.words~=spell.words or
+            not state.choice or not M.same(p,state.choice.position) or M.distance(p,state.box)~=2 or
+            p.x~=state.box.x and p.y~=state.box.y then return false end
+        settlePending(player,p)
+        if pending or player:isWalking() or player:isAutoWalking() or now()<monkDepartUntil then return false end
+        local function sight(a,b) return not g_map.isSightClear or g_map.isSightClear(a,b) and g_map.isSightClear(b,a) end
+        if not sight(p,state.box) or not M.canUseFormation(state.plan,p,state.box,state.monsters,sight) then return false end
+        holdUntil=now()+350
+        return true,M.faceBox(p,state.box)
+    end
     if state.paladin and spell.words=='exevo mas san' then
         -- This exception is exact: never launch from the EK's adjacent tile,
         -- a diagonal slot or a distant fallback when all four slots are occupied.
@@ -450,4 +479,11 @@ function Follower.prepareSpell(spell)
     holdUntil=now()+350
     return true,profile.shape=='directional' and coverage.facing or nil
 end
-function Follower.onSpellCast() castWindow=nil;holdUntil=now()+180 end
+function Follower.onSpellCast()
+    castWindow=nil;holdUntil=now()+180
+    if state and state.monk and state.danger then
+        -- Leave the casting slot before considering the next ready spell.
+        monkDepartUntil=now()+650
+        formation=nil
+    end
+end
