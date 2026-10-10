@@ -274,7 +274,7 @@ BaiakerosPartyHuntPanel < UIWidget
 
     Label
       id: partyTutorialText
-      !text: tr('1. Forme uma party com até 4 jogadores. O líder aperta Start; os membros seguem automaticamente, sem abrir o Helper. O líder anda manualmente ou pelo Cavebot.\n\n2. Configure cura, magias e runas no Helper de cada jogador. Fora da protection zone, Auto Target e Shooter seguem as opções do líder; o alvo também é compartilhado.\n\n3. Cada membro ajusta sua movimentação acima. No minimizado, Stop pausa só esse membro; Resume retoma. O Stop do líder para todos.\n\n4. Os membros só saem da protection zone após o líder. PvP (PZ lock/skull), queda ou morte do líder interrompem o Party Hunt.')
+      !text: tr('1. Forme uma party com até 4 jogadores. O líder aperta Start; os membros seguem automaticamente, sem abrir o Helper. O líder anda manualmente ou pelo Cavebot.\n\n2. Configure cura, magias e runas no Helper de cada jogador. Fora da protection zone, Auto Target e Shooter seguem as opções do líder; o alvo também é compartilhado.\n\n3. Cada membro ajusta sua movimentação acima. No minimizado, Stop pausa só esse membro; Resume retoma. O Stop do líder para todos.\n\n4. Os membros só saem da protection zone após o líder. PvP (PZ lock/skull) para o Party Hunt. Na morte, o acompanhamento aguarda o retorno do jogador, preservando a party. Logout ou saída da party interrompe o acompanhamento.')
       color: #d0d0d0
       text-wrap: true
       text-auto-resize: true

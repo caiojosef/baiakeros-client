@@ -81,8 +81,8 @@ modules = {
     game_baiakeros_helper = {
         playerConfigPrefix = function() return 'lure_test' end,
         getAttackState = function() return attackSettings end,
-        setAutoAttackEnabled = function(value) attackSettings.autoTarget = value end,
-        setAttackRotationEnabled = function(value) attackSettings.shooter = value end,
+        setAutoAttackEnabled = function(value) attackSettings.autoTarget = value;modules.game_baiakeros_helper.autoAttackEnabled=value end,
+        setAttackRotationEnabled = function(value) attackSettings.shooter = value;modules.game_baiakeros_helper.attackRotationEnabled=value end,
         getSelectedExplorerLureSpell = function() return nil end
     },
     game_baiakeros_helper_v2 = { detachCavebot = function() end }
@@ -218,7 +218,10 @@ chaseMode = ChaseOpponent
 target = monster(102, 100)
 monsters = { target }
 startAtStand()
+modules.game_baiakeros_helper.setAutoAttackEnabled(false)
+modules.game_baiakeros_helper.setAttackRotationEnabled(false)
 advance()
+assert(attackSettings.autoTarget and attackSettings.shooter,'running Cavebot restores disabled combat helpers')
 assert(chaseMode == DontChase and g_game.getAttackingCreature() == target,
     'Lure must disable native chase without cancelling the attack target')
 assert(attackSettings.autoTarget and attackSettings.shooter and

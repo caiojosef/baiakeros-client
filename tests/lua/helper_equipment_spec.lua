@@ -20,7 +20,7 @@ g_game={isOnline=function()return true end,getLocalPlayer=function()return p end
     talk=function(words)casts[#casts+1]=words end,
     useInventoryItemWith=function(id,target)assert(target==p);potions[#potions+1]=id end}
 g_settings={save=function()end,getNode=function(key)return saved[key] end,setNode=function(key,value)
-    local copy={};for k,v in pairs(value)do copy[k]={enabled=v.enabled,itemId=v.itemId,percent=v.percent}end;saved[key]=copy end}
+    local copy={};for k,v in pairs(value)do copy[k]={enabled=v.enabled,itemId=v.itemId,percent=v.percent,mode=v.mode}end;saved[key]=copy end}
 SpellInfo={Default={
     ['Magic Shield']={id=44,words='utamo vita',level=14,mana=50,exhaustion=14000,group={[3]=2000}},
     ['Cancel Magic Shield']={id=245,words='exana vita',level=14,mana=50,exhaustion=2000,group={[3]=2000}}}}
@@ -115,4 +115,14 @@ e.setRule('highAmulet',{enabled=true});assert(not saved[key].highAmulet.enabled,
 skull=0;e.updateCombatLock();e.setRule('highAmulet',{enabled=true})
 assert(saved[key].highAmulet.enabled,'cleared skull permits enable')
 pz=true;e.updateCombatLock();assert(saved[key].highAmulet.enabled,'safe-zone icon is distinct from combat PZ lock')
+pz=false;now=60000;hp=100;shield=false;voc=14
+cooldown(44,0);group(3,0)
+e.setRule('shield',{enabled=true,mode='always'});e.setRule('cancel',{enabled=true})
+local initial=#casts;e.checkShield();assert(casts[#casts]=='utamo vita' and #casts==initial+1,'always mode casts at full HP')
+shield=true;now=62000;group(3,0);e.checkShield();assert(#casts==initial+1,'always mode suppresses exana')
+shield=false;now=80000;cooldown(44,0);e.checkShield();assert(#casts==initial+2,'always mode renews expired shield')
+hp=0;pzLock=true;e.updateCombatLock();e.onGameEnd();e.onGameStart()
+assert(saved[key].shield.enabled and saved[key].shield.mode=='always','death preserves shield preference and mode')
+pzLock=false;hp=100;e.updateCombatLock();now=100000;cooldown(44,0);group(3,0);e.checkShield()
+assert(#casts==initial+3,'restored always mode casts after revival')
 print('helper_equipment_spec: PASS - vocation filters, transformed rings, replacements, persistence and shared cooldowns')

@@ -383,6 +383,11 @@ if CAVEBOT_DETOUR_ONLY then
     detourMap=true;monsters={}
     playerPosition={x=120,y=100,z=7}
     widget('v2CavebotNodeButton').onClick()
+    widget('v2CavebotAutoExploringButton').onClick()
+    assert(not isAutoExplorerActive(),'one waypoint cannot start automation')
+    playerPosition={x=121,y=100,z=7}
+    widget('v2CavebotNodeButton').onClick()
+    widget('v2CavebotWaypointList').children[1].onClick()
     playerPosition={x=100,y=100,z=7}
     widget('v2CavebotAutoExploringButton').onClick()
     advance(50)
