@@ -63,7 +63,8 @@ local function localProtectionZone()
     return snapshot.protectionZone==true
 end
 local function combatAllowed()
-    return not localProtectionZone() and (isLeader() or not snapshot.leader or snapshot.leader.protectionZone~=true)
+    local p=g_game.getLocalPlayer()
+    return (not p or not p.getHealth or p:getHealth()>0) and (not snapshot.leader or not snapshot.leader.dead) and not localProtectionZone() and (isLeader() or not snapshot.leader or snapshot.leader.protectionZone~=true)
 end
 local function syncCombat()
     if not running or snapshot.paused then return end
@@ -194,7 +195,7 @@ function Hunt.hasBeamMastery()
     return ready and g_clock.millis()-lastStatusAt<=8000 and snapshot.vocation==1 and
         snapshot.spellUpgrades and snapshot.spellUpgrades.beamMastery==true or false
 end
-function Hunt.isFollowing() return running and not snapshot.paused and snapshot.following==true and not isLeader() end
+function Hunt.isFollowing() return running and not snapshot.paused and snapshot.following==true and not isLeader() and not (snapshot.leader and snapshot.leader.dead) end
 function Hunt.isRunesOnly()
     return Hunt.isFollowing() and snapshot.vocation~=3 and snapshot.vocation~=9 and snapshot.settings and snapshot.settings.alwaysRun==true or false
 end

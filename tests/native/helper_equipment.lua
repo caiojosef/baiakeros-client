@@ -45,6 +45,24 @@ scheduleEvent(function()
                     assert(value:getPosition().y+value:getHeight()==slot:getPosition().y+slot:getHeight(),'percentage aligns with icon bottom '..key)
                     assert(row:recursiveGetChildById('increase'):getPosition().x+16<row:getPosition().x+row:getWidth(),'percentage fits')
                 end
+                local equipment=module.BaiakHelperEquipmentV2
+                local originalCreate=g_ui.createWidget
+                local menuOptions={}
+                g_ui.createWidget=function(style,...)
+                    if style~='PopupMenu' then return originalCreate(style,...) end
+                    return {setGameMenu=function()end,display=function()end,
+                        addOption=function(_,label,action)menuOptions[label]=action end}
+                end
+                local icon=page:recursiveGetChildById('lowAmulet'):recursiveGetChildById('assign')
+                icon.onMouseRelease(icon,{x=100,y=100},MouseRightButton)
+                g_ui.createWidget=originalCreate
+                assert(menuOptions['Assign Amulet'] and menuOptions['Remove Item'],'assigned gear context menu')
+                menuOptions['Remove Item']()
+                assert(page:recursiveGetChildById('lowAmulet'):recursiveGetChildById('item'):getItemId()==0,'remove clears the square')
+                equipment.setRule('lowAmulet',{itemId=3081,enabled=true})
+                equipment.setRule('shield',{enabled=true,mode='always'})
+                assert(not page:recursiveGetChildById('cancel'):recursiveGetChildById('enabled'):isEnabled(),'always shield disables exana')
+                equipment.setRule('shield',{mode='percent'})
                 local divider=page:recursiveGetChildById('equipmentDivider')
                 local low,high=page:recursiveGetChildById('lowAmulet'),page:recursiveGetChildById('highAmulet')
                 assert(low:getPosition().x+low:getWidth()<=divider:getPosition().x+1 and high:getPosition().x>=divider:getPosition().x,'divider separates both gear columns')

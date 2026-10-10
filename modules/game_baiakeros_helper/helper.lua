@@ -4294,7 +4294,7 @@ function checkAttackAfkTimeout()
     end
 
     local explorer = modules.game_baiakeros_helper_v2
-    if explorer and ((explorer.isAutoExplorerActive and explorer.isAutoExplorerActive()) or
+    if explorer and ((explorer.BaiakHelperExplorerV2 and explorer.BaiakHelperExplorerV2.isAutoExplorerActive()) or
         (explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive())) then
         ATTACK_AFK.trackingSince = g_clock.millis()
         return false

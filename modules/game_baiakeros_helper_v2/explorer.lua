@@ -350,7 +350,7 @@ render = function()
     local button = window:recursiveGetChildById('v2CavebotAutoExploringButton')
     button:setText(running and 'Stop' or 'Start')
     button:setEnabled(g_game.isOnline() and serverStatusReady and not dialogBusy and
-        (running or (remainingMs() > 0 and hasRoute())))
+        (running or (remainingMs() > 0 and #waypoints>=2)))
     window:recursiveGetChildById('v2CavebotStatus'):setText(statusText)
     window:recursiveGetChildById('v2CavebotNodeButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
     window:recursiveGetChildById('v2CavebotStandButton'):setEnabled(not running and not dialogBusy and g_game.isOnline())
@@ -1434,9 +1434,14 @@ local function tick()
                 stop('Low health: exploration stopped')
             elseif player:hasState(PlayerStates.Pz) then
                 stop('Protection zone: exploration stopped')
+            elseif (PlayerStates.PzBlock and player:hasState(PlayerStates.PzBlock)) or (player.getSkull and player:getSkull()~=(SkullNone or 0)) then
+                stop('Combate PvP: Cavebot parado')
             elseif g_game.isFollowing() then
                 stop('Following another character: exploration stopped')
             elseif player:isAutoWalking() then
+                local combat=modules.game_baiakeros_helper
+                if not combat.autoAttackEnabled then combat.setAutoAttackEnabled(true) end
+                if not combat.attackRotationEnabled then combat.setAttackRotationEnabled(true) end
                 -- A user click-to-walk may temporarily own movement. Keep the
                 -- waypoint and resume routing once that walk finishes.
                 pendingStep = nil
@@ -1444,6 +1449,9 @@ local function tick()
                 blockedCombat = false
                 setStatus('Manual walk: resuming waypoint ' .. waypointIndex)
             else
+                local combat=modules.game_baiakeros_helper
+                if not combat.autoAttackEnabled then combat.setAutoAttackEnabled(true) end
+                if not combat.attackRotationEnabled then combat.setAttackRotationEnabled(true) end
                 local manualWalkAt = modules.game_interface.lastManualWalk or 0
                 if manualWalkAt > lastManualWalk then
                     lastManualWalk = manualWalkAt
@@ -1630,8 +1638,8 @@ local function start()
     end
     if dialogBusy then return end
     if not g_game.isOnline() then return end
-    if not hasRoute() then
-        setStatus('Add or load a waypoint before starting')
+    if #waypoints<2 then
+        setStatus('Adicione pelo menos 2 waypoints para iniciar')
         render()
         return
     end

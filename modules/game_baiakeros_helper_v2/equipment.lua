@@ -51,7 +51,7 @@ function Equipment.updateCombatLock()
     local previous=blocked
     blocked=Equipment.isCombatBlocked()
     local changed=false
-    if blocked then
+    if blocked and player() and player():getHealth()>0 then
         for _, rule in pairs(settings) do
             if rule.enabled then rule.enabled=false;changed=true end
         end
@@ -67,8 +67,8 @@ function Equipment.render()
     panel:recursiveGetChildById('shieldSection'):setVisible(mage(p))
     panel:recursiveGetChildById('nonMageNote'):setVisible(not mage(p))
     local status=panel:recursiveGetChildById('equipmentCombatStatus')
-    status:setText(blocked and 'PK / PZ lock: all rules disabled. Wait for the lock to end.' or
-        'PK / PZ lock disables all rules. Enable them again after it ends.')
+    status:setText(blocked and 'PK / bloqueio de PZ: aguarde o fim do combate PvP.' or
+        'PK ou bloqueio de PZ desativa as regras. Após o bloqueio, ative-as novamente.')
     status:setColor(blocked and '#ed7777' or '#bbbbbb')
     for _, definition in ipairs(definitions) do
         local row=panel:recursiveGetChildById(definition.key)
@@ -81,11 +81,19 @@ function Equipment.render()
         if definition.slot then
             local item=byId[rule.itemId]
             row:recursiveGetChildById('item'):setItemId(item and item.id or 0)
-            row:recursiveGetChildById('name'):setText(item and item.name or 'Choose '..(definition.slot=='ring' and 'ring' or 'amulet'))
-            row:recursiveGetChildById('assign'):setTooltip(item and (item.name..'\nClick to change. Right-click to clear.') or 'Click, then select an item from your backpack or equipment.')
+            row:recursiveGetChildById('name'):setText(item and item.name or 'Escolher '..(definition.slot=='ring' and 'anel' or 'amuleto'))
+            row:recursiveGetChildById('assign'):setTooltip(item and (item.name..'\nBotão direito: atribuir ou remover item.') or 'Botão direito: atribuir um item da sua mochila.')
             row:recursiveGetChildById('enabled'):setEnabled(not blocked and item~=nil and Equipment.canEquip(item,p))
         end
     end
+    local always=settings.shield.mode=='always'
+    local shieldRow=panel:recursiveGetChildById('shield')
+    local mode=shieldRow:recursiveGetChildById('mode')
+    if mode then mode:setCurrentOption(always and 'Sempre ativo' or 'Por porcentagem') end
+    for _, id in ipairs({'decrease','value','increase'}) do shieldRow:recursiveGetChildById(id):setEnabled(not always) end
+    local cancelRow=panel:recursiveGetChildById('cancel')
+    cancelRow:recursiveGetChildById('enabled'):setEnabled(not blocked and mage(p) and not always)
+    cancelRow:recursiveGetChildById('enabled'):setChecked(settings.cancel.enabled and not always)
     updating=false
 end
 function Equipment.setRule(key, values)
@@ -100,6 +108,7 @@ function Equipment.setRule(key, values)
         if rule.itemId==0 then rule.enabled=false end
     end
     if values.enabled~=nil then rule.enabled=values.enabled==true and not blocked end
+    if key=='shield' and values.mode then rule.mode=values.mode=='always' and 'always' or 'percent' end
     if values.percent then rule.percent=math.max(1,math.min(100,math.floor(tonumber(values.percent) or rule.percent))) end
     save(); Equipment.render()
 end
@@ -139,6 +148,7 @@ function Equipment.onGameStart()
         local rule=saved[definition.key] or {}
         settings[definition.key]={enabled=rule.enabled==true or rule.enabled=='true',
             itemId=tonumber(rule.itemId) or 0,
+            mode=rule.mode=='always' and 'always' or 'percent',
             percent=math.max(1,math.min(100,tonumber(rule.percent) or definition.percent))}
     end
     nextEquip={necklace=0,ring=0};Equipment.updateCombatLock();Equipment.render()
@@ -181,19 +191,21 @@ function Equipment.checkEquipment()
     end
 end
 function Equipment.checkShield()
-    if not characterKey or Equipment.updateCombatLock() or not mage(player()) then return end
+    if not characterKey or not g_game.isOnline() or Equipment.updateCombatLock() or not mage(player()) or player():getHealth()<=0 then return end
     local p=player()
     local hp=p:getHealthPercent()
     local active=p:hasState(PlayerStates.ManaShield) or p:hasState(PlayerStates.NewManaShield)
     local shield,cancel,potion=settings.shield,settings.cancel,settings.potion
+    local always=shield.enabled and shield.mode=='always'
     if active then
+        if always then return end
         -- The defensive threshold wins if shield/cancel ranges overlap.
         if cancel.enabled and hp>cancel.percent and not (shield.enabled and hp<shield.percent) and
             not (potion.enabled and hp<potion.percent) then
             legacy().tryCastEquipmentShield(true)
         end
-    elseif (shield.enabled and hp<shield.percent) or (potion.enabled and hp<potion.percent) then
-        if shield.enabled and hp<shield.percent and legacy().tryCastEquipmentShield(false) then return end
+    elseif (shield.enabled and (always or hp<shield.percent)) or (potion.enabled and hp<potion.percent) then
+        if shield.enabled and (always or hp<shield.percent) and legacy().tryCastEquipmentShield(false) then return end
         if potion.enabled and hp<potion.percent then legacy().tryUseEquipmentShieldPotion() end
     end
 end
@@ -204,9 +216,9 @@ end
 function Equipment.init(window)
     g_ui.importStyle('equipment')
     panel=g_ui.createWidget('HelperEquipmentPanel',window:recursiveGetChildById('equipmentPage'))
-    panel:recursiveGetChildById('equipmentFooter'):setText('Click here, then click the item in your backpack. Right-click here to clear.\nItems must be in your backpack. Settings are saved per character.')
-    panel:recursiveGetChildById('equipmentHelp'):setText('Life < %: equip below the selected health percentage.\nLife > %: equip above it, restoring your regular equipment.\n\nEnable each item with its checkbox. Replacements are equipped while the rule matches and the item is in your backpack.')
-    panel:recursiveGetChildById('shieldHelp'):setText('The potion is used when utamo vita is on cooldown.\n\nLife potions remain the first priority.\n\nShield spells respect cooldowns and manual hotkeys.')
+    panel:recursiveGetChildById('equipmentFooter'):setText('Botão direito no quadrado: Assign Ring/Amulet. Depois clique no item da mochila.\nRemove Item limpa o espaço. As configurações são salvas por personagem.')
+    panel:recursiveGetChildById('equipmentHelp'):setText('Vida < %: equipa abaixo da porcentagem escolhida.\nVida > %: equipa acima dela, restaurando seu equipamento habitual.\n\nAtribua um anel ou amuleto e marque sua caixa. O Helper repõe o item enquanto a regra for válida e houver unidades na mochila. A regra de emergência tem prioridade.')
+    panel:recursiveGetChildById('shieldHelp'):setText('Utamo vita: escolha Por porcentagem para usar abaixo da vida definida, ou Sempre ativo para renovar o escudo quando acabar. Marque a caixa para ativar.\n\nExana vita remove o escudo acima da vida escolhida. Fica inativo no modo Sempre ativo.\n\nA poção de escudo é usada abaixo da porcentagem quando utamo está em cooldown. Cura de vida e hotkeys manuais têm prioridade. As opções permanecem salvas após a morte.')
     for _, definition in ipairs(definitions) do
         local key=definition.key
         local row=g_ui.createWidget('HelperEquipmentCompactRule',panel:recursiveGetChildById(definition.slot and
@@ -221,14 +233,24 @@ function Equipment.init(window)
         end
         local assign=row:recursiveGetChildById('assign')
         if definition.slot then
-            assign.onClick=function() Equipment.openSelector(key) end
-            assign.onMouseRelease=function(_,_,button)
-                if button==MouseRightButton then Equipment.setRule(key,{itemId=0});return true end
+            assign.onMouseRelease=function(_,position,button)
+                if button~=MouseRightButton then return false end
+                local menu=g_ui.createWidget('PopupMenu')
+                menu:setGameMenu(true)
+                menu:addOption(definition.slot=='ring' and 'Assign Ring' or 'Assign Amulet',function() Equipment.openSelector(key) end)
+                if settings[key].itemId~=0 then menu:addOption('Remove Item',function() Equipment.setRule(key,{itemId=0}) end) end
+                menu:display(position)
+                return true
             end
         else
             assign:setEnabled(false)
-            row:recursiveGetChildById('name'):setText(key=='shield' and 'utamo vita - HP below' or
-                key=='cancel' and 'exana vita - HP above' or 'Shield potion - HP below')
+            row:recursiveGetChildById('name'):setText(key=='shield' and 'utamo vita - proteção' or
+                key=='cancel' and 'exana vita - vida acima' or 'Poção de escudo - vida abaixo')
+            if key=='shield' then
+                local mode=row:recursiveGetChildById('mode')
+                mode:addOption('Por porcentagem');mode:addOption('Sempre ativo');mode:show()
+                mode.onOptionChange=function(_,option) if not updating then Equipment.setRule(key,{mode=option=='Sempre ativo' and 'always' or 'percent'}) end end
+            end
             if key=='potion' then row:recursiveGetChildById('item'):setItemId(35563)
             else
                 local spell=SpellInfo.Default[key=='shield' and 'Magic Shield' or 'Cancel Magic Shield']

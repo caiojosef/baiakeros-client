@@ -135,6 +135,14 @@ HelperEquipmentCompactRule < UIWidget
     margin-top: 3
     !tooltip: tr('Enable this rule')
 
+  ComboBox
+    id: mode
+    size: 150 24
+    anchors.left: enabled.right
+    anchors.top: decrease.top
+    margin-left: 8
+    visible: false
+
 HelperEquipmentPanel < UIWidget
   anchors.fill: parent
 
@@ -155,7 +163,7 @@ HelperEquipmentPanel < UIWidget
       anchors.bottom: parent.bottom
 
       Label
-        text: Equip when Life < %
+        text: Equipar com Vida < %
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         margin-top: 8
@@ -188,7 +196,7 @@ HelperEquipmentPanel < UIWidget
       anchors.bottom: parent.bottom
 
       Label
-        text: Equip when Life > %
+        text: Equipar com Vida > %
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         margin-top: 8
@@ -204,7 +212,7 @@ HelperEquipmentPanel < UIWidget
           type: verticalBox
 
     Label
-      text: Emergency equipment has priority.
+      text: Equipamento de emergência tem prioridade.
       anchors.left: parent.left
       anchors.bottom: parent.bottom
       margin-left: 12
@@ -221,7 +229,7 @@ HelperEquipmentPanel < UIWidget
     margin-right: 7
 
     Label
-      text: Equipment Rules
+      text: Como usar os equipamentos
       anchors.top: parent.top
       anchors.horizontalCenter: parent.horizontalCenter
       margin-top: 8
@@ -255,7 +263,7 @@ HelperEquipmentPanel < UIWidget
     margin: 12 7 0 6
 
     Label
-      text: Mana Shield - Druids & Sorcerers
+      text: Escudo de mana - Druids e Sorcerers
       anchors.top: parent.top
       anchors.horizontalCenter: parent.horizontalCenter
       margin-top: 8
@@ -283,7 +291,7 @@ HelperEquipmentPanel < UIWidget
 
   Label
     id: nonMageNote
-    text: Mana Shield controls are available to Druids and Sorcerers.
+    text: Escudo de mana disponível para Druids e Sorcerers.
     anchors.top: equipmentSection.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     margin-top: 55
