@@ -335,12 +335,11 @@ function inventoryController:onGameStart()
         end
     end
     -- The four PVP-mode selectors remain registered for protocol compatibility,
-    -- but BaiakEros currently uses Safe Fight plus the Codex shortcut in this area.
+    -- BaiakEros uses Safe Fight here; the Market shortcut lives in the main panel.
     inventoryController.ui.onPanel.whiteDoveBox:hide()
     inventoryController.ui.onPanel.whiteHandBox:hide()
     inventoryController.ui.onPanel.yellowHandBox:hide()
     inventoryController.ui.onPanel.redFistBox:hide()
-    inventoryController.ui.onPanel.codexButton:show()
     inventoryController.ui.onPanel.purseButton:setVisible(g_game.getFeature(GamePurseSlot))
 
     if isPlayerMonk() and player then
@@ -431,7 +430,7 @@ end
 
 function expertMode(self, checked)
     -- Intentionally reserved. PVP modes are preserved internally, while their
-    -- former 2x2 visual space is used by the Codex shortcut.
+    -- former selectors remain hidden in the inventory.
 end
 
 function onSetPVPMode(self, selectedPVPButton)

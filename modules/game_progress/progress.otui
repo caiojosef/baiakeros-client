@@ -1,0 +1,107 @@
+BaiakerosProgressTab < UIButton
+  image-source: /images/ui/button
+  image-clip: 0 0 22 23
+  image-border: 3
+  font: verdana-11px-antialised
+  color: #dfdfdf
+  text-offset: 14 0
+
+  $hover:
+    color: #ffffff
+  $on:
+    color: #f0d48a
+  $pressed:
+    image-clip: 0 46 22 23
+
+BaiakerosProgressWindow < MainWindow
+  id: baiakerosProgressWindow
+  text: Baiakeros - Adventures
+  size: 900 610
+  visible: false
+  @onEscape: modules.game_progress.hide()
+
+  UIWidget
+    id: navigationBar
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 36
+    background-color: #404040
+    border-width-top: 1
+    border-color-top: black
+    border-width-left: 1
+    border-color-left: black
+    border-width-bottom: 1
+    border-color-bottom: #747474
+    border-width-right: 1
+    border-color-right: #747474
+
+    BaiakerosProgressTab
+      id: tasksTab
+      size: 112 36
+      anchors.left: parent.left
+      anchors.top: parent.top
+      margin-left: 1
+      text: Tasks
+      tooltip: Tasks de caca e recompensas
+      @onClick: modules.game_progress.selectTab('tasks')
+
+      UIWidget
+        size: 24 24
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 5
+        image-source: /images/options/button_taskboard
+        image-clip: 0 0 16 16
+        image-smooth: true
+        phantom: true
+
+    BaiakerosProgressTab
+      id: codexTab
+      size: 112 36
+      anchors.left: prev.right
+      anchors.top: prev.top
+      margin-left: 1
+      text: Codex
+      tooltip: Colecoes de itens e bonus do personagem
+      @onClick: modules.game_progress.selectTab('codex')
+
+      UIWidget
+        size: 24 24
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 5
+        image-source: /images/inventory/codex-button-v2
+        image-size: 24 24
+        image-smooth: true
+        phantom: true
+
+  UIWidget
+    id: contentContainer
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: navigationBar.bottom
+    anchors.bottom: bottomSeparator.top
+    margin-top: 7
+    margin-bottom: 7
+
+  HorizontalSeparator
+    id: bottomSeparator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: closeButton.top
+    margin-bottom: 10
+
+  Label
+    text: Tasks e colecoes para evoluir seu personagem.
+    anchors.left: parent.left
+    anchors.verticalCenter: closeButton.verticalCenter
+    color: #a8a8a8
+
+  QtButton
+    id: closeButton
+    text: Fechar
+    size: 64 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_progress.hide()

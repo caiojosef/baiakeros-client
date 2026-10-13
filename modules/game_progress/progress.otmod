@@ -1,0 +1,13 @@
+Module
+  name: game_progress
+  description: Baiakeros Tasks and Codex progression hub
+  author: Baiakeros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_mainpanel
+    - game_hunting_tasks
+    - game_codex
+  scripts: [ progress ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -23,7 +23,7 @@ local PANEL_CONSTANTS = {
         STORE = 1
     },
     MULTI_STORE_HEIGHT = 20,
-    MULTI_STORE_SPACING = 8,
+    MULTI_STORE_SPACING = 4,
     HEIGHT_EXTRA_ONPANEL = -5,
     HEIGHT_EXTRA_SHRINK = 5
 }
@@ -66,8 +66,10 @@ function reloadMainPanelSizes()
                         local store_height, store_count = calculatePanelHeight(store_panel,
                             PANEL_CONSTANTS.MAX_ICONS_PER_ROW.STORE)
                         if store_count > 0 then
-                            store_height = store_count * PANEL_CONSTANTS.MULTI_STORE_HEIGHT +
-                                (store_count - 1) * PANEL_CONSTANTS.MULTI_STORE_SPACING
+                            store_height = (store_count - 1) * PANEL_CONSTANTS.MULTI_STORE_SPACING
+                            for _, child in ipairs(store_panel:getChildren()) do
+                                if child:isVisible() then store_height = store_height + child:getHeight() end
+                            end
                         end
                         local combined_height = store_height + math.max(options_height, specials_height)
                         local extra_height = PANEL_CONSTANTS.HEIGHT_EXTRA_ONPANEL
@@ -120,8 +122,8 @@ local function createButton_large(id, description, image, callback, special, fro
     button:setTooltip(description)
     button:setImageSource(image)
     button:setImageClip('0 0 108 20')
-    if text then
-        button:setText(text)
+    button:setText(text or '')
+    if text and text ~= '' then
         button:setTextAlign(AlignCenter)
         button:setTextOffset('10 0')
         button:setColor('#f4f4f4')
@@ -288,27 +290,24 @@ function addCompactStoreButton(id, description, image, callback, slot, text, ico
     end
     button:setId(id)
     button:setTooltip(description)
-    button:setSize('78 20')
+    button:setSize('51 20')
     button:setImageSource(image)
     button:setImageClip('0 0 108 20')
     button:breakAnchors()
-    -- The store column itself is 108 px wide, but this row sits below the
-    -- controls button too. Position the second half explicitly so both
-    -- compact buttons can use that otherwise empty area.
+    -- Three equal shortcuts span the options and controls columns above the icons.
     button:addAnchor(AnchorLeft, 'parent', AnchorLeft)
     button:addAnchor(AnchorTop, 'parent', AnchorTop)
-    button:setMarginLeft(slot == 2 and 80 or 0)
-    if text then
-        button:setText(text)
-        button:setTextAlign(AlignCenter)
-        button:setTextOffset('7 0')
-        button:setColor('#f4f4f4')
-        button:setFont('verdana-11px-rounded')
-    end
-    if icon then
-        button:setIcon(icon)
-        button:setIconClip('0 0 16 16')
-        button:setIconRect('7 2 16 16')
+    button:setMarginLeft(((slot or 1) - 1) * 53)
+    button:setText('')
+    local icons = { '/images/topbuttons/bot', '/images/topbuttons/codex-native-v2', '/images/topbuttons/market-native-v2' }
+    button:setIcon(icons[slot or 1])
+    button:setIconClip('0 0 16 16')
+    button:setIconRect('17 2 16 16')
+    for _,effect in ipairs({{'brightButton','helper-button-bright'},{'highlight','helper-button-highlight'}}) do
+        local overlay=button:getChildById(effect[1]) or g_ui.createWidget('UIWidget',button)
+        overlay:setId(effect[1]);overlay:setSize(button:getSize())
+        overlay:addAnchor(AnchorLeft,'parent',AnchorLeft);overlay:addAnchor(AnchorTop,'parent',AnchorTop)
+        overlay:setImageSource('/images/baiakeros/'..effect[2]);overlay:setPhantom(true)
     end
     button.onMouseRelease = function(widget, mousePos, mouseButton)
         if widget:containsPoint(mousePos) and mouseButton ~= MouseMidButton then

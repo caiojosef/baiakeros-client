@@ -229,13 +229,10 @@ TaskRewardChoiceButton < QtButton
     color: #c0c0c0
     phantom: true
 
-HuntingTasksWindow < MainWindow
+HuntingTasksPanel < UIWidget
   id: huntingTasksWindow
-  !text: tr('Hunting Tasks')
-  size: 720 550
-  anchors.centerIn: parent
+  anchors.fill: parent
   visible: false
-  @onEscape: modules.game_hunting_tasks.hide()
 
   UIWidget
     id: filterPanel
@@ -387,19 +384,9 @@ HuntingTasksWindow < MainWindow
   Label
     id: statusLabel
     anchors.left: parent.left
-    anchors.right: closeButton.left
+    anchors.right: parent.right
     anchors.bottom: parent.bottom
     margin-left: 12
     margin-right: 10
     margin-bottom: 10
     color: #a8a8a8
-
-  QtButton
-    id: closeButton
-    text: Close
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    size: 64 20
-    margin-right: 10
-    margin-bottom: 8
-    @onClick: modules.game_hunting_tasks.hide()

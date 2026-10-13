@@ -24,11 +24,12 @@ local function sendRequest(action, extra)
     protocol:sendExtendedOpcode(OPCODE, json.encode(request))
 end
 
-local function ensureWindow()
+local function ensureWindow(parent)
     if codexWindow then return true end
+    if not parent then return false end
     local ok, result = pcall(function()
         g_ui.importStyle('codex')
-        codexWindow = g_ui.createWidget('CodexWindow', rootWidget)
+        codexWindow = g_ui.createWidget('CodexPanel', parent)
         codexWindow:hide()
     end)
     if not ok then
@@ -133,7 +134,7 @@ local function onExtendedOpcode(protocol, opcode, buffer)
         return
     end
     codexData = decoded
-    if ensureWindow() then refresh() end
+    refresh()
 end
 
 local function online()
@@ -145,20 +146,26 @@ local function offline()
     hide()
 end
 
+function createPanel(parent)
+    if not ensureWindow(parent) then return nil end
+    codexWindow:setParent(parent)
+    codexWindow:breakAnchors()
+    codexWindow:fill('parent')
+    codexWindow:hide()
+    refresh()
+    return codexWindow
+end
+
 function show()
-    if not g_game.isOnline() or not ensureWindow() then return end
-    codexWindow:show()
-    codexWindow:raise()
-    codexWindow:focus()
-    sendRequest('sync')
+    if modules.game_progress then modules.game_progress.show('codex') end
 end
 
 function hide()
-    if codexWindow then codexWindow:hide() end
+    if modules.game_progress then modules.game_progress.hide() end
 end
 
 function toggle()
-    if codexWindow and codexWindow:isVisible() then hide() else show() end
+    if modules.game_progress then modules.game_progress.toggle('codex') end
 end
 
 function refreshFromServer()
@@ -168,7 +175,6 @@ end
 function init()
     ProtocolGame.registerExtendedOpcode(OPCODE, onExtendedOpcode)
     connect(g_game, { onGameStart = online, onGameEnd = offline })
-    ensureWindow()
     if g_game.isOnline() then online() end
 end
 
