@@ -1,6 +1,5 @@
 local OPCODE = 215
 local taskWindow
-local taskButton
 local taskData = { tasks = {}, history = {}, actives = {}, ranking = {} }
 local currentFilter = 'available'
 local confirmWindow
@@ -9,11 +8,12 @@ local function taskWidget(id)
     return taskWindow and taskWindow:recursiveGetChildById(id)
 end
 
-local function ensureTaskWindow()
+local function ensureTaskWindow(parent)
     if taskWindow then return true end
+    if not parent then return false end
     local ok, result = pcall(function()
         g_ui.importStyle('hunting_tasks')
-        taskWindow = g_ui.createWidget('HuntingTasksWindow', rootWidget)
+        taskWindow = g_ui.createWidget('HuntingTasksPanel', parent)
         taskWidget('availableFilter').onClick = function() selectFilter('available') end
         taskWidget('progressFilter').onClick = function() selectFilter('progress') end
         taskWidget('completedFilter').onClick = function() selectFilter('completed') end
@@ -321,37 +321,41 @@ local function offline()
     hide()
 end
 
-function show()
-    if not g_game.isOnline() then return end
-    if not ensureTaskWindow() then return end
-    taskWindow:show()
-    taskWindow:raise()
-    taskWindow:focus()
-    taskButton:setOn(true)
+function createPanel(parent)
+    if not ensureTaskWindow(parent) then return nil end
+    taskWindow:setParent(parent)
+    taskWindow:breakAnchors()
+    taskWindow:fill('parent')
+    taskWindow:hide()
+    refresh()
+    return taskWindow
+end
+
+function refreshFromServer()
     sendRequest('sync')
 end
 
+function onTabHidden()
+    closeConfirm()
+end
+
+function show()
+    if modules.game_progress then modules.game_progress.show('tasks') end
+end
+
 function hide()
-    if taskWindow then taskWindow:hide() end
-    if taskButton then taskButton:setOn(false) end
+    closeConfirm()
+    if modules.game_progress then modules.game_progress.hide() end
 end
 
 function toggle()
-    if taskWindow and taskWindow:isVisible() then hide() else show() end
+    if modules.game_progress then modules.game_progress.toggle('tasks') end
 end
 
 function init()
     ProtocolGame.registerExtendedOpcode(OPCODE, onExtendedOpcode)
     connect(g_game, { onGameStart = online, onGameEnd = offline })
 
-    taskButton = modules.game_mainpanel.addCompactStoreButton('huntingTasksButton',
-        tr('Hunting Tasks'), '/images/options/yellow_large', toggle, 2,
-        tr('Tasks'), '/images/options/button_taskboard')
-    taskButton:show()
-    taskButton:setOn(false)
-    local highlight = taskButton:getChildById('highlight')
-    if highlight then highlight:show() end
-    modules.game_mainpanel.reloadMainPanelSizes()
     if g_game.isOnline() then online() end
 end
 
@@ -359,7 +363,6 @@ function terminate()
     closeConfirm()
     disconnect(g_game, { onGameStart = online, onGameEnd = offline })
     ProtocolGame.unregisterExtendedOpcode(OPCODE)
-    if taskButton then taskButton:destroy(); taskButton = nil end
     if taskWindow then taskWindow:destroy(); taskWindow = nil end
     modules.game_mainpanel.reloadMainPanelSizes()
 end

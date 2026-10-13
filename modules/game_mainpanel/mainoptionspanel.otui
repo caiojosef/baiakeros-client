@@ -39,7 +39,7 @@ PhantomMiniWindow
       layout:
         type: verticalBox
         cell-size: 108 20
-        spacing: 8
+        spacing: 4
         flow: true
 		
       $pressed !disabled:

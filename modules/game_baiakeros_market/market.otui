@@ -1,0 +1,762 @@
+BaiakerosMarketSurface < UIWidget
+  background-color: #25292e
+  border-width: 1
+  border-color: #434950
+
+BaiakerosMarketButton < UIButton
+  height: 28
+  opacity: 1
+  font: verdana-11px-antialised
+  color: #eee9df
+  background-color: #363c43
+  border-width: 1
+  border-color: #56606b
+  $hover !disabled:
+    background-color: #434b54
+    border-color: #b79957
+  $pressed:
+    background-color: #252a30
+  $disabled:
+    opacity: 0.45
+
+BaiakerosMarketPrimary < BaiakerosMarketButton
+  color: #ffdf94
+  background-color: #55442a
+  border-color: #b89450
+  $hover !disabled:
+    background-color: #715934
+
+BaiakerosMarketTab < BaiakerosMarketButton
+  size: 144 36
+  background-color: #30353a
+  border-color: #444b52
+  $on:
+    color: #ffdc8d
+    background-color: #53452f
+    border-color: #b89450
+
+BaiakerosMarketComboPopupMenuButton < ComboBoxPopupMenuButton
+
+BaiakerosMarketComboPopupMenu < ComboBoxPopupMenu
+
+BaiakerosMarketCombo < UIComboBox
+  font: verdana-11px-antialised
+  color: #dddfe2
+  text-align: center
+  text-offset: -10 0
+  background-color: #363c43
+  border-width: 1
+  border-color: #56606b
+  $hover !disabled:
+    border-color: #b79957
+  $on:
+    background-color: #434b54
+  UIWidget
+    id: dropdownArrow
+    size: 8 5
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-right: 8
+    image-source: /images/ui/combobox_square
+    image-clip: 77 8 8 5
+    phantom: true
+
+BaiakerosMarketEntry < MainWindow
+  id: baiakerosMarketEntry
+  text: Baiakeros Market
+  size: 420 270
+  visible: false
+  @onEscape: modules.game_baiakeros_market.hide()
+
+  UIWidget
+    id: entryIcon
+    size: 48 48
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-source: /images/inventory/market-button-v2
+    image-size: 48 48
+    image-smooth: true
+    phantom: true
+
+  Label
+    text: B A I A K E R O S   M A R K E T
+    color: #eac779
+    anchors.left: entryIcon.right
+    anchors.top: entryIcon.top
+    margin-left: 14
+    margin-top: 5
+    height: 20
+
+  Label
+    id: entryTitle
+    text: Conecte sua conta
+    anchors.left: entryIcon.right
+    anchors.top: prev.bottom
+    margin-left: 14
+    height: 20
+    color: #eeeeee
+
+  HorizontalSeparator
+    id: entryDivider
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: entryIcon.bottom
+    margin-top: 12
+
+  Label
+    id: entryDescription
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: entryDivider.bottom
+    margin-top: 12
+    height: 38
+    text-wrap: true
+    color: #c2c5c9
+
+  Label
+    id: entryMessage
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: entryDescription.bottom
+    margin-top: 5
+    height: 34
+    text-wrap: true
+    color: #e7c478
+
+  BaiakerosMarketPrimary
+    id: connectAccount
+    text: Conectar agora
+    width: 214
+    anchors.left: parent.left
+    anchors.bottom: entryClose.top
+    margin-bottom: 12
+    enabled: false
+    @onClick: modules.game_baiakeros_market.showConsent()
+
+  BaiakerosMarketButton
+    text: Atualizar
+    width: 92
+    anchors.right: parent.right
+    anchors.top: connectAccount.top
+    @onClick: modules.game_baiakeros_market.refresh()
+
+  Label
+    text: Sua senha fica somente no Mercado Pago.
+    color: #91989f
+    anchors.left: parent.left
+    anchors.verticalCenter: entryClose.verticalCenter
+
+  SmallButton
+    id: entryClose
+    text: Fechar
+    size: 62 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_baiakeros_market.hide()
+
+BaiakerosMarketConsent < MainWindow
+  id: baiakerosMarketConsent
+  text: Confirmar conexão
+  size: 490 330
+  visible: false
+  @onEscape: modules.game_baiakeros_market.closeConsent()
+
+  Label
+    text: Sua conta. Sua autorização.
+    color: #efcf85
+    anchors.top: parent.top
+    anchors.left: parent.left
+    height: 24
+
+  BaiakerosMarketSurface
+    id: consentDetails
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 10
+    height: 126
+    padding: 14
+
+    Label
+      text: Você será levado à página oficial do Mercado Pago.
+      color: #e4e5e7
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      height: 24
+
+    Label
+      text: Ao autorizar, vinculamos a identificação da sua conta e guardamos os dados da conexão de forma protegida.
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-top: 5
+      height: 40
+      text-wrap: true
+      color: #aeb7c0
+
+    Label
+      text: Conectar a conta não realiza uma cobrança.
+      anchors.left: parent.left
+      anchors.top: prev.bottom
+      margin-top: 8
+      height: 18
+      color: #d6bf8c
+
+  CheckBox
+    id: connectionConsent
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: consentDetails.bottom
+    margin-top: 17
+    height: 24
+    text: Li e aceito vincular minha conta Mercado Pago.
+    @onCheckChange: modules.game_baiakeros_market.consentChanged()
+
+  Label
+    text: A confirmação permanece marcada após o aceite.
+    color: #8f979f
+    anchors.left: parent.left
+    anchors.top: connectionConsent.bottom
+    margin-top: 5
+    height: 20
+
+  BaiakerosMarketButton
+    text: Agora não
+    width: 105
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_baiakeros_market.closeConsent()
+
+  BaiakerosMarketPrimary
+    id: confirmConnection
+    text: Continuar para Mercado Pago
+    width: 230
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    enabled: false
+    @onClick: modules.game_baiakeros_market.openAccountConnection()
+
+BaiakerosMarketSaleInfo < MainWindow
+  id: baiakerosMarketSaleInfo
+  text: Como funciona a venda
+  size: 520 350
+  @onEscape: modules.game_baiakeros_market.closeSaleInfo()
+
+  Label
+    id: saleTitle
+    text: Publique seu lote e aguarde a venda
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    height: 24
+    color: #efcf85
+
+  Label
+    text: Selecione um item ou a pilha inteira da mochila, informe o preço total e escolha 6, 12 ou 24 horas. Você pode ter até 3 anúncios.
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: saleTitle.bottom
+    margin-top: 12
+    height: 52
+    text-wrap: true
+    color: #c2c5c9
+
+  Label
+    id: reservationInfo
+    text: Após publicar, o lote fica reservado e não pode ser retirado ou cancelado. Se não for vendido até o fim do prazo, volta ao seu Your Inbox.
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 12
+    height: 66
+    text-wrap: true
+    color: #e2cfaa
+
+  Label
+    id: paymentInfo
+    text: Após a aprovação do pagamento, o comprador recebe o lote no Your Inbox. O valor da venda vai para sua conta Mercado Pago, com comissão Baiakeros de 15% e as tarifas do Mercado Pago.
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 12
+    height: 80
+    text-wrap: true
+    color: #c2c5c9
+
+  BaiakerosMarketPrimary
+    id: understood
+    text: Entendi
+    width: 112
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_baiakeros_market.closeSaleInfo()
+
+BaiakerosMarketDraftCard < BaiakerosMarketSurface
+  size: 248 332
+  anchors.left: parent.left
+  anchors.top: parent.top
+  padding: 14
+
+  Label
+    id: cardTitle
+    anchors.left: parent.left
+    anchors.top: parent.top
+    height: 20
+    color: #d4b976
+
+  SmallButton
+    id: removeItem
+    text: Limpar
+    size: 48 20
+    anchors.right: parent.right
+    anchors.top: parent.top
+    enabled: false
+
+  Item
+    id: item
+    size: 64 64
+    virtual: true
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: cardTitle.bottom
+    margin-top: 12
+
+  Label
+    id: itemName
+    text: Escolha um item
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: item.bottom
+    margin-top: 8
+    height: 20
+    text-align: center
+    color: #e8e8e8
+
+  BaiakerosMarketButton
+    id: selectItem
+    text: Selecionar da mochila
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: itemName.bottom
+    margin-top: 7
+
+  Label
+    id: lotSummary
+    text: O lote será o item selecionado
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: selectItem.bottom
+    margin-top: 8
+    height: 18
+    color: #b9c0c6
+    text-align: center
+
+  Label
+    id: priceLabel
+    text: Preço total (R$)
+    anchors.left: parent.left
+    anchors.top: lotSummary.bottom
+    margin-top: 8
+    height: 18
+    color: #aab1b9
+
+  Label
+    id: durationLabel
+    text: Duração
+    anchors.right: parent.right
+    anchors.top: priceLabel.top
+    width: 89
+    height: 18
+    color: #aab1b9
+
+  TextEdit
+    id: price
+    size: 116 26
+    anchors.left: parent.left
+    anchors.top: priceLabel.bottom
+    margin-top: 4
+    max-length: 14
+
+  BaiakerosMarketCombo
+    id: duration
+    size: 89 26
+    anchors.right: parent.right
+    anchors.top: price.top
+
+  BaiakerosMarketPrimary
+    id: publishItem
+    text: Publicar anúncio
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    enabled: false
+
+  Label
+    id: draftState
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: price.bottom
+    margin-top: 7
+    height: 32
+    text-wrap: true
+    text-align: center
+    color: #aab1b9
+
+BaiakerosMarketOfferRow < BaiakerosMarketSurface
+  size: 180 184
+  padding: 10
+
+  Item
+    id: item
+    size: 40 40
+    virtual: true
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+
+  Label
+    id: name
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: item.bottom
+    margin-top: 6
+    height: 28
+    text-align: center
+    text-wrap: true
+    color: #eddbb5
+
+  Label
+    id: details
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: name.bottom
+    height: 18
+    text-align: center
+    color: #b1bac3
+
+  Label
+    id: expiry
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: details.bottom
+    margin-top: 2
+    height: 18
+    text-align: center
+    color: #89939d
+
+  Label
+    id: price
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: expiry.bottom
+    margin-top: 2
+    height: 20
+    text-align: center
+    color: #edcf88
+
+  BaiakerosMarketPrimary
+    id: buy
+    height: 24
+    text: Comprar
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+
+BaiakerosMarketWindow < MainWindow
+  id: baiakerosMarketWindow
+  text: Baiakeros Market
+  size: 860 660
+  visible: false
+  @onEscape: modules.game_baiakeros_market.hide()
+
+  UIWidget
+    id: marketIcon
+    size: 48 48
+    anchors.left: parent.left
+    anchors.top: parent.top
+    image-source: /images/inventory/market-button-v2
+    image-size: 48 48
+    image-smooth: true
+    phantom: true
+
+  Label
+    text: B A I A K E R O S   M A R K E T
+    anchors.left: marketIcon.right
+    anchors.top: marketIcon.top
+    margin-left: 14
+    margin-top: 5
+    height: 20
+    color: #efcf85
+
+  Label
+    text: Itens e oportunidades do Baiakeros.
+    anchors.left: marketIcon.right
+    anchors.top: prev.bottom
+    margin-left: 14
+    height: 20
+    color: #a7aeb5
+
+  BaiakerosMarketButton
+    id: signOut
+    text: Sair
+    size: 72 28
+    anchors.right: parent.right
+    anchors.verticalCenter: marketIcon.verticalCenter
+    @onClick: modules.game_baiakeros_market.signOut()
+
+  Label
+    id: accountStatus
+    text: Conta conectada
+    width: 190
+    text-align: right
+    color: #88c99c
+    anchors.right: signOut.left
+    anchors.verticalCenter: signOut.verticalCenter
+    margin-right: 16
+
+  UIWidget
+    id: navigation
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: marketIcon.bottom
+    margin-top: 15
+    height: 36
+    background-color: #30353a
+
+    BaiakerosMarketTab
+      id: marketTab
+      text: Market
+      anchors.left: parent.left
+      anchors.top: parent.top
+      @onClick: modules.game_baiakeros_market.selectTab('market')
+
+    BaiakerosMarketTab
+      id: registerTab
+      text: Cadastrar itens
+      anchors.left: prev.right
+      anchors.top: parent.top
+      margin-left: 3
+      @onClick: modules.game_baiakeros_market.selectTab('register')
+
+  UIWidget
+    id: pages
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: navigation.bottom
+    anchors.bottom: bottomDivider.top
+    margin-top: 12
+    margin-bottom: 12
+
+    BaiakerosMarketSurface
+      id: marketPage
+      anchors.fill: parent
+      padding: 18
+
+      Label
+        text: Últimos anúncios
+        anchors.left: parent.left
+        anchors.top: parent.top
+        height: 24
+        color: #e7ce95
+
+      BaiakerosMarketButton
+        id: refreshOffers
+        text: Atualizar
+        size: 88 26
+        anchors.right: parent.right
+        anchors.top: parent.top
+        @onClick: modules.game_baiakeros_market.refresh(true)
+
+      Label
+        id: offerCount
+        anchors.left: parent.left
+        anchors.top: prev.bottom
+        margin-top: 8
+        height: 20
+        color: #a1aab3
+
+      TextEdit
+        id: searchName
+        anchors.left: parent.left
+        anchors.top: offerCount.bottom
+        margin-top: 8
+        width: 492
+        height: 28
+        max-length: 80
+        placeholder: Buscar pelo nome do item...
+        @onTextChange: modules.game_baiakeros_market.searchChanged()
+
+      BaiakerosMarketCombo
+        id: categoryFilter
+        anchors.right: parent.right
+        anchors.top: searchName.top
+        width: 246
+        height: 28
+        @onOptionChange: modules.game_baiakeros_market.categoryChanged()
+
+      Label
+        id: loadingLabel
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        width: 260
+        height: 24
+        text-align: center
+        text: Carregando itens...
+        color: #efcf85
+        visible: false
+
+      UIWidget
+        id: loadingTrack
+        size: 160 4
+        anchors.horizontalCenter: loadingLabel.horizontalCenter
+        anchors.top: loadingLabel.bottom
+        margin-top: 10
+        background-color: #363c43
+        visible: false
+        UIWidget
+          id: loadingSegment
+          size: 40 4
+          anchors.left: parent.left
+          anchors.top: parent.top
+          background-color: #d4b976
+
+      UIWidget
+        id: emptyIcon
+        size: 76 76
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        margin-top: -36
+        image-source: /images/inventory/market-button-v2
+        image-size: 76 76
+        image-smooth: true
+        phantom: true
+
+      Label
+        id: emptyTitle
+        text: O próximo anúncio pode ser o seu
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: emptyIcon.bottom
+        margin-top: 16
+        height: 22
+        text-align: center
+        color: #e9dcc0
+
+      Label
+        id: emptyDescription
+        text: Novos itens à venda aparecerão aqui.
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: prev.bottom
+        margin-top: 5
+        height: 20
+        text-align: center
+        color: #a7aeb5
+
+      BaiakerosMarketPrimary
+        id: prepareItems
+        text: Preparar meus itens
+        size: 178 28
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: prev.bottom
+        margin-top: 18
+        @onClick: modules.game_baiakeros_market.selectTab('register')
+
+      ScrollablePanel
+        id: offersList
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: searchName.bottom
+        anchors.bottom: lastUpdate.top
+        margin-top: 12
+        margin-bottom: 12
+        vertical-scrollbar: offersScroll
+        layout:
+          type: grid
+          cell-size: 180 184
+          cell-spacing: 12
+          num-columns: 4
+        visible: false
+
+      VerticalScrollBar
+        id: offersScroll
+        anchors.right: parent.right
+        anchors.top: offersList.top
+        anchors.bottom: offersList.bottom
+        step: 48
+        pixels-scroll: true
+
+      Label
+        id: lastUpdate
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        color: #89939d
+
+    UIWidget
+      id: registerPage
+      anchors.fill: parent
+      visible: false
+      padding: 12
+
+      Label
+        text: Prepare seus anúncios
+        id: registerTitle
+        anchors.left: parent.left
+        anchors.top: parent.top
+        height: 24
+        color: #e7ce95
+
+      Label
+        id: draftCounter
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 24
+        color: #a9b2bc
+
+      UIWidget
+        id: draftsContainer
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: registerTitle.bottom
+        margin-top: 12
+        height: 332
+
+      Label
+        id: draftMessage
+        text: Publicar reserva o lote no Market. Vendas vão ao Inbox do comprador; itens não vendidos voltam ao seu Inbox. Há tarifas do Mercado Pago além da comissão.
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: draftsContainer.bottom
+        margin-top: 13
+        height: 38
+        text-wrap: true
+        color: #aeb7bf
+
+      BaiakerosMarketPrimary
+        text: Guardar rascunhos
+        size: 165 28
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        @onClick: modules.game_baiakeros_market.saveDrafts()
+
+  HorizontalSeparator
+    id: bottomDivider
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: closeButton.top
+    margin-bottom: 10
+
+  BaiakerosMarketButton
+    id: commissionInfo
+    text: Informações da venda  (i)
+    size: 210 24
+    anchors.left: parent.left
+    anchors.verticalCenter: closeButton.verticalCenter
+    @onClick: modules.game_baiakeros_market.showSaleInfo()
+
+  SmallButton
+    id: closeButton
+    text: Fechar
+    size: 64 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_baiakeros_market.hide()

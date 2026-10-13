@@ -8,6 +8,7 @@ Services = {
     status = "https://www.baiakeros.com/login.php",
     clientManifest = "https://www.baiakeros.com/downloads/client/client.windows.json",
     websites = "https://www.baiakeros.com/",
+    market = "https://www.baiakeros.com",
     forgotPassword = "https://www.baiakeros.com/index.php/account/lost",
     discord = "https://discord.gg/6FET9zsWj",
     createAccount = "https://www.baiakeros.com/index.php/account/create",

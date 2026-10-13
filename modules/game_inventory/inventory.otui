@@ -188,34 +188,6 @@ PhantomMiniWindow
       margin-right: 0
       visible: false
 
-    UIButton
-      id: codexButton
-      anchors.right: parent.right
-      anchors.top: pvp.bottom
-      margin-right: 8
-      margin-top: 5
-      size: 44 44
-      image-source: /images/options/blue_large
-      image-clip: 0 0 108 20
-      image-border: 3
-      tooltip: Codex
-      @onClick: modules.game_codex.toggle()
-
-      $pressed:
-        image-clip: 0 20 108 20
-
-      $on:
-        image-clip: 0 20 108 20
-
-      UIWidget
-        id: codexIcon
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
-        size: 40 40
-        image-source: /images/inventory/codex-button
-        image-size: 40 40
-        phantom: true
-
     TopToggleButton
       id: attack
       visible: false
