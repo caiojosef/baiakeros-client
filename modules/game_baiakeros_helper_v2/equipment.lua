@@ -42,8 +42,11 @@ local function closeSelector()
 end
 function Equipment.isCombatBlocked()
     local p=player()
-    return p~=nil and ((PlayerStates.PzBlock and p:hasState(PlayerStates.PzBlock)) or
-        (tonumber(p:getSkull()) or 0)~=(SkullNone or 0)) or false
+    if not p then return false end
+    local skull=tonumber(p:getSkull()) or 0
+    -- Green skull identifies party members; it is not a PvP penalty.
+    local hostileSkull=skull~=(SkullNone or 0) and skull~=(SkullGreen or 2)
+    return (PlayerStates.PzBlock and p:hasState(PlayerStates.PzBlock)) or hostileSkull or false
 end
 -- Disable the saved rules, rather than silently resuming automation when the
 -- skull/PZ lock disappears. Check before every action as well as state events.
