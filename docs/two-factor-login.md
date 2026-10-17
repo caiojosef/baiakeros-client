@@ -36,6 +36,8 @@ Fresh logins clear any prior code/ticket; retrying the challenge preserves its a
 context. Changing the account, password, host, port or protocol cancels that challenge.
 Unique request IDs reject delayed HTTP responses after retry/cancellation. The modal
 blocks input to the login form and remains on top of delayed startup UI callbacks.
+The dialog uses a compact 300x150 layout. The initial required-code message does not
+repeat the instructions; validation errors expand its height to fit wrapped text.
 
 `tests/native/two_factor_login.lua` runs the real client UI with a mocked login
 transport and synthetic credentials. It covers normal login, required 2FA, TOTP with

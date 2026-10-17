@@ -23,7 +23,7 @@ scheduleEvent(function()
         return sent[#sent].request
     end
     local function challenge(request, message)
-        login.loginFailed(request, message or 'Digite o codigo do autenticador.', 6)
+        login.loginFailed(request, message or 'Digite o código do Google Authenticator ou um código de recuperação.', 6)
         assert(modal() and modal():isVisible())
     end
     local function submit(code)
@@ -41,9 +41,12 @@ scheduleEvent(function()
 
         local first = start()
         challenge(first)
+        assert(modal():getWidth()==300 and modal():getHeight()==150)
+        assert(not modal():getChildById('errorLabel'):isVisible(), 'The initial prompt must not duplicate the instructions')
         local count=#sent
         submit('12345')
         assert(#sent==count and modal(), 'Invalid TOTP must not consume a server attempt')
+        assert(modal():getHeight()>150, 'Validation messages need extra space')
         submit('012345')
         assert(not modal() and sent[#sent].token=='012345' and sent[#sent].request~=first)
         -- Delayed response from an earlier request must not replace this attempt.
@@ -53,6 +56,9 @@ scheduleEvent(function()
         local blocked='Muitas tentativas. Aguarde 5 minutos e tente novamente.'
         challenge(request,blocked)
         assert(G.authenticatorToken==nil and modal():getChildById('errorLabel'):getText()==blocked)
+        local errorLabel=modal():getChildById('errorLabel')
+        assert(errorLabel:getHeight()>=errorLabel:getTextSize().height, 'Wrapped server errors must fit')
+        assert(errorLabel:getY()+errorLabel:getHeight()+8<modal():getChildById('confirmButton'):getY(), 'Errors must not overlap the buttons')
         assert(modal():getChildById('tokenEdit'):getText()=='')
 
         -- The production backend accepts 20 hex digits, optionally grouped by hyphens.
@@ -78,7 +84,7 @@ scheduleEvent(function()
         assert(#sent==count and not modal(), 'A challenge must not transfer to another account')
 
         challenge(start())
-        assert(modal():getWidth()==390 and modal():getHeight()==260)
+        assert(modal():getWidth()==300 and modal():getHeight()==150)
         login.show()
         assert(not panel:isVisible(), 'Login window must not cover the authenticator challenge')
         modal():getChildById('tokenEdit'):setText('012345')
@@ -88,7 +94,12 @@ scheduleEvent(function()
     CharacterList.create, CharacterList.show = originalCreateList, originalShowList
     if not ok then g_logger.error('[TwoFactorQA] FAIL: '..tostring(err)) end
     scheduleEvent(function()
-        if ok then g_app.doScreenshot('/two-factor-login.png') end
+        if ok then
+            g_app.doScreenshot('/two-factor-login.png')
+            login.showAuthenticatorInput('Muitas tentativas. Aguarde 5 minutos e tente novamente.')
+            modal():getChildById('tokenEdit'):setText('ABCD-1234-EFAB-5678-90AB')
+            scheduleEvent(function() g_app.doScreenshot('/two-factor-login-error.png') end,300)
+        end
         scheduleEvent(function() login.destroyToken(); g_app.exit() end,1000)
     end,700)
 end,3000)

@@ -1211,6 +1211,20 @@ end
 
 -- Only the authenticated login endpoint decides whether this account requires 2FA.
 -- No secrets, recovery codes or account-security flags are fetched from the database by the client.
+local function setAuthenticatorMessage(message)
+    -- The initial production challenge repeats the instructions already above the input.
+    if message == 'Digite o código do Google Authenticator ou um código de recuperação.' then
+        message = nil
+    end
+    local label = tokenWindow:getChildById('errorLabel')
+    label:setText(message or '')
+    local hasMessage = message and message ~= ''
+    local height = hasMessage and math.max(14, label:getTextSize().height) or 0
+    label:setHeight(height)
+    label:setVisible(hasMessage and true or false)
+    tokenWindow:setHeight(150 + (hasMessage and height + 8 or 0))
+end
+
 function EnterGame.showAuthenticatorInput(message)
     EnterGame.destroyToken()
     EnterGame.hide()
@@ -1220,7 +1234,7 @@ function EnterGame.showAuthenticatorInput(message)
     }
     tokenWindow = g_ui.displayUI('authenticator')
     tokenWindow:lock()
-    tokenWindow:getChildById('errorLabel'):setText(message or '')
+    setAuthenticatorMessage(message)
     tokenWindow:raise()
     tokenWindow:focus()
     tokenWindow:getChildById('tokenEdit'):focus()
@@ -1234,7 +1248,7 @@ function EnterGame.submitAuthenticator()
     local validTotp = #token == 6 and token:match('^%d+$')
     local validRecovery = #recovery == 20 and recovery:match('^[%x]+$')
     if not validTotp and not validRecovery then
-        tokenWindow:getChildById('errorLabel'):setText('Digite 6 numeros ou um codigo de recuperacao completo.')
+        setAuthenticatorMessage('Digite 6 numeros ou um codigo de recuperacao completo.')
         tokenEdit:focus()
         return
     end
