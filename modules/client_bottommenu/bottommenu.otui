@@ -1,38 +1,29 @@
 ShowOffWidget < UIWidget
-  size: 1020 1000
-  anchors.left: parent.left
-  anchors.top: parent.top
+  size: 560 80
+  anchors.horizontalCenter: parent.horizontalCenter
+  anchors.verticalCenter: parent.verticalCenter
 
   Label
     id: image
-    size: 88 88
+    size: 72 72
     image-smooth: false
     anchors.left: parent.left
-    anchors.top: parent.top
-    margin-left: 10
-    margin-top: 0
+    anchors.verticalCenter: parent.verticalCenter
 
-  UITextEdit
+  Label
     id: description
-    size: 465 0
-    ttf-font: verdana-bold
-    ttf-font-size: 10
+    height: 72
+    font: Verdana Bold-11px
     anchors.left: image.right
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    margin-left: 10
-    margin-top: 3
+    anchors.right: parent.right
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 12
     color: #c0c0c0ff
     multiline: true
     text-wrap: true
-    text-auto-resize: true
-    editable: false
-    selectable: true
+    text-align: center
     focusable: false
-    cursor-visible: false
-    change-cursor-image: false
-    selection-color: #f4f4f4ff
-    selection-background-color: #808080ff
+    phantom: true
 
 Panel
   id: bottomMenu
@@ -41,13 +32,21 @@ Panel
   anchors.horizontalCenter: parent.horizontalCenter
   image-source: /images/ui/panel_top
   
-  MiniQtScrollableWindow
+  MiniQtWindow
     id: showOffWindow
     anchors.bottom: parent.bottom
     anchors.top: parent.top
     anchors.left: parent.left
     size: 605 116
     draggable: false
+
+    Panel
+      id: contentsPanel
+      anchors.fill: parent
+      margin-top: 24
+      margin-bottom: 6
+      margin-left: 10
+      margin-right: 10
 
     Label
       id: showOffWindowText
