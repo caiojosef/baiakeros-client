@@ -56,6 +56,8 @@ vc18/
 # Local runtime configuration and per-machine application data
 /config.ini
 /environment.lua
+__pycache__/
+*.py[cod]
 /.tmp_*/
 *.vspscc
 *.vssscc
