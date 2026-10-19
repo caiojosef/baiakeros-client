@@ -1248,7 +1248,7 @@ function EnterGame.submitAuthenticator()
     local validTotp = #token == 6 and token:match('^%d+$')
     local validRecovery = #recovery == 20 and recovery:match('^[%x]+$')
     if not validTotp and not validRecovery then
-        setAuthenticatorMessage('Digite 6 numeros ou um codigo de recuperacao completo.')
+        setAuthenticatorMessage('Digite 6 números ou um código de recuperação completo.')
         tokenEdit:focus()
         return
     end

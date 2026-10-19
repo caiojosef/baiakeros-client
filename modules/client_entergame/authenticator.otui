@@ -12,7 +12,7 @@ MainWindow
     anchors.right: parent.right
     height: 26
     text-wrap: true
-    text: Digite os 6 numeros do autenticador ou um codigo de recuperacao.
+    text: Digite os 6 números do autenticador.
 
   TextEdit
     id: tokenEdit
