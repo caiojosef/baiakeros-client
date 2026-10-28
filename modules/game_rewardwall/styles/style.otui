@@ -152,23 +152,30 @@ OfferBuyPrice < FlatPanel
 
 GoldLabel2 < UIWidget
   image-source: /images/ui/test/button-verydarkgrey-down
-  margin: 1
-  
+  image-border: 3
+  margin: 0
+
   UIWidget
     id: gold
     anchors.right: parent.right
     anchors.verticalCenter: parent.verticalCenter
+    margin-right: 6
+    size: 11 11
     image-source: /images/game/prey/prey_gold
-    tooltip: Gold Coins
+    image-smooth: false
     phantom: true
   UIWidget
     id: text
-    anchors.right: prev.left
-    margin-right: 5
     anchors.left: parent.left
+    anchors.right: gold.left
     anchors.verticalCenter: parent.verticalCenter
-    text-align: center
+    margin-left: 6
+    margin-right: 7
+    height: 18
+    font: verdana-bold_11
+    text-align: right
     phantom: true
+
 TESDTSTST < Panel
   id: actions
   size: 68 95

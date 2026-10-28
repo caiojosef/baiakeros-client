@@ -1,0 +1,258 @@
+RewardWallLabel < Label
+  font: verdana-bold_11
+  color: #c0c0c0
+  height: 18
+
+RewardWallSection < MiniPanel
+  font: verdana-bold_11
+  color: #c0c0c0
+  padding-top: 24
+  padding-left: 8
+  padding-right: 8
+  padding-bottom: 8
+
+RewardWallDay < Panel
+  size: 68 98
+  RewardButton3
+    id: rewardButton
+    size: 68 68
+    anchors.top: parent.top
+    anchors.left: parent.left
+    image-smooth: false
+    @onClick: modules.game_rewardwall.rewardWallController:onClickDisplayWindowsPickRewardWindow({target = self})
+  UIWidget
+    id: rewardGold
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: prev.bottom
+    margin-top: 7
+    height: 24
+
+RewardWallHistoryRow < UIWidget
+  height: 30
+  padding: 6
+  RewardWallLabel
+    id: date
+    anchors.top: parent.top
+    anchors.left: parent.left
+    width: 160
+    text-align: left
+  RewardWallLabel
+    id: Balance
+    anchors.top: parent.top
+    anchors.left: prev.right
+    margin-left: 9
+    width: 54
+    text-align: center
+  RewardWallLabel
+    id: Description
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.right: parent.right
+    margin-left: 13
+    text-align: topLeft
+    text-wrap: true
+
+MainWindow
+  id: rewardWallWindow
+  text: Reward Wall
+  size: 624 590
+  font: verdana-bold_11
+  padding-top: 32
+  padding-left: 16
+  padding-right: 16
+  padding-bottom: 16
+  @onEscape: modules.game_rewardwall.hide(true)
+
+  RewardWallSection
+    id: restingAreaPanel
+    text: Resting Area Bonuses
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 138
+    Panel
+      id: restingAreaInfo
+      anchors.left: parent.left
+      anchors.top: parent.top
+      size: 100 106
+      UIWidget
+        id: rewardStreakIcon
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        size: 66 44
+        image-source: /game_rewardwall/images/icon-rewardstreak-default
+        image-smooth: false
+        font: verdana-bold_11
+        text-offset: 0 3
+        text-align: center
+      RewardWallLabel
+        id: timeLeft
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: prev.bottom
+        margin-top: 5
+        height: 24
+        text-align: center
+        image-source: /images/ui/test/button-verydarkgrey-down
+        image-border: 3
+      GoldLabel2
+        id: restingAreaGold
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: prev.bottom
+        margin-top: 7
+        height: 24
+    Panel
+      id: bonusIcons
+      anchors.top: parent.top
+      anchors.right: parent.right
+      margin-right: 18
+      size: 438 70
+      layout:
+        type: horizontalBox
+        spacing: 6
+    RewardWallLabel
+      id: streakWarning
+      anchors.top: bonusIcons.bottom
+      anchors.left: bonusIcons.left
+      anchors.right: bonusIcons.right
+      margin-top: 7
+      height: 30
+      text-align: center
+      text-wrap: true
+      text: Great! You benefit from the best possible rewards and bonuses due to your premium status.
+
+  RewardWallSection
+    id: dailyRewardsPanel
+    text: Daily Rewards
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 9
+    height: 150
+
+  FlatPanel
+    id: premiumStatus
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 9
+    height: 60
+    padding: 10
+    RewardWallLabel
+      id: premiumMessage
+      anchors.left: parent.left
+      anchors.right: premiumButton.left
+      anchors.verticalCenter: parent.verticalCenter
+      margin-right: 13
+      text-align: left
+      text-wrap: true
+      height: 40
+    QtButton
+      id: premiumButton
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      size: 128 36
+      font: verdana-bold_11
+      text: Premium
+      text-offset: 12 0
+      @onClick: modules.game_rewardwall.rewardWallController:onClickSendStoreRewardWall()
+      UIWidget
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 9
+        size: 20 16
+        image-source: /images/ui/icon-premium
+        image-smooth: false
+        phantom: true
+
+  FlatPanel
+    id: infoPanel
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 9
+    height: 126
+    padding: 10
+    RewardWallLabel
+      id: message
+      anchors.fill: parent
+      text-align: topLeft
+      text-wrap: true
+    RewardWallLabel
+      id: free
+      anchors.left: parent.left
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      width: 278
+      text-align: topLeft
+      text-wrap: true
+    RewardWallLabel
+      id: premium
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      width: 278
+      text-align: topLeft
+      text-wrap: true
+
+  RewardWallSection
+    id: historyPanel
+    text: History
+    anchors.top: restingAreaPanel.top
+    anchors.bottom: infoPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    visible: false
+    TextListWithScroll
+      id: historyList
+      anchors.fill: parent
+
+  HorizontalSeparator
+    id: footerSeparator
+    anchors.top: infoPanel.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 9
+
+  Panel
+    id: footerPanel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    height: 24
+    GoldLabel2
+      id: footerGold1
+      anchors.left: parent.left
+      anchors.top: parent.top
+      size: 80 24
+    GoldLabel2
+      id: footerGold2
+      anchors.left: prev.right
+      anchors.top: parent.top
+      margin-left: 9
+      size: 80 24
+    MiniPremiumButton
+      id: instantRewardButton
+      anchors.left: prev.right
+      anchors.verticalCenter: parent.verticalCenter
+      margin-left: 9
+      @onClick: modules.game_rewardwall.rewardWallController:onClickbuyInstantRewardAccess()
+    QtButton
+      id: closeButton
+      anchors.right: parent.right
+      anchors.top: parent.top
+      size: 64 24
+      font: verdana-bold_11
+      text: Close
+      @onClick: modules.game_rewardwall.hide(true)
+    QtButton
+      id: historyButton
+      anchors.right: prev.left
+      anchors.top: parent.top
+      margin-right: 9
+      size: 76 24
+      font: verdana-bold_11
+      text: History
+      @onClick: modules.game_rewardwall.rewardWallController:onClickshowHistory()

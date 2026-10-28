@@ -85,6 +85,8 @@ function init()
         onPreyWildcardSelection = onPreyWildcardSelection
     })
 
+    -- Match the Prey tab font throughout this dialog without changing global fonts.
+    g_fonts.importFontWithSize('/fonts/ttf/verdana-bold.ttf', 11)
     preyWindow = g_ui.displayUI('prey')
     preyWindow:hide()
     g_keyboard.bindKeyDown('Ctrl+Y', toggle)
@@ -565,6 +567,7 @@ function onPreyLocked(slot, unlockState, timeUntilFreeReroll, wildcards)
         return
     end
     prey.title:setText('Locked')
+    prey.title:removeTooltip()
     prey.inactive:hide()
     prey.active:hide()
     prey.locked:show()
@@ -712,6 +715,13 @@ local function setChoosePreyButtonEnabled(button, enabled)
     end
 
     button:setImageSource(imagePath)
+    if enabled then
+        button:setImageClip({x = 0, y = 0, width = 46, height = 36})
+        button:setImageRect({x = 0, y = 0, width = 46, height = 36})
+    else
+        button:setImageClip({x = 0, y = 0, width = 44, height = 35})
+        button:setImageRect({x = 1, y = 1, width = 44, height = 35})
+    end
 end
 
 local function updateChoosePreyButtonState(slot)
@@ -932,9 +942,13 @@ function refreshRerollButtonState(slot)
 
         if canAfford then
             button:setImageSource('/images/game/prey/prey_reroll')
+            button:setImageClip({x = 0, y = 0, width = 60, height = 46})
+            button:setImageRect({x = 1, y = 0, width = 60, height = 46})
             button:enable()
         else
             button:setImageSource('/images/game/prey/prey_reroll_blocked')
+            button:setImageClip({x = 0, y = 0, width = 58, height = 45})
+            button:setImageRect({x = 2, y = 1, width = 58, height = 45})
             button:disable()
         end
     end
@@ -1185,38 +1199,6 @@ local function uncheckChildrenExcept(parent, except)
     end
 end
 
-function onItemBoxChecked(widget)
-    for _, slotId in ipairs({ 'slot1', 'slot2', 'slot3' }) do
-        local slotWidget = preyWindow[slotId]
-        if slotWidget and slotWidget.inactive then
-            local list = slotWidget.inactive.list
-            if list and isDescendantOf(widget, list) then
-                uncheckChildrenExcept(list, widget)
-                widget:setChecked(true)
-                local slotIndex = tonumber(slotId:match('slot(%d+)'))
-                if slotIndex then
-                    updateChoosePreyButtonState(slotIndex - 1)
-                end
-                return
-            end
-            local fullList = slotWidget.inactive.fullList
-            if fullList then
-                local entriesContainer = getFullListEntriesContainer(fullList) or fullList
-                if entriesContainer and isDescendantOf(widget, entriesContainer) then
-                    uncheckChildrenExcept(entriesContainer, widget)
-                    widget:setChecked(true)
-                    local slotIndex = tonumber(slotId:match('slot(%d+)'))
-                    if slotIndex then
-                        updateChoosePreyButtonState(slotIndex - 1)
-                    end
-                    return
-                end
-            end
-        end
-    end
-    widget:setChecked(true)
-end
-
 local function setWidgetTextToFit(widget, text, formatter)
     if not widget then
         return ''
@@ -1228,7 +1210,8 @@ local function setWidgetTextToFit(widget, text, formatter)
     local ellipsis = '...'
     local paddingLeft = widget.getPaddingLeft and widget:getPaddingLeft() or 0
     local paddingRight = widget.getPaddingRight and widget:getPaddingRight() or 0
-    local availableWidth = widget:getWidth() - paddingLeft - paddingRight
+    local textOffset = widget.getTextOffset and widget:getTextOffset() or {x = 0}
+    local availableWidth = widget:getWidth() - paddingLeft - paddingRight - math.max(textOffset.x, 0)
 
     if availableWidth <= 0 then
         local formatted = formatter(text)
@@ -1270,6 +1253,55 @@ local function setWidgetTextToFit(widget, text, formatter)
     local _, ellipsisFormatted = setAndCheck(ellipsis)
     widget:setText(ellipsisFormatted)
     return ellipsisFormatted
+end
+
+local function setSelectedPreyTitle(prey, name)
+    if not prey or not prey.title then
+        return
+    end
+
+    if name and name ~= '' then
+        setWidgetTextToFit(prey.title, name, function(value)
+            return tr('Selected: %s', value)
+        end)
+        prey.title:setTooltip(name)
+    else
+        prey.title:setText(tr('Select monster'))
+        prey.title:removeTooltip()
+    end
+end
+
+function onItemBoxChecked(widget)
+    for _, slotId in ipairs({ 'slot1', 'slot2', 'slot3' }) do
+        local slotWidget = preyWindow[slotId]
+        if slotWidget and slotWidget.inactive then
+            local list = slotWidget.inactive.list
+            if list and isDescendantOf(widget, list) then
+                uncheckChildrenExcept(list, widget)
+                widget:setChecked(true)
+                setSelectedPreyTitle(slotWidget, widget.preyCreatureName)
+                local slotIndex = tonumber(slotId:match('slot(%d+)'))
+                if slotIndex then
+                    updateChoosePreyButtonState(slotIndex - 1)
+                end
+                return
+            end
+            local fullList = slotWidget.inactive.fullList
+            if fullList then
+                local entriesContainer = getFullListEntriesContainer(fullList) or fullList
+                if entriesContainer and isDescendantOf(widget, entriesContainer) then
+                    uncheckChildrenExcept(entriesContainer, widget)
+                    widget:setChecked(true)
+                    local slotIndex = tonumber(slotId:match('slot(%d+)'))
+                    if slotIndex then
+                        updateChoosePreyButtonState(slotIndex - 1)
+                    end
+                    return
+                end
+            end
+        end
+    end
+    widget:setChecked(true)
 end
 
 local function buildRaceEntry(raceId)
@@ -1332,11 +1364,10 @@ updateRaceSelectionDisplay = function(slot)
 
     if prey.title then
         if entry then
-            setWidgetTextToFit(prey.title, entry.name, function(value)
-                return tr('Selected: %s', value)
-            end)
+            setSelectedPreyTitle(prey, entry.name)
         else
             prey.title:setText(tr('Select your prey creature'))
+            prey.title:removeTooltip()
         end
     end
 
@@ -1345,21 +1376,9 @@ updateRaceSelectionDisplay = function(slot)
         local creatureWidget = preview.creature
         local placeholder = preview.placeholder
         if entry and entry.outfit and creatureWidget then
-            local spriteSize = g_gameConfig.getSpriteSize()
-            if spriteSize <= 0 then
-                spriteSize = 32
-            end
-            local widgetSize = math.min(creatureWidget:getWidth(), creatureWidget:getHeight())
-            local referenceSize = math.max(entry.realSize or spriteSize * 2, spriteSize * 2)
-            local targetSize = widgetSize > 0 and widgetSize or spriteSize * 2
-            local scale = math.floor((targetSize / referenceSize) * 100)
-
-            if scale < 1 then
-                scale = 1
-            elseif scale > 100 then
-                scale = 100
-            end
-            creatureWidget:setCreatureSize(size)
+            local spriteSize = math.max(g_gameConfig.getSpriteSize(), 32)
+            local targetSize = math.min(creatureWidget:getWidth(), creatureWidget:getHeight())
+            creatureWidget:setCreatureSize(targetSize > 0 and targetSize or spriteSize * 2)
             creatureWidget:setOutfit(entry.outfit)
             creatureWidget:setVisible(true)
             if placeholder then
@@ -1686,7 +1705,8 @@ function onPreyActive(slot, currentHolderName, currentHolderOutfit, bonusType, b
     prey.inactive:hide()
     prey.locked:hide()
     prey.active:show()
-    prey.title:setText(currentHolderName)
+    setWidgetTextToFit(prey.title, currentHolderName)
+    prey.title:setTooltip(currentHolderName)
     local creatureAndBonus = prey.active.creatureAndBonus
     creatureAndBonus.creature:setOutfit(currentHolderOutfit)
     setTimeUntilFreeReroll(slot, timeUntilFreeReroll)
@@ -1751,7 +1771,7 @@ function onPreySelection(slot, names, outfits, timeUntilFreeReroll, wildcards, o
     selectedRaceEntryBySlot[slot] = nil
     selectedRaceWidgetBySlot[slot] = nil
     setPickSpecificPreyBonus(slot)
-    prey.title:setText(tr('Select monster'))
+    setSelectedPreyTitle(prey, nil)
     local rerollButton = prey.inactive.reroll and prey.inactive.reroll.button and
         prey.inactive.reroll.button.rerollButton
     if rerollButton then
@@ -1764,10 +1784,10 @@ function onPreySelection(slot, names, outfits, timeUntilFreeReroll, wildcards, o
     for i, name in ipairs(names) do
         local box = g_ui.createWidget('PreyCreatureBox', list)
         name = capitalFormatStr(name)
+        box.preyCreatureName = name
         box:setTooltip(name)
         box.creature:setOutfit(outfits[i])
-        local backgroundColor = (i % 2 == 1) and '#484848' or '#414141'
-        box:setBackgroundColor(backgroundColor)
+        box:setBackgroundColor('alpha')
     end
     prey.inactive.choose.choosePreyButton.onClick = function()
         for i, child in pairs(list:getChildren()) do
@@ -1813,7 +1833,7 @@ function onPreySelectionChangeMonster(slot, names, outfits, bonusType, bonusValu
     selectedRaceEntryBySlot[slot] = nil
     selectedRaceWidgetBySlot[slot] = nil
     setPickSpecificPreyBonus(slot)
-    prey.title:setText(tr('Select monster'))
+    setSelectedPreyTitle(prey, nil)
     local rerollButton = prey.inactive.reroll and prey.inactive.reroll.button and
         prey.inactive.reroll.button.rerollButton
     if rerollButton then
@@ -1826,10 +1846,10 @@ function onPreySelectionChangeMonster(slot, names, outfits, bonusType, bonusValu
     for i, name in ipairs(names) do
         local box = g_ui.createWidget('PreyCreatureBox', list)
         name = capitalFormatStr(name)
+        box.preyCreatureName = name
         box:setTooltip(name)
         box.creature:setOutfit(outfits[i])
-        local backgroundColor = (i % 2 == 1) and '#484848' or '#414141'
-        box:setBackgroundColor(backgroundColor)
+        box:setBackgroundColor('alpha')
     end
     prey.inactive.choose.choosePreyButton.onClick = function()
         for i, child in pairs(list:getChildren()) do
@@ -1867,6 +1887,7 @@ function onPreyListSelection(slot, races, nextFreeReroll, wildcards, option)
     end
 
     prey.title:setText(tr('Select your prey creature'))
+    prey.title:removeTooltip()
 
     clearFullListEntries(fullList)
 
