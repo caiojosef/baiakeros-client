@@ -1,4 +1,6 @@
 
+> **Equipe Baiakeros:** comece pelo [guia de clonagem, configuracao e trabalho em equipe](docs/trabalho-em-equipe.md).
+
 <h1>
   <img src="https://github.com/mehah/otclient/blob/main/data/images/clienticon.png?raw=true" width="32" alt="logo"/>
   OTClient - Redemption
