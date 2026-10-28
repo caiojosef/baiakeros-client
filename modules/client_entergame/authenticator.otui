@@ -1,0 +1,59 @@
+MainWindow
+  id: authenticatorWindow
+  !text: tr('Autenticador')
+  size: 300 150
+  @onEscape: EnterGame.cancelAuthenticator()
+  @onEnter: EnterGame.submitAuthenticator()
+
+  Label
+    id: instruction
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 26
+    text-wrap: true
+    text: Digite os 6 números do autenticador.
+
+  TextEdit
+    id: tokenEdit
+    anchors.top: instruction.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    height: 24
+    max-length: 64
+    @onEnter: EnterGame.submitAuthenticator()
+
+  Label
+    id: errorLabel
+    anchors.top: tokenEdit.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    height: 0
+    visible: false
+    color: #eeaa77
+    text-wrap: true
+
+  HorizontalSeparator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: confirmButton.top
+    margin-bottom: 8
+
+  Button
+    id: confirmButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    width: 70
+    text: Entrar
+    @onClick: EnterGame.submitAuthenticator()
+
+  Button
+    id: cancelButton
+    anchors.bottom: parent.bottom
+    anchors.right: confirmButton.left
+    margin-right: 8
+    width: 70
+    text: Cancelar
+    @onClick: EnterGame.cancelAuthenticator()

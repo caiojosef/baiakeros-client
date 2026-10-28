@@ -8,6 +8,14 @@ local calendarPrevButton
 local calendarNextButton
 local calendarCurrentDate
 local showOffWindow
+local showOffWidget
+local showOffSlideIndex = 1
+local showOffSlideEvent
+local showOffUsesDefault = true
+local SHOW_OFF_INTERVAL = 8000
+local scheduleRefreshEvent
+local scheduleReceivedAt
+local scheduleRefreshTicks = 0
 
 local eventSchedulerTimestamp
 local eventSchedulerCalendar
@@ -26,10 +34,68 @@ local BOSS_BONUS_TEXT = "Today's boosted boss: %s\n\n\tBoosted boss contain more
 local default_info = {
     {
         image = "/images/baiakeros/logo-panel",
-        Title = "Welcome to Baiakeros",
-        description = "Baiakeros-Global | Open PvP\nVIP benefits: +10% EXP, +5% loot and +5% skill gain.\nFace powerful bosses, conquer challenges and build your legacy."
+        Title = "Market / Mercado Pago",
+        description = "Conecte sua conta Mercado Pago.\nVenda itens no Market e receba em dinheiro."
+    },
+    {
+        image = "/images/baiakeros/logo-panel",
+        Title = "Helper / Cavebot incluso",
+        description = "Rotas, cura e ataques no mesmo cliente.\nConfigure sua caçada e evolua no seu ritmo."
+    },
+    {
+        image = "/images/baiakeros/logo-panel",
+        Title = "Party Hunt exclusivo",
+        description = "Mais de um personagem, uma equipe coordenada.\nOrganize seu grupo e domine as caçadas."
     },
 }
+
+local function stopShowOffSlides()
+    if showOffSlideEvent then
+        removeEvent(showOffSlideEvent)
+        showOffSlideEvent = nil
+    end
+end
+
+local function displayShowOffSlide()
+    local slide = default_info[showOffSlideIndex]
+    showOffWindow.title:setText(slide.Title .. "  (" .. showOffSlideIndex .. "/" .. #default_info .. ")")
+    showOffWidget:recursiveGetChildById('image'):setImageSource(slide.image)
+    showOffWidget:recursiveGetChildById('description'):setText(slide.description)
+end
+
+local function startShowOffSlides()
+    stopShowOffSlides()
+    if not showOffUsesDefault or bottomMenu:isHidden() then
+        return
+    end
+    showOffSlideEvent = scheduleEvent(function()
+        showOffSlideEvent = nil
+        showOffSlideIndex = (showOffSlideIndex % #default_info) + 1
+        displayShowOffSlide()
+        startShowOffSlides()
+    end, SHOW_OFF_INTERVAL)
+end
+
+local function stopScheduleRefresh()
+    if scheduleRefreshEvent then
+        removeEvent(scheduleRefreshEvent)
+        scheduleRefreshEvent = nil
+    end
+end
+
+local function startScheduleRefresh()
+    stopScheduleRefresh()
+    if bottomMenu:isHidden() then return end
+    scheduleRefreshEvent = scheduleEvent(function()
+        scheduleRefreshEvent = nil
+        refreshScheduleSummary()
+        scheduleRefreshTicks = scheduleRefreshTicks + 1
+        if scheduleRefreshTicks % 5 == 0 then
+            modules.client_entergame.EnterGame.postEventScheduler()
+        end
+        startScheduleRefresh()
+    end, 60000)
+end
 
 function init()
     g_ui.importStyle('calendar')
@@ -44,9 +110,14 @@ function init()
 
     showOffWindow = bottomMenu:recursiveGetChildById('showOffWindow')
     showOffWindow.title = showOffWindow:recursiveGetChildById('showOffWindowText')
+    showOffWidget = g_ui.createWidget('ShowOffWidget', showOffWindow:recursiveGetChildById('contentsPanel'))
+    showOffSlideIndex = 1
+    showOffUsesDefault = true
+    displayShowOffSlide()
     activeScheduleEvent = bottomMenu:recursiveGetChildById('activeScheduleEvent')
     upcomingScheduleEvent = bottomMenu:recursiveGetChildById('upcomingScheduleEvent')
     upcomingScheduleEvent:recursiveGetChildById('fill'):setOn(false)
+    startScheduleRefresh()
     eventSchedulerCalendarYearIndex = 1
     eventSchedulerCalendarMonth = tonumber(os.date("%m"))
 
@@ -54,42 +125,34 @@ function init()
     monsterOutfit = boostedWindow:recursiveGetChildById('creature')
     bossOutfit = boostedWindow:recursiveGetChildById('boss')
 
---  if not Services.status and default_info then
-    if default_info then
-        local scrollable = showOffWindow:recursiveGetChildById('contentsPanel')
-        local widget = g_ui.createWidget('ShowOffWidget', scrollable)
-        local description = widget:recursiveGetChildById('description')
-        local image = widget:recursiveGetChildById('image')
+    monsterOutfit:setVisible(false)
+    bossOutfit:setVisible(false)
 
-        math.randomseed(os.time())
-        local randomIndex = math.random(1, #default_info)
-        local randomItem = default_info[randomIndex]
-        showOffWindow.title:setText(randomItem.Title)
-        image:setImageSource(randomItem.image)
-        description:setText(randomItem.description)
-        monsterOutfit:setVisible(false)
-        bossOutfit:setVisible(false)
-        widget:resize(widget:getWidth(), math.max(image:getHeight(), description:getHeight()))
+    monsterImage = boostedWindow:recursiveGetChildById('monsterImage')
+    bossImage = boostedWindow:recursiveGetChildById('bossImage')
 
-        monsterImage = boostedWindow:recursiveGetChildById('monsterImage')
-        bossImage = boostedWindow:recursiveGetChildById('bossImage')
-
-        monsterImage:setImageSource("images/icon-questionmark")
-        monsterImage:setVisible(true)
-        bossImage:setImageSource("images/icon-questionmark")
-        bossImage:setVisible(true)
-    end
+    monsterImage:setImageSource("images/icon-questionmark")
+    monsterImage:setVisible(true)
+    bossImage:setImageSource("images/icon-questionmark")
+    bossImage:setVisible(true)
     if g_game.isOnline() then
         hide()
+    else
+        startShowOffSlides()
     end
 end
 
 function terminate()
+    stopShowOffSlides()
+    stopScheduleRefresh()
+    g_keyboard.unbindKeyPress('Escape', onClickCloseCalendar)
     bottomMenu:destroy()
     calendarWindow:destroy()
 end
 
 function hide()
+    stopShowOffSlides()
+    stopScheduleRefresh()
     bottomMenu:hide()
     bottomMenu:lower()
 
@@ -102,11 +165,19 @@ function show()
     bottomMenu:show()
     bottomMenu:raise()
     bottomMenu:focus()
+    startShowOffSlides()
+    refreshScheduleSummary()
+    startScheduleRefresh()
 end
 
 -- @ Store showoff
 function setShowOffData(data)
-    local widget = g_ui.createWidget('ShowOffWidget', showOffWindow)
+    if type(data) ~= 'table' or not data.image or not data.title or not data.description then
+        return
+    end
+    showOffUsesDefault = false
+    stopShowOffSlides()
+    local widget = showOffWidget
     local image = widget:recursiveGetChildById('image')
 
     if data.image and data.image:sub(1, 4):lower() == "http" then
@@ -118,7 +189,7 @@ function setShowOffData(data)
             image:setImageSource(path)
         end)
     else
-        image:setImage(data.image)
+        image:setImageSource(data.image)
     end
 
     local description = widget:recursiveGetChildById('description')
@@ -151,8 +222,52 @@ function onClickCloseCalendar()
 end
 
 function setEventsSchedulerTimestamp(time)
-    eventSchedulerTimestamp = time
-    calendarCurrentDate:setText(os.date("%Y-%m-%d, %H:%M CET", eventSchedulerTimestamp))
+    if not tonumber(time) then return end
+    eventSchedulerTimestamp = tonumber(time)
+    scheduleReceivedAt = g_clock.millis()
+    calendarCurrentDate:setText(os.date("!%d/%m/%Y, %H:%M", eventSchedulerTimestamp - 10800) .. ' Brasília')
+end
+
+local function upcomingAnnouncementStart(startdate)
+    -- Wednesday 00:00 before this occurrence, always in Brasilia (UTC-03).
+    local localStart = os.date('!*t', startdate - 10800)
+    local daysSinceWednesday = (localStart.wday - 4 + 7) % 7
+    return startdate - daysSinceWednesday * 86400 -
+        localStart.hour * 3600 - localStart.min * 60 - localStart.sec
+end
+
+local function addSummaryEvent(widget, info, active)
+    widget:addScheduleEvent({name = info.shortname or info.name,
+        description = info.description, active = '#484848ff',
+        inactive = '#414141ff', season = false}, active, onClickOnCalendar)
+    for _, row in ipairs(widget:getChildById('content'):getChildren()) do
+        row:getChildById('text'):setColor('#ffffffff')
+        row:getChildById('text'):setOpacity(1)
+    end
+end
+
+function refreshScheduleSummary()
+    if not activeScheduleEvent or not eventSchedulerCalendar then return end
+    local now = (eventSchedulerTimestamp or os.time()) +
+        (scheduleReceivedAt and math.floor((g_clock.millis() - scheduleReceivedAt) / 1000) or 0)
+    activeScheduleEvent:clearEvents()
+    upcomingScheduleEvent:clearEvents()
+    local nextStart
+    for _, info in ipairs(eventSchedulerCalendar) do
+        local active = info.startdate <= now and now < info.enddate
+        local upcoming = info.startdate > now and now >= upcomingAnnouncementStart(info.startdate)
+        if upcoming and (not nextStart or info.startdate < nextStart) then
+            nextStart = info.startdate
+        end
+        if active then
+            addSummaryEvent(activeScheduleEvent, info, true)
+        end
+    end
+    for _, info in ipairs(eventSchedulerCalendar) do
+        if info.startdate == nextStart then
+            addSummaryEvent(upcomingScheduleEvent, info, false)
+        end
+    end
 end
 
 function getCalendarEventWidgetByDay(day, month, year, weekOffset, forceLine)
@@ -193,7 +308,7 @@ function reloadEventsSchedulerCurrentPage()
         else
             previousMonth = previousMonth - 1
         end
-        if previousYearIndex >= 0 then
+        if previousYearIndex >= 1 then
             local previousDays = eventSchedulerYears[previousYearIndex][previousMonth]
             local amountsLeft = weekOffset
             local i = #previousDays
@@ -293,13 +408,14 @@ function reloadEventsSchedulerCalender()
     eventSchedulerYears = {}
     table.insert(eventSchedulerYears, createCalendar(tonumber(os.date("%Y", os.time()))))
     table.insert(eventSchedulerYears, createCalendar(tonumber(os.date("%Y", os.time())) + 1))
+    refreshScheduleSummary()
 
     if eventSchedulerCalendar == nil or #eventSchedulerCalendar == 0 then
         return
     end
 
     for _, info in ipairs(eventSchedulerCalendar) do
-        local days = getCalendarDays(info.startdate, info.enddate)
+        local days = getCalendarDays(info.startdate, info.enddate - 1)
         for index, day in ipairs(days) do
             table.insert(day, {
                 active = (info.colorlight .. "ff"),
@@ -315,25 +431,11 @@ function reloadEventsSchedulerCalender()
         end
     end
 
-    activeScheduleEvent:clearEvents()
-    local currentDay = getCalendarDays(os.time(), os.time())
-    if #currentDay > 0 then
-        for _, event in ipairs(currentDay[1]) do
-            activeScheduleEvent:addScheduleEvent(event, true, onClickOnCalendar)
-        end
-    end
-
-    upcomingScheduleEvent:clearEvents()
-    local nextDay = getCalendarDays(os.time() + 86400, os.time() + 86400)
-    if #nextDay > 0 then
-        for _, event in ipairs(nextDay[1]) do
-            upcomingScheduleEvent:addScheduleEvent(event, false, onClickOnCalendar)
-        end
-    end
+    refreshScheduleSummary()
 end
 
 function setEventsSchedulerCalender(calender)
-    eventSchedulerCalendar = calender
+    eventSchedulerCalendar = type(calender) == 'table' and calender or {}
     reloadEventsSchedulerCalender()
 end
 
@@ -362,88 +464,21 @@ function createCalendar(year)
 end
 
 function getCalendarDays(startTimestamp, endTimestamp)
-    local currentYear = tonumber(os.date("%Y", os.time()))
-    local startYear = tonumber(os.date("%Y", startTimestamp))
-    local endYear = tonumber(os.date("%Y", endTimestamp))
+    local currentYear = tonumber(os.date("%Y"))
     local daysInRange = {}
-
-    if startYear ~= currentYear and startYear ~= (currentYear + 1) then
-        return daysInRange
-    end
-
-    if endYear ~= currentYear and endYear ~= (currentYear + 1) then
-        return daysInRange
-    end
-
-    local startMonth = tonumber(os.date("%m", startTimestamp))
-    local startDay = tonumber(os.date("%d", startTimestamp))
-    local endMonth = tonumber(os.date("%m", endTimestamp))
-    local endDay = tonumber(os.date("%d", endTimestamp))
-
-    if startYear == currentYear then
-        for month = startMonth, endMonth do
-            local startLoop = 1
-            local endLoop = 31
-
-            if month == startMonth then
-                startLoop = startDay
-            end
-
-            if month == endMonth then
-                endLoop = endDay
-            end
-
-            if eventSchedulerYears[1][month] then
-                for day = startLoop, endLoop do
-                    if eventSchedulerYears[1][month][day] then
-                        table.insert(daysInRange, eventSchedulerYears[1][month][day])
-                    end
-                end
-            end
+    local date = os.date("*t", startTimestamp)
+    date.hour, date.min, date.sec = 0, 0, 0
+    local cursor = os.time(date)
+    while cursor <= endTimestamp do
+        local day = os.date("*t", cursor)
+        local yearIndex = day.year - currentYear + 1
+        local year = eventSchedulerYears[yearIndex]
+        if year and year[day.month] and year[day.month][day.day] then
+            table.insert(daysInRange, year[day.month][day.day])
         end
-    else
-        for month = startMonth, 12 do
-            local startLoop = 1
-            local endLoop = 31
-
-            if month == startMonth then
-                startLoop = startDay
-            end
-
-            if month == endMonth then
-                endLoop = endDay
-            end
-
-            if eventSchedulerYears[1][month] then
-                for day = startLoop, endLoop do
-                    if eventSchedulerYears[1][month][day] then
-                        table.insert(daysInRange, eventSchedulerYears[1][month][day])
-                    end
-                end
-            end
-        end
-        for month = 1, endMonth do
-            local startLoop = 1
-            local endLoop = 31
-
-            if month == startMonth then
-                startLoop = startDay
-            end
-
-            if month == endMonth then
-                endLoop = endDay
-            end
-
-            if eventSchedulerYears[2][month] then
-                for day = startLoop, endLoop do
-                    if eventSchedulerYears[2][month][day] then
-                        table.insert(daysInRange, eventSchedulerYears[2][month][day])
-                    end
-                end
-            end
-        end
+        day.day = day.day + 1
+        cursor = os.time(day)
     end
-
     return daysInRange
 end
 

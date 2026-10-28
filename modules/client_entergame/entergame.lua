@@ -17,8 +17,8 @@ local clientBox
 local protocolLogin
 local motdEnabled = true
 local tokenWindow
-local authErrorBox
-local hasAttemptedAuthenticator = false
+local authenticatorContext
+local loginRequestSequence = 0
 local savedAccountsConfig
 
 local SAVED_ACCOUNTS_FILE = '/saved-accounts.otml'
@@ -171,24 +171,13 @@ local function onError(protocol, message, errorCode)
         loadBox = nil
     end
 
-    if errorCode == 6 then
-        if hasAttemptedAuthenticator then
-            if authErrorBox then
-              authErrorBox:destroy()
-            end
-            authErrorBox = displayErrorBox(tr('Authentication Failed'), tr('The token you entered is incorrect.'))
-            connect(authErrorBox, {
-              onOk = function()
-                authErrorBox = nil
-                EnterGame.showAuthenticatorInput()
-              end
-            })
-        else
-            EnterGame.showAuthenticatorInput()
-        end
-
+    G.authenticatorToken = nil
+    G.sessionKey = nil
+    if tonumber(errorCode) == 6 then
+        EnterGame.showAuthenticatorInput(message)
         return
     end
+    EnterGame.destroyToken()
 
     if not errorCode then
         EnterGame.clearAccountFields()
@@ -589,6 +578,7 @@ function EnterGame.firstShow()
 end
 
 function EnterGame.terminate()
+    EnterGame.destroyToken()
     Keybind.delete("Misc.", "Change Character")
 
     disconnect(clientBox, {
@@ -781,6 +771,11 @@ function EnterGame.postShowCreatureBoost()
 end
 
 function EnterGame.show()
+    if tokenWindow then
+        tokenWindow:raise()
+        tokenWindow:getChildById('tokenEdit'):focus()
+        return
+    end
     if g_game.isOnline() or CharacterList.isVisible() then -- fix login quickly error (http post)
         return
     end
@@ -792,7 +787,6 @@ function EnterGame.show()
     enterGame:show()
     enterGame:raise()
     enterGame:focus()
-    hasAttemptedAuthenticator = false
 end
 
 function EnterGame.hide()
@@ -893,7 +887,7 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
     connect(loadBox, {
         onCancel = function(msgbox)
             loadBox = nil
-            G.requestId = 0
+            EnterGame.destroyToken()
             EnterGame.show()
         end
     })
@@ -923,8 +917,8 @@ function EnterGame.tryHttpLogin(clientVersion, httpLogin)
         end
     end
 
-    math.randomseed(os.time())
-    G.requestId = math.random(1)
+    loginRequestSequence = loginRequestSequence + 1
+    G.requestId = loginRequestSequence
 
     local http = LoginHttp.create()
     http:httpLogin(host, path, G.port, G.account, G.password, G.requestId, httpLogin, G.authenticatorToken)
@@ -956,7 +950,7 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
     connect(loadBox, {
         onCancel = function(msgbox)
             loadBox = nil
-            G.requestId = 0
+            EnterGame.destroyToken()
             EnterGame.show()
         end
     })
@@ -1012,7 +1006,9 @@ function EnterGame.loginSuccess(requestId, jsonSession, jsonWorlds, jsonCharacte
         subStatus = premiumUntil > os.time() and SubscriptionStatus.Premium or SubscriptionStatus.Free
     }
 
-    -- set session key
+    -- The server validates 2FA and returns its game ticket; never retain the submitted code.
+    EnterGame.destroyToken()
+    G.requestId = 0
     G.sessionKey = session.sessionkey
 
     onCharacterList(nil, characters, account)
@@ -1022,10 +1018,15 @@ function EnterGame.loginFailed(requestId, msg, result)
     if G.requestId ~= requestId then
         return
     end
+    G.requestId = 0
     onError(nil, msg, result)
 end
 
-function EnterGame.doLogin()
+function EnterGame.doLogin(authenticatorRetry)
+    if not authenticatorRetry then
+        EnterGame.destroyToken()
+        G.sessionKey = nil
+    end
     G.account = enterGame:getChildById('accountNameTextEdit'):getText()
     G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
     G.stayLogged = enterGame:getChildById('stayLoggedBox'):isChecked()
@@ -1208,162 +1209,88 @@ function EnterGame.disableMotd()
     motdEnabled = false
 end
 
-function EnterGame.showAuthenticatorInput()
-    if tokenWindow then
-        tokenWindow:destroy()
-        tokenWindow = nil
+-- Only the authenticated login endpoint decides whether this account requires 2FA.
+-- No secrets, recovery codes or account-security flags are fetched from the database by the client.
+local function setAuthenticatorMessage(message)
+    -- The initial production challenge repeats the instructions already above the input.
+    if message == 'Digite o código do Google Authenticator ou um código de recuperação.' then
+        message = nil
     end
-    
-    -- Create a custom message box with embedded text edit
-    tokenWindow = g_ui.createWidget('MessageBoxWindow', rootWidget)
-    tokenWindow.title = tokenWindow:getChildById('title')
-    tokenWindow.title:setText(tr('Two-Factor Authentication'))
-    
-    tokenWindow.content = tokenWindow:getChildById('content')
-    tokenWindow.content:setText(tr('Please enter a new, valid token:'))
-    tokenWindow.content:setColor('#c0c0c0')
-    tokenWindow.content:resizeToText()
-    -- Align content to the left instead of center
-    tokenWindow.content:breakAnchors()
-    tokenWindow.content:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-    tokenWindow.content:addAnchor(AnchorTop, 'parent', AnchorTop)
-    tokenWindow.content:setMarginLeft(15)
-    tokenWindow.content:setMarginTop(32)
-    
-    -- Add text edit field for token input
-    local tokenEdit = g_ui.createWidget('TextEdit', tokenWindow)
-    tokenEdit:setId('tokenEdit')
-    tokenEdit:addAnchor(AnchorHorizontalCenter, 'parent', AnchorHorizontalCenter)
-    tokenEdit:addAnchor(AnchorTop, 'content', AnchorBottom)
-    tokenEdit:setMarginTop(10)
-    tokenEdit:setMaxLength(8)
-    tokenEdit:setWidth(320)
-    tokenEdit:setHeight(16)
-    tokenEdit:setMarginLeft(15)
-    tokenEdit:setMarginRight(15)
-    tokenEdit:focus()
-    
-    -- Add horizontal separator
-    local separator = g_ui.createWidget('HorizontalSeparator', tokenWindow)
-    separator:setId('customSeparator')
-    separator:addAnchor(AnchorLeft, 'parent', AnchorLeft)
-    separator:addAnchor(AnchorRight, 'parent', AnchorRight)
-    separator:addAnchor(AnchorTop, 'tokenEdit', AnchorBottom)
-    separator:setMarginTop(10)
-    separator:setMarginLeft(15)
-    separator:setMarginRight(15)
-    
-    -- Reposition the holder to be below our custom separator
-    tokenWindow.holder = tokenWindow:getChildById('holder')
-    tokenWindow.holder:breakAnchors()
-    tokenWindow.holder:addAnchor(AnchorRight, 'customSeparator', AnchorRight)
-    tokenWindow.holder:addAnchor(AnchorLeft, 'customSeparator', AnchorLeft)
-    tokenWindow.holder:addAnchor(AnchorTop, 'customSeparator', AnchorBottom)
-    tokenWindow.holder:addAnchor(AnchorBottom, 'parent', AnchorBottom)
-    tokenWindow.holder:setMarginTop(12)
-    
-    local okCallback = function()
-        local token = tokenEdit:getText()
-        if not token or token:len() == 0 then
-            if authErrorBox then
-              authErrorBox:destroy()
-            end
-            authErrorBox = displayErrorBox(tr('Error'), tr('Token is required.'))
-            connect(authErrorBox, {
-              onOk = function()
-                authErrorBox = nil
-                if tokenWindow then
-                    tokenWindow:raise()
-                    tokenWindow:focus()
-                    tokenEdit:focus()
-                end
-              end
-            })
-            return
-        end
-        
-        hasAttemptedAuthenticator = true
-        
-        G.account = enterGame:getChildById('accountNameTextEdit'):getText()
-        G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
-        G.host = enterGame:getChildById('serverHostTextEdit'):getText()
-        G.port = tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
-        G.authenticatorToken = token
-        local clientVersion = tonumber(clientBox:getText())
-        local httpLogin = enterGame:getChildById('httpLoginBox'):isChecked()
-        
-        if tokenWindow then
-            tokenWindow:destroy()
-            tokenWindow = nil
-        end
-        
-        EnterGame.tryHttpLogin(clientVersion, httpLogin)
-    end
-    
-    local cancelCallback = function()
-        hasAttemptedAuthenticator = false
-        G.authenticatorToken = nil
-        if tokenWindow then
-            tokenWindow:destroy()
-            tokenWindow = nil
-        end
-        EnterGame.show()
-    end
-        
-    -- Add Cancel button (to the left of OK button)
-    local cancelButton = tokenWindow:addButton(tr('Cancel'), cancelCallback)
-    cancelButton:breakAnchors()
-    cancelButton:addAnchor(AnchorTop, 'parent', AnchorTop)
-    cancelButton:addAnchor(AnchorRight, 'parent', AnchorRight)
-    cancelButton:setWidth(45)
+    local label = tokenWindow:getChildById('errorLabel')
+    label:setText(message or '')
+    local hasMessage = message and message ~= ''
+    local height = hasMessage and math.max(14, label:getTextSize().height) or 0
+    label:setHeight(height)
+    label:setVisible(hasMessage and true or false)
+    tokenWindow:setHeight(150 + (hasMessage and height + 8 or 0))
+end
 
-    -- Add OK button (right side, added first)
-    local okButton = tokenWindow:addButton(tr('Ok'), okCallback)
-    okButton:breakAnchors()
-    okButton:addAnchor(AnchorTop, 'prev', AnchorTop)
-    okButton:addAnchor(AnchorRight, 'prev', AnchorLeft)
-    okButton:setMarginRight(10)
-    okButton:setWidth(40)
-    
-    -- Calculate window size based on content
-    local windowWidth = 350
-    local windowHeight = 28 + tokenWindow.content:getHeight() + 10 + tokenEdit:getHeight() + 10 + 2 + 12 + okButton:getHeight() + 12
-    
-    tokenWindow:setWidth(windowWidth)
-    tokenWindow:setHeight(windowHeight)
-    
-    -- Connect Enter and Escape keys
-    connect(tokenWindow, {
-        onEnter = okCallback,
-        onEscape = cancelCallback
-    })
-    
-    -- Connect text edit Enter key
-    connect(tokenEdit, {
-        onEnter = okCallback
-    })
+function EnterGame.showAuthenticatorInput(message)
+    EnterGame.destroyToken()
+    EnterGame.hide()
+    authenticatorContext = {
+        account = G.account, password = G.password, host = G.host, port = G.port,
+        clientVersion = G.clientVersion
+    }
+    tokenWindow = g_ui.displayUI('authenticator')
+    tokenWindow:lock()
+    setAuthenticatorMessage(message)
+    tokenWindow:raise()
+    tokenWindow:focus()
+    tokenWindow:getChildById('tokenEdit'):focus()
+end
+
+function EnterGame.submitAuthenticator()
+    if not tokenWindow or not authenticatorContext then return end
+    local tokenEdit = tokenWindow:getChildById('tokenEdit')
+    local token = trim(tokenEdit:getText())
+    local recovery = token:gsub('[%s%-]', '')
+    local validTotp = #token == 6 and token:match('^%d+$')
+    local validRecovery = #recovery == 20 and recovery:match('^[%x]+$')
+    if not validTotp and not validRecovery then
+        setAuthenticatorMessage('Digite 6 números ou um código de recuperação completo.')
+        tokenEdit:focus()
+        return
+    end
+
+    local context = authenticatorContext
+    if context.account ~= enterGame:getChildById('accountNameTextEdit'):getText()
+        or context.password ~= enterGame:getChildById('accountPasswordTextEdit'):getText()
+        or context.host ~= enterGame:getChildById('serverHostTextEdit'):getText()
+        or context.port ~= tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
+        or context.clientVersion ~= tonumber(clientBox:getText()) then
+        EnterGame.cancelAuthenticator()
+        return
+    end
+
+    -- Destroying the modal clears its text; the submitted code exists only for this request.
+    EnterGame.destroyToken()
+    G.authenticatorToken = token
+    EnterGame.doLogin(true)
+end
+
+function EnterGame.cancelAuthenticator()
+    EnterGame.destroyToken()
+    G.sessionKey = nil
+    if protocolLogin then protocolLogin:cancelLogin() end
+    EnterGame.show()
 end
 
 function EnterGame.doLoginWithToken()
-    local servers = Servers_init or {}
-    local serverData = servers[G.host]
-    if not (serverData and serverData.useAuthenticator) then
-        print('Authenticator token is disabled for this server.')
-        return
-    end
-    
+    -- A manual prompt is optional; automatic challenges do not depend on useAuthenticator.
     EnterGame.showAuthenticatorInput()
 end
 
 function EnterGame.destroyToken()
     if tokenWindow then
-      if tokenWindow.destroy then
+        tokenWindow:getChildById('tokenEdit'):clearText()
+        tokenWindow:unlock()
         tokenWindow:destroy()
-      end
-      tokenWindow = nil
-      hasAttemptedAuthenticator = false
-      G.authenticatorToken = nil
+        tokenWindow = nil
     end
+    authenticatorContext = nil
+    G.authenticatorToken = nil
+    G.requestId = 0
 end
 
 function ensableBtnCreateNewAccount()

@@ -1,6 +1,6 @@
 Panel
   id: background
-  image-source: /images/background
+  image-source: /images/background-baiakeros-graphite-left-1530-v2
   image-smooth: true
   image-fixed-ratio: true
   anchors.top: parent.top
@@ -13,7 +13,7 @@ Panel
   Panel
     id: siteIdentityShade
     anchors.fill: parent
-    background-color: #03111db0
+    background-color: #080b1010
     phantom: true
 
   UILabel

@@ -1,0 +1,28 @@
+{
+  "eventlist": [
+    {
+      "name": "Tier Weekend",
+      "shortname": "Tier +1",
+      "description": "Tier +1 durante o fim de semana, acumulando com o VIP. Sábado 10h até segunda 10h (Brasília).",
+      "startdate": 1792242000,
+      "enddate": 1792414800,
+      "colorlight": "#a95327",
+      "colordark": "#533023",
+      "displaypriority": 10,
+      "isseasonal": false,
+      "specialevent": 1
+    },
+    {
+      "name": "Tier Weekend",
+      "shortname": "Tier +1",
+      "description": "Tier +1 durante o fim de semana, acumulando com o VIP. Sábado 10h até segunda 10h (Brasília).",
+      "startdate": 1792846800,
+      "enddate": 1793019600,
+      "colorlight": "#a95327",
+      "colordark": "#533023",
+      "displaypriority": 10,
+      "isseasonal": false,
+      "specialevent": 1
+    }
+  ]
+}
