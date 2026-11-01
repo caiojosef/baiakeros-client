@@ -4288,14 +4288,29 @@ function resetAttackAfkTimer()
 end
 
 function checkAttackAfkTimeout()
-    if (not autoAttackEnabled and not attackRotationEnabled) or not g_game.isOnline() then
+    if not g_game.isOnline() then
         ATTACK_AFK.trackingSince = 0
         return false
     end
 
     local explorer = modules.game_baiakeros_helper_v2
-    if explorer and ((explorer.BaiakHelperExplorerV2 and explorer.BaiakHelperExplorerV2.isAutoExplorerActive()) or
-        (explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive())) then
+    local cavebot = explorer and explorer.BaiakHelperExplorerV2
+    local cavebotActive = cavebot and
+        (cavebot.isCombatAutomationActive or cavebot.isAutoExplorerActive)
+    -- An active, timed Cavebot session owns both combat switches. Reconcile
+    -- them before the disabled/idle gates, including while standing to fight.
+    if cavebotActive and cavebotActive() then
+        if not autoAttackEnabled then setAutoAttackEnabled(true) end
+        if not attackRotationEnabled then setAttackRotationEnabled(true) end
+        ATTACK_AFK.trackingSince = g_clock.millis()
+        return false
+    end
+
+    if not autoAttackEnabled and not attackRotationEnabled then
+        ATTACK_AFK.trackingSince = 0
+        return false
+    end
+    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive() then
         ATTACK_AFK.trackingSince = g_clock.millis()
         return false
     end
