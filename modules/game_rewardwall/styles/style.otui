@@ -123,7 +123,7 @@ imgBonuses < UIWidget
     margin-bottom: 1
     visible:false
   UIWidget
-    id:ditherpattern
+    id:premiumBanner
     image-source: /game_rewardwall/images/icon-banner-premium
     phantom: true
     anchors.top: parent.top
@@ -172,7 +172,7 @@ GoldLabel2 < UIWidget
     margin-left: 6
     margin-right: 7
     height: 18
-    font: verdana-bold_11
+    font: verdana-bold_10
     text-align: right
     phantom: true
 
