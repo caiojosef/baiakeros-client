@@ -8,7 +8,7 @@ dofile('environment.lua')
 
 -- The release packager replaces this baseline with the generated manifest
 -- revision. Do not increment it manually.
-CLIENT_UPDATE_REVISION = 39
+CLIENT_UPDATE_REVISION = 42
 g_app.setName("Baiakeros");
 g_app.setCompactName("baiakeros-global");
 g_app.setOrganizationName("Baiakeros");

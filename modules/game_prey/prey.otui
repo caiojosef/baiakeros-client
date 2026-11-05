@@ -1,5 +1,5 @@
 LockedPreyPanel < Panel
-  size: 212 306
+  size: 210 306
 
   NoCreaturePanel
     id: noCreature
@@ -86,7 +86,7 @@ NoStar < UIWidget
   image-source: /images/game/prey/prey_nostar
 
 NoCreaturePanel < Panel
-  size: 212 152
+  size: 210 152
 
   FlatPanel
     size: 124 124
@@ -190,7 +190,7 @@ NoCreaturePanel < Panel
     @onHoverChange: modules.game_prey.onHover(self)
 
 ActivePreyPanel < Panel
-  size: 212 326
+  size: 210 326
 
   CreatureAndBonus
     id: creatureAndBonus
@@ -274,7 +274,7 @@ ActivePreyPanel < Panel
     anchors.right: parent.right
 
 CreatureAndBonus < Panel
-  size: 212 152
+  size: 210 152
 
   UICreature
     id: creature
@@ -335,7 +335,7 @@ CreatureAndBonus < Panel
 
 BonusReroll < FlatPanel
   padding: 2
-  size: 56 92
+  size: 54 92
 
   UIButton
     id: selectPrey
@@ -360,7 +360,7 @@ BonusReroll < FlatPanel
     margin-top: 2
 
 InactivePreyPanel < Panel
-  size: 212 326
+  size: 210 326
 
   ChoosePrey
     id: choose
@@ -485,7 +485,7 @@ InactivePreyPanel < Panel
       pixel-scroll: true
 
 ChoosePrey < FlatPanel
-  size: 56 92
+  size: 54 92
   padding: 2
 
   UIButton
@@ -660,13 +660,13 @@ PreyCreatureListItem < UICheckBox
     border-color: alpha
 
 SlotPanel < Panel
-  size: 228 334
+  size: 218 334
   image-source: /images/ui/window
   image-border: 25
   padding-top: 2
   padding-bottom: 6
-  padding-left: 8
-  padding-right: 8
+  padding-left: 4
+  padding-right: 4
 
   Label
     id: title
@@ -699,9 +699,12 @@ MainWindow
   id: preyWindow
   text: Prey
   font: verdana-bold_11
-  size: 744 574
+  size: 698 560
   @onEscape: modules.game_prey.hide()
-  padding: 20
+  padding-top: 28
+  padding-left: 16
+  padding-right: 16
+  padding-bottom: 12
   @onHoverChange: modules.game_prey.onHover(self)
 
   FlatPanel
@@ -716,7 +719,7 @@ MainWindow
       anchors.left: parent.left
       anchors.top: parent.top
       anchors.bottom: parent.bottom
-      width: 352
+      width: 333
       checked: true
       text: Prey Creatures
       text-offset: 18 0
@@ -767,13 +770,13 @@ MainWindow
     id: slot2
     anchors.verticalCenter: prev.verticalCenter
     anchors.left: prev.right
-    margin-left: 11
+    margin-left: 7
 
   SlotPanel
     id: slot3
     anchors.verticalCenter: prev.verticalCenter
     anchors.left: prev.right
-    margin-left: 11
+    margin-left: 7
 
   FlatPanel
     id: descriptionBackground

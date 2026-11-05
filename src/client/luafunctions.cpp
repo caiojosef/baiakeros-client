@@ -830,6 +830,8 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Item>("getTooltip", &Item::getTooltip);
     g_lua.bindClassMemberFunction<Item>("getDurationTime", &Item::getDurationTime);
     g_lua.bindClassMemberFunction<Item>("getTier", &Item::getTier);
+    g_lua.bindClassMemberFunction<Item>("getRarity", &Item::getRarity);
+    g_lua.bindClassMemberFunction<Item>("setRarity", &Item::setRarity);
     g_lua.bindClassMemberFunction<Item>("getCharges", &Item::getCharges);
     g_lua.bindClassMemberFunction<Item>("getContentCount", &Item::getContentCount);
     g_lua.bindClassMemberFunction<Item>("getQuickLootCategoryFlags", &Item::getQuickLootCategoryFlags);

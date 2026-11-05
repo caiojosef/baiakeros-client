@@ -1,3 +1,12 @@
+local function restoreItemBorder(widget)
+    widget:setBorderWidth(0)
+    local item = widget:getItem()
+    local rarity = item and item.getRarity and item:getRarity() or 0
+    if ItemsDatabase and (rarity > 0 or widget.baiakerosRarityState) then
+        ItemsDatabase.setRarityItem(widget, item)
+    end
+end
+
 function UIItem:onDragEnter(mousePos)
     if self:isVirtual() then
         return false
@@ -32,13 +41,13 @@ function UIItem:onDragLeave(droppedWidget, mousePos)
         g_mouse.popCursor('target')
     end
     UIDragIcon:hide()
-    self:setBorderWidth(0)
+    restoreItemBorder(self)
     self.hoveredWho = nil
     return true
 end
 
 function UIItem:onDrop(widget, mousePos, forced)
-    self:setBorderWidth(0)
+    restoreItemBorder(self)
 
     if not self:canAcceptDrop(widget, mousePos) and not forced then
         return false
@@ -94,7 +103,7 @@ end
 
 function UIItem:onDestroy()
     if self == g_ui.getDraggingWidget() and self.hoveredWho then
-        self.hoveredWho:setBorderWidth(0)
+        restoreItemBorder(self.hoveredWho)
     end
 
     if self:isVirtual() then
@@ -125,7 +134,7 @@ function UIItem:onHoverChange(hovered)
             self:setBorderWidth(1)
             draggingWidget.hoveredWho = self
         else
-            self:setBorderWidth(0)
+            restoreItemBorder(self)
             draggingWidget.hoveredWho = nil
         end
     end
@@ -244,8 +253,17 @@ end
 
 function UIItem:onItemChange()
     local tooltip = ""
+    local item = self:getItem()
+    local rarity = item and item.getRarity and item:getRarity() or 0
+    if ItemsDatabase and (rarity > 0 or self.baiakerosRarityState) then
+        ItemsDatabase.setRarityItem(self, item)
+    end
     if self:getItem() and self:getItem():getTooltip():len() > 0 then
         tooltip = self:getItem():getTooltip()
+    end
+    if rarity > 0 and ItemsDatabase and ItemsDatabase.equipmentRarities[rarity] then
+        local name = ItemsDatabase.equipmentRarities[rarity].name
+        tooltip = (tooltip ~= "" and tooltip .. "\n" or "") .. name .. " - " .. rarity .. (rarity == 1 and " attribute." or " attributes.") .. " Use Look to inspect bonuses."
     end
     self:setTooltip(tooltip)
 end
