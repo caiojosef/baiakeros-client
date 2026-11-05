@@ -5,7 +5,7 @@ scheduleEvent(function()
         window:setSize({width=480,height=200})
         window:setText('Baiakeros - Raridades de equipamento')
         window:show()
-        local names={'Comum','Raro','Epico','Ultra'}
+        local names={'Common','Rare','Epic','Ultra'}
         local colors={'#4299ffff','#ac66ffff','#ffd447ff','#ff4545ff'}
         local function hex(c) return string.format('#%02x%02x%02x%02x',c.r,c.g,c.b,c.a) end
         for rarity=1,4 do

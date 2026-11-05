@@ -254,7 +254,7 @@ function UIItem:onItemChange()
     end
     if rarity > 0 and ItemsDatabase and ItemsDatabase.equipmentRarities[rarity] then
         local name = ItemsDatabase.equipmentRarities[rarity].name
-        tooltip = (tooltip ~= "" and tooltip .. "\n" or "") .. name .. " - " .. rarity .. " atributo(s). Use Look para ver os bonus."
+        tooltip = (tooltip ~= "" and tooltip .. "\n" or "") .. name .. " - " .. rarity .. (rarity == 1 and " attribute." or " attributes.") .. " Use Look to inspect bonuses."
     end
     self:setTooltip(tooltip)
 end

@@ -1,75 +1,103 @@
-# Raridades — Baiakeros Tibia nativo e OTC
+# Raridades e atributos — Baiakeros Tibia nativo / OTC
 
-Definicao atualizada em 05/11/2026 conforme a conversa com Caio. Exclusivo do servidor Canary de Tibia e do OTC Baiakeros. Nao envolve Idler/mobile.
+Atualizado em 05/11/2026: regra de atributos v2. Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. O Quente nao e alterado por esta implementacao local.
 
-## Fluxo
+## Raridades e loot
 
-Monstro ou boss sorteia seu loot normalmente. Cada equipamento elegivel efetivamente criado recebe uma unica raridade e exatamente o numero de atributos dela. Nao existe resultado normal sem raridade para novos equipamentos elegiveis. A raridade fica na instancia; mover, equipar, trocar ou relogar nao sorteia novamente. Itens existentes nao sao reclassificados.
-
-| Raridade | Cor | Atributos | Chance condicional ao equipamento cair |
+| Raridade exibida | Cor | Atributos | Chance apos o equipamento cair |
 |---|---|---:|---:|
-| Comum | Azul | 1 | 40% |
-| Raro | Roxo | 2 | 30% |
-| Epico | Amarelo | 3 | 20% |
+| Common | Azul | 1 | 40% |
+| Rare | Roxo | 2 | 30% |
+| Epic | Amarelo | 3 | 20% |
 | Ultra | Vermelho | 4 | 10% |
 
-Chances altas para teste, apresentadas e confirmadas na conversa junto da escolha de atributos por equipamento. Loot rate, VIP e contribuicao de boss continuam afetando a queda normal; nao multiplicam a raridade novamente. Exemplo: se um Troll soltar leather boots, aquela unidade recebe um dos quatro tipos e seus bonus, sem criar outra bota.
+O monstro/boss sorteia seu loot normal. Equipamento elegivel novo que cair recebe exatamente uma raridade; nao ha resultado normal sem raridade. Bonus VIP, loot rate e contribuicao continuam afetando a queda normal, sem multiplicar a raridade novamente. As chances sao altas para testes locais.
 
-## Elegiveis
+Elegiveis: helmet, armor, legs, boots, shield, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva suas regras de municao e capacidade. Excluir rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, consumiveis e produtos de criatura. Loja/NPC/comando/quest nao reclassificam automaticamente os itens.
 
-Helmet, armor, legs, boots, shield, armas melee/distance, wand/rod e **quiver**. Quiver e a excecao entre containers: preserva capacidade e regras das municoes.
+Atributos seguem o equipamento e suas restricoes, nao a vocacao de quem matou. Requisitos originais de vocacao, level e elemento continuam valendo. O primeiro atributo e basico; demais atributos sao sorteados sem repeticao no mesmo grupo.
 
-Excluidos: rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, produtos de criatura, consumiveis e objetos sem funcao de equipamento. Itens de NPC, loja, comandos ou quest nao sao convertidos automaticamente. O filtro opera no loot normal e nas recompensas aleatorias de bosses.
+## Grupos de bonus
 
-## Atributos definidos pelo equipamento
+Os nomes abaixo sao os textos efetivamente exibidos no jogo, em ingles.
 
-A vocacao de quem matou nao muda o resultado. Permanecem os requisitos originais de vocacao, level, elemento e uso. O primeiro atributo e basico; os adicionais sao distintos, sorteados no grupo do equipamento.
-
-| Equipamento | Atributo basico | Adicionais possiveis |
+| Equipamento | Bonus basico | Bonus adicionais possiveis |
 |---|---|---|
-| Sword/axe/club | Ataque do item | Skill da arma, vida, mana, armadura |
-| Distance | Ataque do item | Distance, vida, mana, armadura |
-| Wand/rod | Magic level | Mana, vida, shielding |
-| Armor restrita a sorcerer/druid | Armadura | Magic level, mana, vida, shielding |
-| Armor restrita a paladin | Armadura | Distance, vida, mana, shielding |
-| Armor exclusiva de monk | Armadura | Fist fighting, vida, mana, shielding |
-| Shield | Defesa | Shielding, vida, mana, armadura |
-| Quiver | Distance | Vida, mana, shielding |
-| Armor generica ou compartilhada, inclusive knights | Armadura | Vida, mana, shielding |
+| Rod / wand | Magic Level | Maximum Mana; Offensive Rune Cooldown Reduction; Offensive Spell Cooldown Reduction |
+| Helmet exclusivo de mage | Magic Level | Maximum Mana; Maximum Health; Armor |
+| Armor / legs exclusivos de mage | Armor | Magic Level; Maximum Mana; Maximum Health |
+| Sword / axe / club | Attack | Sword/Axe/Club Fighting correspondente; Attack Speed; Maximum Health; Maximum Mana |
+| Bow / crossbow / distance | Attack | Distance Fighting; Attack Speed; Maximum Health; Maximum Mana |
+| Wraps de monk | Attack | Fist Fighting; Attack Speed; Maximum Health; Maximum Mana |
+| Quiver | Distance Fighting | Maximum Mana; Maximum Health; Attack Speed |
+| Shield | Defense | Shielding; Maximum Health; Armor |
+| Boots | Movement Speed | Maximum Health; Maximum Mana; Armor |
+| Armor / helmet / legs exclusivos de paladin | Armor | Distance Fighting; Maximum Health; Maximum Mana |
+| Armor / helmet / legs exclusivos de monk | Armor | Fist Fighting; Maximum Health; Maximum Mana |
+| Armor / helmet / legs genericos, de knight ou com restricoes compartilhadas | Armor | Maximum Health; Maximum Mana; Shielding |
 
-Valores iniciais por atributo: ataque +1 ate 5% do ataque base, arredondado para baixo com minimo +1; armadura/defesa +1 a +2; vida maxima +10 a +30; mana maxima +15 a +40; skill/shielding/magic level +1. Um Comum tem apenas o basico, Raro tem 2 atributos, Epico 3 e Ultra 4. Armadura generica nao ganha uma skill ofensiva de outra vocacao.
+Rods/wands novos nao sorteiam Shielding ou atributos fisicos. Armas fisicas nao sorteiam Magic Level nem reducao de cooldown de runa. Equipamento compartilhado entre vocacoes nao e classificado automaticamente como equipamento de mage apenas por listar sorcerer/druid entre varias vocacoes.
 
-Magic level usa as formulas nativas do Canary. Nao ha bonus novo de velocidade de ataque/runas, cooldown ou amplificacao elemental global nesta primeira versao. Forge tier e imbuements continuam separados. Limites por instancia sao conferidos tambem no C++.
+## Progressao por raridade e nivel minimo do equipamento
 
-## Persistencia, visual e vendas
+Bandas de nivel minimo de uso: 0–49 (banda 0), 50–149 (1), 150–299 (2), 300+ (3). Isso e separado de forge tier, nivel do personagem e quantidade de atributos. Nunca alterar level minimo do item para aplicar raridade.
 
-Salvar raridade, versao, perfil, origem e bonus na instancia, com nome e descricao legiveis. Aplicar o sorteio ao gerar a recompensa, antes da coleta. Os mesmos dados acompanham corpse, backpack, quiver, loot pouch, reward chest, depot e troca direta quando o motor preserva a instancia.
+| Atributo, antes do ajuste por nivel | Common | Rare | Epic | Ultra |
+|---|---:|---:|---:|---:|
+| Magic Level / Fighting / Shielding | +1 | +1 | +1 a +2 | +2 a +3 |
+| Maximum Health | +5 a +10 | +10 a +20 | +15 a +30 | +25 a +40 |
+| Maximum Mana | +10 a +15 | +15 a +25 | +25 a +40 | +40 a +60 |
+| Armor / Defense | +1 | +1 a +2 | +2 a +3 | +3 a +4 |
+| Movement Speed | +1 a +2 | +2 a +3 | +3 a +4 | +4 a +5 |
+| Attack | 1–2% do ataque base, minimo +1 | 2–3%, minimo +1 | 3–4%, minimo +1 | 4–5%, minimo +1 |
+| Attack Speed / Offensive Cooldown Reduction | Nao aparece no bonus basico Common | +0,50% a +1,00% | +1,00% a +1,50% | +1,50% a +2,00% |
 
-O OTC recebe raridade real por instancia e mostra fundo/moldura azul, roxo, amarelo ou vermelho; preco medio nao determina essa raridade. Ao esvaziar ou trocar o slot, limpar a cor anterior. Objetos sem raridade conservam a decoracao de preco existente.
+Attack e aplicado e exibido em pontos inteiros reais, depois de arredondar para baixo. Vida e mana recebem +5 por banda em ambos os extremos do intervalo. Percentuais recebem +0,10 ponto percentual por banda. Armor, Defense e Movement Speed recebem +1 em bandas 2 e 3. Em Epic/Ultra de banda 2 ou 3, skill/magic level usa o extremo superior (Epic +2; Ultra +3). Os bonus so sao considerados quando o atributo faz parte do grupo e foi sorteado.
 
-Raro/Epico/Ultra ficam protegidos de venda NPC por ID e venda em lote nesta primeira versao, sem opcao de desbloqueio ainda. Comum pode ser vendido pelo preco original. O mercado nativo de commodities fica bloqueado para raridades porque recria itens pelo tipo; o Market real que serializa a instancia e a troca direta devem preservar atributos e precisam de teste de transferencia. Nao aumentar pagamentos NPC por raridade.
+Exemplo valido de Rare rod de nivel baixo:
 
-## Compatibilidade e ambiente
+> Rare: +1 Magic Level; +17 Maximum Mana.
 
-Novo OTC anuncia bkrarity1 no login. Apenas com essa capacidade o servidor negocia o recurso 136 e envia um byte extra de raridade por item. Clientes antigos mantem o layout anterior. O cliente novo so le esse byte quando o servidor negocia o recurso. Isso exige recompilar servidor e OTC; Lua sozinha nao implementa o visual por instancia.
+Exemplo de Epic wand de nivel 150:
 
-Implementacao e testes locais em branches proprias, sem alterar o Quente. A fonte do servidor e /home/baiakeros/baiakeros na WSL Ubuntu-24.04; o cliente e G:\otserv\otclient-main. Nenhuma fonte do Idler e usada.
+> Epic: +2 Magic Level; +40 Maximum Mana; +1.20% Offensive Spell Cooldown Reduction.
 
-## Validacao necessaria
+Exemplo de Ultra rod de nivel 300+ (quatro atributos):
 
-Testar limites das chances, 1/2/3/4 atributos sem repeticao, quiver inclusa e municoes excluidas, grupos de vocacao, nao rerrolar, loot normal e boss, serializacao, equipar/desequipar sem acumular, transferencia e protecao de venda. Simular pelo menos 100 mil equipamentos. Conferir quatro cores no mesmo item e limpeza do slot. Registrar apenas as verificacoes realmente executadas; balanceamento e gameplay completos continuam dependendo de testes reais.
-## Resultado da implementacao local — 05/11/2026
+> Ultra: +3 Magic Level; +70 Maximum Mana; +2.00% Offensive Rune Cooldown Reduction; +1.90% Offensive Spell Cooldown Reduction.
 
-- Servidor Canary e OTC compilados com sucesso, em branches dudantas/item-rarity-20261105.
-- Simulacao de 100.000 equipamentos: 40.041 Comuns, 29.814 Raros, 20.119 Epicos e 10.026 Ultras.
-- Testados elegibilidade de quiver, grupos de atributos, quantidade exata por raridade, nao rerrolar e rotas de loot comum/boss.
-- Teste nativo com 20 itens reais passou para boots, wand, bow, quiver e shield, incluindo clone, atributos serializados e transferencia para container.
-- Conta/personagem descartaveis locais validaram equipar e desequipar vida, mana, shielding, magic level e distance de quiver; os valores voltaram ao normal ao remover, sem acumular.
-- Dois logins reais validaram negociacao do recurso 136, recebimento do Ultra equipado no OTC e preservacao byte a byte dos atributos apos save/load do banco.
-- Teste visual nativo passou nas quatro cores, copia da instancia e limpeza do fundo do slot. Hook central de UIItem e slots de inventario aplicam o visual em qualquer janela que receba a instancia.
-- Regressoes de Warzone, entrega de itens e comandos de manutencao passaram.
-- Conta, personagem, equipamento e credenciais descartaveis foram removidos ao terminar. Scripts temporarios sairam dos diretorios de autoload.
-- Servidor local online com o novo executavel; environment.lua do OTC segue localhost. start.sh/recompile.sh nao foram alterados por esta entrega. Quente e Idler nao foram alterados.
-- Nao foi feito teste de combate completo contra todos os bosses nem de compra/venda/cancelamento em todos os mercados. Mercado de commodities bloqueia itens com raridade; Market real usa serializacao existente e requer validacao funcional antes de publicar.
+## Cooldowns e velocidade no Canary
 
-Captura visual: tools/rarity-client-profile-20261105/rarity-colors.png. Teste reproduzivel do servidor: tests/lua/item_rarity_spec.lua com LuaJIT. Teste de itens virtuais: tools/local-test/item_rarity.lua (fora do autoload). Teste visual OTC: tests/native/item_rarity.lua.
+Percentuais sao armazenados em basis points inteiros (100 = 1%). O servidor agrega somente equipamentos nos slots de combate, nao itens guardados em backpack/depot. Caps totais de raridade: 3% Attack Speed; 5% reducao de cooldown ofensivo de runas; 5% reducao de cooldown ofensivo de instant spells.
+
+Rune e instant spell sao distinguidos pelo proprio motor. A reducao e aplicada a cooldown individual e ao grupo principal Attack no caminho nativo de lancamento. Nao cancela condicoes de cooldown ja existentes, nao permite usar uma runa durante bloqueio e nao remove os limites de movimento/uso de itens. Cura, suporte e grupos secundarios continuam com suas regras normais.
+
+Os modificadores de Wheel, proficiency e VIP sao calculados antes da reducao de raridade. Preservar o piso de 50% do cooldown individual base apos a taxa nativa. O grupo Attack e o ataque basico nao sao reduzidos abaixo de 1000 ms por raridade; se a regra nativa ja for menor, raridade nao reduz esse intervalo. Nenhum percentual novo e aplicado a cura ou suporte.
+
+Exemplo: 2.000 ms com 1% vira 1.980 ms; com 2,30% vira 1.954 ms. Uma spell de 6.000 ms com 2,30% vira 5.862 ms, desde que o piso nativo permita. Nao confundir percentual de reducao de intervalo com o mesmo aumento percentual exato de DPS.
+
+## Itens existentes e texto em ingles
+
+Nome de item: [Common], [Rare], [Epic] ou [Ultra] antes do nome original. Descricao: Common/Rare/Epic/Ultra: seguido dos atributos em ingles. Tooltip do OTC tambem e ingles.
+
+Itens da versao 1 mantem todos os numeros sorteados, mesmo quando um atributo antigo ja nao faz parte do grupo novo. Ao usar Look/Look in Trade, o servidor converte apenas nome e descricao para ingles. Nao aumenta atributos, nao troca Shielding antigo por outro bonus e nao rerrola. O detalhe original do item e preservado antes da linha de raridade. A traducao e idempotente.
+
+## Persistencia, visual e economia
+
+Salvar raridade, versao da regra, perfil, banda de nivel, origem e atributos na instancia. O resultado e gerado com a criacao do loot/reward, antes de retirar. Transferir, equipar ou relogar nao sorteia novamente. Equipar aplica bonus reais e desequipar os remove, inclusive para equipamentos sem MoveEvent e quivers.
+
+OTC recebe a raridade real por instancia, independente do preco medio. Exibe fundo e borda azul/roxa/amarela/vermelha e limpa a cor ao trocar/esvaziar o slot. Negociacao bkrarity1/recurso 136 mantem o pacote anterior para clientes antigos.
+
+Rare/Epic/Ultra sao protegidos contra venda NPC em lote ou por ID nesta primeira versao; Common pode ser vendido pelo preco original. O mercado nativo de commodities bloqueia raridades pois recria por tipo. Troca direta e Market real usam a serializacao da instancia. Nao aumentar o pagamento NPC por raridade.
+
+## Testes e fontes
+
+Fonte local: WSL Ubuntu-24.04, /home/baiakeros/baiakeros. OTC: G:\otserv\otclient-main. Branches: dudantas/item-rarity-20261105. Preservar localhost, start.sh e recompile.sh. Publicacao no Quente precisa de solicitacao explicita.
+
+Testes v2: 192 combinacoes de grupos/ranks/bandas; intervalos crescentes; grupos de mage e armas fisicas; quiver; loot normal/boss/nested; traducao exata do exemplo Rare sem mudar numeros; idempotencia; 100 mil sorteios. Teste C++ cobre reducoes reais em milissegundos, teto de 5%, pisos, valores negativos/corrompidos e intervalos pequenos.
+
+Compilacao release do servidor v2 concluida. Validacao nativa com personagem descartavel confirmou equip/de-equip de boots, quiver e wand, aplicacao e remocao de vida/mana/skills/magic level/movement speed, descricao em ingles e preservacao exata dos atributos em dois logins reais com save/load no banco. OTC confirmou o recurso 136 e a instancia Ultra recebida. A conta, personagem, equipamentos e credenciais temporarios foram removidos.
+
+Cooldowns foram verificados por testes C++ de calculo e integracao no caminho nativo; medicao de casts em combate e balanceamento de gameplay/mercados ainda precisam de testes antes de publicar no Quente.
+
+Reproduzir testes de regras a partir da raiz do servidor: luajit tests/lua/item_rarity_spec.lua. Teste C++ independente: g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test && /tmp/rarity-balance-test. Nao compilar esse teste com -DNDEBUG, pois usa assert.
