@@ -90,6 +90,21 @@ OTC recebe a raridade real por instancia, independente do preco medio. Exibe fun
 
 Rare/Epic/Ultra sao protegidos contra venda NPC em lote ou por ID nesta primeira versao; Common pode ser vendido pelo preco original. O mercado nativo de commodities bloqueia raridades pois recria por tipo. Troca direta e Market real usam a serializacao da instancia. Nao aumentar o pagamento NPC por raridade.
 
+## Criacao administrativa com /i
+
+O comando continua exclusivo de GOD. Sem parametro de raridade, preserva a criacao original e o tier da Forge: `/i item, quantidade, tier`. O parametro de raridade e opcional e usa nomes, sem confundir os numeros da Forge com ranks Common/Rare/Epic/Ultra.
+
+| Exemplo | Resultado |
+|---|---|
+| `/i 53226` | Stellar Moonsilver Bow original, sem raridade |
+| `/i 53226, 1, ultra` | Um bow Ultra com quatro bonus sorteados no grupo de bow |
+| `/i 53226, 1, rare` | Um bow Rare com dois bonus sorteados |
+| `/i 53226, 5, random` | Cinco bows; raridade e bonus sorteados individualmente |
+| `/i 53226, 1, 3, ultra` | Um bow Forge tier 3 e raridade Ultra |
+| `/i 39150, 1, epic` | Uma quiver Epic com tres bonus sorteados |
+
+Aceita common, rare, epic, ultra e random; aliases comum, raro, epico/épico e aleatorio/aleatório. A raridade fixa somente o rank: selecao de atributos e valores continuam aleatorios dentro das regras por equipamento/nivel. Atributo basico do grupo continua garantido. Nao altera itens existentes nem chances do loot normal. Rejeita raridades desconhecidas e itens inelegiveis antes de criar qualquer unidade. Cada item do lote recebe sua propria rolagem. Preserva entrega em backpacks/containers, fallback no chao, stacks, cargas, fluidos, tier da Forge e o atalho Mini Obelisk.
+
 ## Testes e fontes
 
 Fonte local: WSL Ubuntu-24.04, /home/baiakeros/baiakeros. OTC: G:\otserv\otclient-main. Branches: dudantas/item-rarity-20261105. Preservar localhost, start.sh e recompile.sh. Publicacao no Quente precisa de solicitacao explicita.
@@ -101,3 +116,5 @@ Compilacao release do servidor v2 concluida. Validacao nativa com personagem des
 Cooldowns foram verificados por testes C++ de calculo e integracao no caminho nativo; medicao de casts em combate e balanceamento de gameplay/mercados ainda precisam de testes antes de publicar no Quente.
 
 Reproduzir testes de regras a partir da raiz do servidor: luajit tests/lua/item_rarity_spec.lua. Teste C++ independente: g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test && /tmp/rarity-balance-test. Nao compilar esse teste com -DNDEBUG, pois usa assert.
+
+Testes adicionais de /i: sintaxe antiga e nova, combinacao Forge/raridade, lote por instancia, nomes/aliases, random, rejeicao sem criar item, falha de rolagem sem entregar item normal e preservacao do Mini Obelisk. API valida ranks administrativos e impede rerrolar itens existentes; 192 combinacoes e 100 mil sorteios de loot continuam passando.
