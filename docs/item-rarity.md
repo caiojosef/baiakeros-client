@@ -1,6 +1,6 @@
 # Raridades e atributos — Baiakeros Tibia nativo / OTC
 
-Atualizado em 05/11/2026: regra de atributos v2. Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. O Quente nao e alterado por esta implementacao local.
+Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas ate 25%, piso de 1500 ms). Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. O Quente nao e alterado por esta implementacao local.
 
 ## Raridades e loot
 
@@ -24,8 +24,8 @@ Os nomes abaixo sao os textos efetivamente exibidos no jogo, em ingles.
 | Equipamento | Bonus basico | Bonus adicionais possiveis |
 |---|---|---|
 | Rod / wand | Magic Level | Maximum Mana; Offensive Rune Cooldown Reduction; Offensive Spell Cooldown Reduction |
-| Helmet exclusivo de mage | Magic Level | Maximum Mana; Maximum Health; Armor |
-| Armor / legs exclusivos de mage | Armor | Magic Level; Maximum Mana; Maximum Health |
+| Helmet exclusivo de mage | Magic Level | Maximum Mana; Maximum Health; Armor; Offensive Rune Cooldown Reduction |
+| Armor / legs exclusivos de mage | Armor | Magic Level; Maximum Mana; Maximum Health; Offensive Rune Cooldown Reduction |
 | Sword / axe / club | Attack | Sword/Axe/Club Fighting correspondente; Attack Speed; Maximum Health; Maximum Mana |
 | Bow / crossbow / distance | Attack | Distance Fighting; Attack Speed; Maximum Health; Maximum Mana |
 | Wraps de monk | Attack | Fist Fighting; Attack Speed; Maximum Health; Maximum Mana |
@@ -50,9 +50,10 @@ Bandas de nivel minimo de uso: 0–49 (banda 0), 50–149 (1), 150–299 (2), 30
 | Armor / Defense | +1 | +1 a +2 | +2 a +3 | +3 a +4 |
 | Movement Speed | +1 a +2 | +2 a +3 | +3 a +4 | +4 a +5 |
 | Attack | 1–2% do ataque base, minimo +1 | 2–3%, minimo +1 | 3–4%, minimo +1 | 4–5%, minimo +1 |
-| Attack Speed / Offensive Cooldown Reduction | Nao aparece no bonus basico Common | +0,50% a +1,00% | +1,00% a +1,50% | +1,50% a +2,00% |
+| Attack Speed / Offensive Rune Cooldown Reduction | Nao aparece no bonus basico Common | +3,00% a +6,00% | +6,00% a +9,00% | +9,00% a +12,00% |
+| Offensive Spell Cooldown Reduction | Nao aparece no bonus basico Common | +0,50% a +1,00% | +1,00% a +1,50% | +1,50% a +2,00% |
 
-Attack e aplicado e exibido em pontos inteiros reais, depois de arredondar para baixo. Vida e mana recebem +5 por banda em ambos os extremos do intervalo. Percentuais recebem +0,10 ponto percentual por banda. Armor, Defense e Movement Speed recebem +1 em bandas 2 e 3. Em Epic/Ultra de banda 2 ou 3, skill/magic level usa o extremo superior (Epic +2; Ultra +3). Os bonus so sao considerados quando o atributo faz parte do grupo e foi sorteado.
+Attack e aplicado e exibido em pontos inteiros reais, depois de arredondar para baixo. Vida e mana recebem +5 por banda em ambos os extremos do intervalo. Attack Speed e Offensive Rune Cooldown Reduction recebem +0,60 ponto percentual por banda; Offensive Spell Cooldown Reduction recebe +0,10 ponto percentual por banda. Assim, Ultra de level 300+ sorteia +10,80% a +13,80% para ataque/runa. Armor, Defense e Movement Speed recebem +1 em bandas 2 e 3. Em Epic/Ultra de banda 2 ou 3, skill/magic level usa o extremo superior (Epic +2; Ultra +3). Os bonus so sao considerados quando o atributo faz parte do grupo e foi sorteado.
 
 Exemplo valido de Rare rod de nivel baixo:
 
@@ -64,23 +65,25 @@ Exemplo de Epic wand de nivel 150:
 
 Exemplo de Ultra rod de nivel 300+ (quatro atributos):
 
-> Ultra: +3 Magic Level; +70 Maximum Mana; +2.00% Offensive Rune Cooldown Reduction; +1.90% Offensive Spell Cooldown Reduction.
+> Ultra: +3 Magic Level; +70 Maximum Mana; +12.00% Offensive Rune Cooldown Reduction; +1.90% Offensive Spell Cooldown Reduction.
 
 ## Cooldowns e velocidade no Canary
 
-Percentuais sao armazenados em basis points inteiros (100 = 1%). O servidor agrega somente equipamentos nos slots de combate, nao itens guardados em backpack/depot. Caps totais de raridade: 3% Attack Speed; 5% reducao de cooldown ofensivo de runas; 5% reducao de cooldown ofensivo de instant spells.
+Percentuais sao armazenados em basis points inteiros (100 = 1%). O servidor agrega somente equipamentos nos slots de combate, nao itens guardados em backpack/depot. Caps totais separados de raridade: 25% Attack Speed; 25% reducao de cooldown ofensivo de runas; 5% reducao de cooldown ofensivo de instant spells. Nao somar ataque automatico com cooldown de runa: cada um usa seu proprio conjunto de bonus.
 
 Rune e instant spell sao distinguidos pelo proprio motor. A reducao e aplicada a cooldown individual e ao grupo principal Attack no caminho nativo de lancamento. Nao cancela condicoes de cooldown ja existentes, nao permite usar uma runa durante bloqueio e nao remove os limites de movimento/uso de itens. Cura, suporte e grupos secundarios continuam com suas regras normais.
 
-Os modificadores de Wheel, proficiency e VIP sao calculados antes da reducao de raridade. Preservar o piso de 50% do cooldown individual base apos a taxa nativa. O grupo Attack e o ataque basico nao sao reduzidos abaixo de 1000 ms por raridade; se a regra nativa ja for menor, raridade nao reduz esse intervalo. Nenhum percentual novo e aplicado a cura ou suporte.
+Os modificadores de Wheel, proficiency e VIP sao calculados antes da reducao de raridade. Preservar o piso de 50% do cooldown individual base apos a taxa nativa. Ataque basico e cooldown individual/grupo Attack de runas ofensivas nao sao reduzidos abaixo de 1500 ms por raridade. Instant spells mantem o piso anterior do grupo Attack de 1000 ms. Se a regra nativa ja for menor que um piso, raridade nao reduz nem aumenta esse intervalo. Nenhum percentual novo e aplicado a cura ou suporte.
 
-Exemplo: 2.000 ms com 1% vira 1.980 ms; com 2,30% vira 1.954 ms. Uma spell de 6.000 ms com 2,30% vira 5.862 ms, desde que o piso nativo permita. Nao confundir percentual de reducao de intervalo com o mesmo aumento percentual exato de DPS.
+Exemplos para ataque/runa de 2.000 ms: 10% -> 1.800 ms; 20% -> 1.600 ms; 25% ou mais -> 1.500 ms. Uma runa de cooldown individual de 6.000 ms com 25% ainda tem 4.500 ms; o piso de 1.500 ms nao transforma todas as runas em um cooldown fixo. A spell instantanea de 6.000 ms com 2,30% continua em 5.862 ms, desde que o piso nativo permita. Nao confundir percentual de reducao de intervalo com o mesmo aumento percentual exato de DPS.
 
 ## Itens existentes e texto em ingles
 
 Nome de item: [Common], [Rare], [Epic] ou [Ultra] antes do nome original. Descricao: Common/Rare/Epic/Ultra: seguido dos atributos em ingles. Tooltip do OTC tambem e ingles.
 
-Itens da versao 1 mantem todos os numeros sorteados, mesmo quando um atributo antigo ja nao faz parte do grupo novo. Ao usar Look/Look in Trade, o servidor converte apenas nome e descricao para ingles. Nao aumenta atributos, nao troca Shielding antigo por outro bonus e nao rerrola. O detalhe original do item e preservado antes da linha de raridade. A traducao e idempotente.
+Itens antigos preservam todos os outros numeros e a selecao de atributos. A v3 atualiza somente Attack Speed e Offensive Rune Cooldown Reduction pre-v3 multiplicando por seis o roll original (limitado ao maximo anterior de 2,30%), sem sortear novamente. Marcadores independentes impedem multiplicacao repetida; a versao original do loot e mantida. Equipamento equipado e atualizado no login; outras instancias sao atualizadas por Look/Look in Trade. O calculo C++ ja interpreta o bonus antigo corretamente antes da migracao do texto. A descricao fica em ingles e preserva o detalhe original do item. Nao adiciona atributos que nao existiam, nem troca Shielding por outro bonus.
+
+Exemplo real do usuario: bow +2,11% -> +12,66%; quiver +1,85% -> +11,10%; soma 23,76%, intervalo calculado de 1.524 ms sobre 2.000 ms (arredondamento para baixo). Rolls maiores podem atingir o piso de 1.500 ms. Para somar reducao de runas, novos helmets/armors/legs exclusivos de mage tambem podem sortear esse atributo; a quantidade de atributos continua 1/2/3/4.
 
 ## Persistencia, visual e economia
 
@@ -88,7 +91,7 @@ Salvar raridade, versao da regra, perfil, banda de nivel, origem e atributos na 
 
 OTC recebe a raridade real por instancia, independente do preco medio. Exibe fundo e borda azul/roxa/amarela/vermelha e limpa a cor ao trocar/esvaziar o slot. Negociacao bkrarity1/recurso 136 mantem o pacote anterior para clientes antigos.
 
-O encerramento de drag, drop rejeitado, saida de hover e destruicao da origem arrastada devem restaurar a borda da raridade do item que permanece no slot. Limpar o destaque temporario de drag nao pode apagar a borda persistente. Itens comuns sem raridade e slots vazios continuam limpando a borda temporaria. Regressao: `luajit tests/lua/item_rarity_border_spec.lua`, alem do teste nativo `tests/native/item_rarity.lua` com widgets reais.
+O encerramento de drag, drop rejeitado, saida de hover e destruicao da origem arrastada devem restaurar a borda da raridade do item que permanece no slot. Limpar o destaque temporario de drag nao pode apagar a borda persistente. Itens sem raridade e slots vazios continuam limpando a borda temporaria. Testes: `luajit tests/lua/item_rarity_border_spec.lua` e teste nativo `tests/native/item_rarity.lua` com widgets reais.
 
 Rare/Epic/Ultra sao protegidos contra venda NPC em lote ou por ID nesta primeira versao; Common pode ser vendido pelo preco original. O mercado nativo de commodities bloqueia raridades pois recria por tipo. Troca direta e Market real usam a serializacao da instancia. Nao aumentar o pagamento NPC por raridade.
 
@@ -120,3 +123,5 @@ Cooldowns foram verificados por testes C++ de calculo e integracao no caminho na
 Reproduzir testes de regras a partir da raiz do servidor: luajit tests/lua/item_rarity_spec.lua. Teste C++ independente: g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test && /tmp/rarity-balance-test. Nao compilar esse teste com -DNDEBUG, pois usa assert.
 
 Testes adicionais de /i: sintaxe antiga e nova, combinacao Forge/raridade, lote por instancia, nomes/aliases, random, rejeicao sem criar item, falha de rolagem sem entregar item normal e preservacao do Mini Obelisk. API valida ranks administrativos e impede rerrolar itens existentes; 192 combinacoes e 100 mil sorteios de loot continuam passando.
+
+Validacao v3: migracao dos rolls reais 2,11%/1,85% e de runa 2,00%, idempotencia, preservacao dos demais atributos, grupos de mage com runa e intervalos C++ ate 1.500 ms. Instant spells preservam o teto de 5%. Compilacao release concluida e v3 ativada localmente em 05/11/2026, com zero jogadores conectados no reinicio. Teste nativo de startup passou: instancias reais de bow/quiver/rod, migracao uma unica vez, preservacao dos outros atributos, serialize/clone e faixas de rolls novas. Os itens temporarios foram removidos e o teste deixou de ser carregado no startup. Servidor online em 7171/7172; ainda e necessario avaliar o balanceamento em combate. O Quente nao foi alterado.
