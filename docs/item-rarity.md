@@ -6,12 +6,12 @@ Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas 
 
 | Raridade exibida | Cor | Atributos | Chance apos o equipamento cair |
 |---|---|---:|---:|
-| Common | Azul | 1 | 40% |
-| Rare | Roxo | 2 | 30% |
-| Epic | Amarelo | 3 | 20% |
-| Ultra | Vermelho | 4 | 10% |
+| Common | Azul | 1 | 85% |
+| Rare | Roxo | 2 | 10% |
+| Epic | Amarelo | 3 | 4% |
+| Ultra | Vermelho | 4 | 1% |
 
-O monstro/boss sorteia seu loot normal. Equipamento elegivel novo que cair recebe exatamente uma raridade; nao ha resultado normal sem raridade. Bonus VIP, loot rate e contribuicao continuam afetando a queda normal, sem multiplicar a raridade novamente. As chances sao altas para testes locais.
+O monstro/boss sorteia seu loot normal. Equipamento elegivel novo que cair recebe exatamente uma raridade; nao ha resultado normal sem raridade. Bonus VIP, loot rate e contribuicao continuam afetando a queda normal, sem multiplicar a raridade novamente. Distribuicao aprovada para publicacao em 05/11/2026: 85% Common, 10% Rare, 4% Epic e 1% Ultra. Continua sem equipamento elegivel normal apos cair.
 
 Elegiveis: helmet, armor, legs, boots, shield, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva suas regras de municao e capacidade. Excluir rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, consumiveis e produtos de criatura. Loja/NPC/comando/quest nao reclassificam automaticamente os itens.
 
