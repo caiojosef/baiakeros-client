@@ -1,141 +1,196 @@
 # Raridades e atributos — Baiakeros Tibia nativo / OTC
 
-Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas ate 25%, piso de 1500 ms). Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. Publicado no Quente por solicitacao explicita em 05/11/2026, junto com o cliente nativo r42.
+Versão 4, implementada e compilada localmente em 05/11/2026. Exclusiva do MMO Canary e OTC; não pertence ao Idler/mobile. Esta versão não foi publicada no Quente. A publicação anterior de produção continua sendo a v3 com cliente r42, registrada no final deste documento.
 
-## Raridades e loot
+## 1. Chances e quantidade de atributos
 
-| Raridade exibida | Cor | Atributos | Chance apos o equipamento cair |
-|---|---|---:|---:|
-| Common | Azul | 1 | 85% |
-| Rare | Roxo | 2 | 10% |
-| Epic | Amarelo | 3 | 4% |
-| Ultra | Vermelho | 4 | 1% |
+O monstro/boss primeiro calcula seu loot normal. Depois, cada equipamento elegível novo recebe exatamente um dos resultados abaixo. Não altera a chance original de o item cair nem multiplica novamente os bônus de loot/VIP.
 
-O monstro/boss sorteia seu loot normal. Equipamento elegivel novo que cair recebe exatamente uma raridade; nao ha resultado normal sem raridade. Bonus VIP, loot rate e contribuicao continuam afetando a queda normal, sem multiplicar a raridade novamente. Distribuicao aprovada para publicacao em 05/11/2026: 85% Common, 10% Rare, 4% Epic e 1% Ultra. Continua sem equipamento elegivel normal apos cair.
+| Resultado | Cor | Chance após cair | Atributos sorteados | Orçamento |
+|---|---|---:|---:|---:|
+| Normal | Sem cor de raridade | 55% | 0 | 0 |
+| Common | Azul | 30% | 1–2 | 3 |
+| Rare | Roxo | 10% | 2–3 | 5 |
+| Epic | Amarelo | 4% | 3–4 | 8 |
+| Ultra | Vermelho | 1% | 4 | 11 |
 
-Elegiveis: helmet, armor, legs, boots, shield, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva suas regras de municao e capacidade. Excluir rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, consumiveis e produtos de criatura. Loja/NPC/comando/quest nao reclassificam automaticamente os itens. Excecao de loot de bosses: Bag You Desire, Primal Bag e Bag You Covet aplicam a raridade ao equipamento entregue ao abrir a bolsa, antes de enviar sua instancia ao cliente. Arcane Bag mantem o fluxo proprio sem reclassificacao.
+Atributos básicos custam 1 ponto; especializações, 2; premium, 3. Não há primeiro atributo obrigatório. O sorteio respeita quantidade, orçamento, perfil do equipamento e incompatibilidades. Efeitos premium entram a partir de Rare: até um no Rare e até dois no Epic/Ultra. Dois bônus Common pequenos não equivalem necessariamente a dois Rare.
 
-Atributos seguem o equipamento e suas restricoes, nao a vocacao de quem matou. Requisitos originais de vocacao, level e elemento continuam valendo. O primeiro atributo e basico; demais atributos sao sorteados sem repeticao no mesmo grupo.
+Não repetir a mesma chave de atributo. Por item: no máximo uma especialização de ML, uma afinidade elemental ofensiva, uma magia/runa específica, uma categoria de redução de recarga e uma proteção. Ice ML e Ice Damage podem coexistir; Ice ML e Fire Damage não. Skill em armor de knight escolhe somente Sword, Axe ou Club por item.
 
-## Grupos de bonus
+O resultado normal também fica marcado como processado, sem nome, cor ou bônus extra. Pegar, transferir, equipar ou reabrir o container não permite tentar novamente. Os requisitos de nível/vocação e atributos originais continuam valendo.
 
-Os nomes abaixo sao os textos efetivamente exibidos no jogo, em ingles.
+## 2. Equipamentos e compatibilidade
 
-| Equipamento | Bonus basico | Bonus adicionais possiveis |
-|---|---|---|
-| Rod / wand | Magic Level | Maximum Mana; Offensive Rune Cooldown Reduction; Offensive Spell Cooldown Reduction |
-| Helmet exclusivo de mage | Magic Level | Maximum Mana; Maximum Health; Armor; Offensive Rune Cooldown Reduction |
-| Armor / legs exclusivos de mage | Armor | Magic Level; Maximum Mana; Maximum Health; Offensive Rune Cooldown Reduction |
-| Sword / axe / club | Attack | Sword/Axe/Club Fighting correspondente; Attack Speed; Maximum Health; Maximum Mana |
-| Bow / crossbow / distance | Attack | Distance Fighting; Attack Speed; Maximum Health; Maximum Mana |
-| Wraps de monk | Attack | Fist Fighting; Attack Speed; Maximum Health; Maximum Mana |
-| Quiver | Distance Fighting | Maximum Mana; Maximum Health; Attack Speed |
-| Shield | Defense | Shielding; Maximum Health; Armor |
-| Boots | Movement Speed | Maximum Health; Maximum Mana; Armor |
-| Armor / helmet / legs exclusivos de paladin | Armor | Distance Fighting; Maximum Health; Maximum Mana |
-| Armor / helmet / legs exclusivos de monk | Armor | Fist Fighting; Maximum Health; Maximum Mana |
-| Armor / helmet / legs genericos, de knight ou com restricoes compartilhadas | Armor | Maximum Health; Maximum Mana; Shielding |
+Entram helmet, armor, legs, boots, shield/spellbook, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva munição e capacidade. Ficam fora rings, amulets, backpacks e outros containers, munições, runas, exercícios/training weapons, moedas, consumíveis e produtos de criatura.
 
-Rods/wands novos nao sorteiam Shielding ou atributos fisicos. Armas fisicas nao sorteiam Magic Level nem reducao de cooldown de runa. Equipamento compartilhado entre vocacoes nao e classificado automaticamente como equipamento de mage apenas por listar sorcerer/druid entre varias vocacoes.
-
-## Progressao por raridade e nivel minimo do equipamento
-
-Bandas de nivel minimo de uso: 0–49 (banda 0), 50–149 (1), 150–299 (2), 300+ (3). Isso e separado de forge tier, nivel do personagem e quantidade de atributos. Nunca alterar level minimo do item para aplicar raridade.
-
-| Atributo, antes do ajuste por nivel | Common | Rare | Epic | Ultra |
-|---|---:|---:|---:|---:|
-| Magic Level / Fighting / Shielding | +1 | +1 | +1 a +2 | +2 a +3 |
-| Maximum Health | +5 a +10 | +10 a +20 | +15 a +30 | +25 a +40 |
-| Maximum Mana | +10 a +15 | +15 a +25 | +25 a +40 | +40 a +60 |
-| Armor / Defense | +1 | +1 a +2 | +2 a +3 | +3 a +4 |
-| Movement Speed | +1 a +2 | +2 a +3 | +3 a +4 | +4 a +5 |
-| Attack | 1–2% do ataque base, minimo +1 | 2–3%, minimo +1 | 3–4%, minimo +1 | 4–5%, minimo +1 |
-| Attack Speed / Offensive Rune Cooldown Reduction | Nao aparece no bonus basico Common | +3,00% a +6,00% | +6,00% a +9,00% | +9,00% a +12,00% |
-| Offensive Spell Cooldown Reduction | Nao aparece no bonus basico Common | +0,50% a +1,00% | +1,00% a +1,50% | +1,50% a +2,00% |
-
-Attack e aplicado e exibido em pontos inteiros reais, depois de arredondar para baixo. Vida e mana recebem +5 por banda em ambos os extremos do intervalo. Attack Speed e Offensive Rune Cooldown Reduction recebem +0,60 ponto percentual por banda; Offensive Spell Cooldown Reduction recebe +0,10 ponto percentual por banda. Assim, Ultra de level 300+ sorteia +10,80% a +13,80% para ataque/runa. Armor, Defense e Movement Speed recebem +1 em bandas 2 e 3. Em Epic/Ultra de banda 2 ou 3, skill/magic level usa o extremo superior (Epic +2; Ultra +3). Os bonus so sao considerados quando o atributo faz parte do grupo e foi sorteado.
-
-Exemplo valido de Rare rod de nivel baixo:
-
-> Rare: +1 Magic Level; +17 Maximum Mana.
-
-Exemplo de Epic wand de nivel 150:
-
-> Epic: +2 Magic Level; +40 Maximum Mana; +1.20% Offensive Spell Cooldown Reduction.
-
-Exemplo de Ultra rod de nivel 300+ (quatro atributos):
-
-> Ultra: +3 Magic Level; +70 Maximum Mana; +12.00% Offensive Rune Cooldown Reduction; +1.90% Offensive Spell Cooldown Reduction.
-
-## Cooldowns e velocidade no Canary
-
-Percentuais sao armazenados em basis points inteiros (100 = 1%). O servidor agrega somente equipamentos nos slots de combate, nao itens guardados em backpack/depot. Caps totais separados de raridade: 25% Attack Speed; 25% reducao de cooldown ofensivo de runas; 5% reducao de cooldown ofensivo de instant spells. Nao somar ataque automatico com cooldown de runa: cada um usa seu proprio conjunto de bonus.
-
-Rune e instant spell sao distinguidos pelo proprio motor. A reducao e aplicada a cooldown individual e ao grupo principal Attack no caminho nativo de lancamento. Nao cancela condicoes de cooldown ja existentes, nao permite usar uma runa durante bloqueio e nao remove os limites de movimento/uso de itens. Cura, suporte e grupos secundarios continuam com suas regras normais.
-
-Os modificadores de Wheel, proficiency e VIP sao calculados antes da reducao de raridade. Preservar o piso de 50% do cooldown individual base apos a taxa nativa. Ataque basico e cooldown individual/grupo Attack de runas ofensivas nao sao reduzidos abaixo de 1500 ms por raridade. Instant spells mantem o piso anterior do grupo Attack de 1000 ms. Se a regra nativa ja for menor que um piso, raridade nao reduz nem aumenta esse intervalo. Nenhum percentual novo e aplicado a cura ou suporte.
-
-Exemplos para ataque/runa de 2.000 ms: 10% -> 1.800 ms; 20% -> 1.600 ms; 25% ou mais -> 1.500 ms. Uma runa de cooldown individual de 6.000 ms com 25% ainda tem 4.500 ms; o piso de 1.500 ms nao transforma todas as runas em um cooldown fixo. A spell instantanea de 6.000 ms com 2,30% continua em 5.862 ms, desde que o piso nativo permita. Nao confundir percentual de reducao de intervalo com o mesmo aumento percentual exato de DPS.
-
-## Itens existentes e texto em ingles
-
-Nome de item: [Common], [Rare], [Epic] ou [Ultra] antes do nome original. Descricao: Common/Rare/Epic/Ultra: seguido dos atributos em ingles. Tooltip do OTC tambem e ingles.
-
-Itens antigos preservam todos os outros numeros e a selecao de atributos. A v3 atualiza somente Attack Speed e Offensive Rune Cooldown Reduction pre-v3 multiplicando por seis o roll original (limitado ao maximo anterior de 2,30%), sem sortear novamente. Marcadores independentes impedem multiplicacao repetida; a versao original do loot e mantida. Equipamento equipado e atualizado no login; outras instancias sao atualizadas por Look/Look in Trade. O calculo C++ ja interpreta o bonus antigo corretamente antes da migracao do texto. A descricao fica em ingles e preserva o detalhe original do item. Nao adiciona atributos que nao existiam, nem troca Shielding por outro bonus.
-
-Exemplo real do usuario: bow +2,11% -> +12,66%; quiver +1,85% -> +11,10%; soma 23,76%, intervalo calculado de 1.524 ms sobre 2.000 ms (arredondamento para baixo). Rolls maiores podem atingir o piso de 1.500 ms. Para somar reducao de runas, novos helmets/armors/legs exclusivos de mage tambem podem sortear esse atributo; a quantidade de atributos continua 1/2/3/4.
-
-## Persistencia, visual e economia
-
-Salvar raridade, versao da regra, perfil, banda de nivel, origem e atributos na instancia. O resultado e gerado com a criacao do loot/reward, antes de retirar. Transferir, equipar ou relogar nao sorteia novamente. Equipar aplica bonus reais e desequipar os remove, inclusive para equipamentos sem MoveEvent e quivers.
-
-OTC recebe a raridade real por instancia, independente do preco medio. Exibe fundo e borda azul/roxa/amarela/vermelha e limpa a cor ao trocar/esvaziar o slot. Negociacao bkrarity1/recurso 136 mantem o pacote anterior para clientes antigos.
-
-O encerramento de drag, drop rejeitado, saida de hover e destruicao da origem arrastada devem restaurar a borda da raridade do item que permanece no slot. Limpar o destaque temporario de drag nao pode apagar a borda persistente. Itens sem raridade e slots vazios continuam limpando a borda temporaria. Testes: `luajit tests/lua/item_rarity_border_spec.lua` e teste nativo `tests/native/item_rarity.lua` com widgets reais.
-
-Rare/Epic/Ultra sao protegidos contra venda NPC em lote ou por ID nesta primeira versao; Common pode ser vendido pelo preco original. O mercado nativo de commodities bloqueia raridades pois recria por tipo. Troca direta e Market real usam a serializacao da instancia. Nao aumentar o pagamento NPC por raridade.
-
-## Criacao administrativa com /i
-
-O comando continua exclusivo de GOD. Sem parametro de raridade, preserva a criacao original e o tier da Forge: `/i item, quantidade, tier`. O parametro de raridade e opcional e usa nomes, sem confundir os numeros da Forge com ranks Common/Rare/Epic/Ultra.
-
-| Exemplo | Resultado |
+| Perfil | Atributos disponíveis, conforme as restrições da peça |
 |---|---|
-| `/i 53226` | Stellar Moonsilver Bow original, sem raridade |
-| `/i 53226, 1, ultra` | Um bow Ultra com quatro bonus sorteados no grupo de bow |
-| `/i 53226, 1, rare` | Um bow Rare com dois bonus sorteados |
-| `/i 53226, 5, random` | Cinco bows; raridade e bonus sorteados individualmente |
-| `/i 53226, 1, 3, ultra` | Um bow Forge tier 3 e raridade Ultra |
-| `/i 39150, 1, epic` | Uma quiver Epic com tres bonus sorteados |
+| Rod / wand | ML geral/especializado, dano da afinidade, runas, magias do perfil, cooldown, custo de mana, crítico/leech e recursos |
+| Spellbook | ML, mana, runas, proteção, cura compatível e utilidade de mage; sem Shielding/Defense |
+| Sword / axe / club | Attack, skill correspondente, dano básico/físico/elemental compatível, spells de knight, velocidade, crítico/leech e recursos |
+| Bow / crossbow | Distance, Attack, dano básico/físico/holy, spells de paladin, velocidade, crítico/leech e recursos |
+| Quiver | Distance, Holy ML, dano básico/holy, spells de paladin, velocidade, crítico/leech e recursos |
+| Shield físico | Defense, Shielding, proteção, recursos e utilidade; restrição da peça pode acrescentar bônus da classe |
+| Armor / helmet / legs de mage | ML, magia/runa compatível, proteção, custo de mana, regeneração e recursos |
+| Armor / helmet / legs de knight | Uma skill de arma, magias de knight, proteção, regeneração e recursos |
+| Armor / helmet / legs de paladin | Distance, Holy ML, magias de paladin, proteção, regeneração e recursos |
+| Wraps / peças de monk | Fist, magias de monk, proteção/recursos conforme a peça; wraps também recebem bônus de arma |
+| Boots | Recursos, proteção, regeneração e caminhada; peças exclusivas também podem receber skill/ML da classe, sem dano/cooldown premium |
+| Peças universais | Recursos, Armor, proteção e regeneração; peças defensivas fora de boots/spellbook podem receber Shielding |
 
-Aceita common, rare, epic, ultra e random; aliases comum, raro, epico/épico e aleatorio/aleatório. A raridade fixa somente o rank: selecao de atributos e valores continuam aleatorios dentro das regras por equipamento/nivel. Atributo basico do grupo continua garantido. Nao altera itens existentes nem chances do loot normal. Rejeita raridades desconhecidas e itens inelegiveis antes de criar qualquer unidade. Cada item do lote recebe sua propria rolagem. Preserva entrega em backpacks/containers, fallback no chao, stacks, cargas, fluidos, tier da Forge e o atalho Mini Obelisk.
+A seleção depende do equipamento, não de quem matou o monstro. Rod/wand com elemento nativo reconhecido prioriza esse elemento. Peças exclusivas de sorcerer recebem Fire/Energy/Death; druid, Earth/Ice; paladin, Holy. Peças de mage compartilhadas não recebem uma spell exclusiva de apenas uma vocação. Runas utilizáveis por mages têm catálogo próprio.
 
-## Testes e fontes
+Loot comum, loot aninhado e recompensa de boss usam a mesma regra. Bag You Desire, Primal Bag e Bag You Covet rolam o equipamento antes de entregá-lo, incluindo o resultado normal. Falta de espaço/falha de criação preserva a bolsa. Arcane Bag mantém seu fluxo separado. Loja/NPC/quest/comando antigo não reclassificam automaticamente seus itens.
 
-Fonte local: WSL Ubuntu-24.04, /home/baiakeros/baiakeros. OTC: G:\otserv\otclient-main. Branches: dudantas/item-rarity-20261105. Preservar localhost, start.sh e recompile.sh. Publicacao no Quente precisa de solicitacao explicita.
+## 3. Vida e mana acima de 100
 
-Testes de regras e regressao: 192 combinacoes de grupos/ranks/bandas; intervalos crescentes; grupos de mage e armas fisicas; quiver; loot normal/boss/nested; traducao exata do exemplo Rare sem mudar numeros; idempotencia; 100 mil sorteios. Teste C++ cobre reducoes reais em milissegundos, tetos separados de 25% para ataque/runa e 5% para instant spells, pisos, valores negativos/corrompidos e intervalos pequenos.
+Faixas novas antes do ajuste pelo nível mínimo do equipamento:
 
-Compilacao release do servidor v2 concluida. Validacao nativa com personagem descartavel confirmou equip/de-equip de boots, quiver e wand, aplicacao e remocao de vida/mana/skills/magic level/movement speed, descricao em ingles e preservacao exata dos atributos em dois logins reais com save/load no banco. OTC confirmou o recurso 136 e a instancia Ultra recebida. A conta, personagem, equipamentos e credenciais temporarios foram removidos.
+| Bônus | Common | Rare | Epic | Ultra |
+|---|---:|---:|---:|---:|
+| Maximum Health | +110–160 | +180–280 | +300–450 | +500–750 |
+| Maximum Mana | +130–200 | +220–360 | +400–600 | +650–1.000 |
 
-Cooldowns foram verificados por testes C++ de calculo e integracao no caminho nativo; medicao de casts em combate e balanceamento de gameplay/mercados continuam sujeitos a avaliacao de gameplay apos esta publicacao autorizada.
+Bandas: nível mínimo 0–49 = 0; 50–149 = 1; 150–299 = 2; 300+ = 3. Cada banda acrescenta +25 ao intervalo de vida e +40 ao de mana. Assim, Ultra de nível 300+ pode sortear +575–825 Maximum Health ou +770–1.120 Maximum Mana. O nível do personagem e o forge tier não alteram essa banda.
 
-Reproduzir testes de regras a partir da raiz do servidor: luajit tests/lua/item_rarity_spec.lua. Teste C++ independente: g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test && /tmp/rarity-balance-test. Nao compilar esse teste com -DNDEBUG, pois usa assert.
+São valores máximos adicionais enquanto equipado, não cura ou recuperação imediata. Equipar/desequipar não enche vida/mana. Não há garantia de sortear recursos em todo item. Itens antigos mantêm os valores que já tinham.
 
-Testes adicionais de /i: sintaxe antiga e nova, combinacao Forge/raridade, lote por instancia, nomes/aliases, random, rejeicao sem criar item, falha de rolagem sem entregar item normal e preservacao do Mini Obelisk. API valida ranks administrativos e impede rerrolar itens existentes; 192 combinacoes e 100 mil sorteios de loot continuam passando.
+## 4. Catálogo completo de bônus novos
 
-Validacao v3: migracao dos rolls reais 2,11%/1,85% e de runa 2,00%, idempotencia, preservacao dos demais atributos, grupos de mage com runa e intervalos C++ ate 1.500 ms. Instant spells preservam o teto de 5%. Compilacao release concluida e v3 ativada localmente em 05/11/2026, com zero jogadores conectados no reinicio. Teste nativo de startup passou: instancias reais de bow/quiver/rod, migracao uma unica vez, preservacao dos outros atributos, serialize/clone e faixas de rolls novas. Os itens temporarios foram removidos e o teste deixou de ser carregado no startup. Servidor online em 7171/7172; ainda e necessario avaliar o balanceamento em combate. A publicacao no Quente foi concluida posteriormente nesta mesma data, conforme o registro abaixo.
+Todos os nomes exibidos abaixo estão em inglês. As faixas são por raridade e só aparecem nos perfis compatíveis.
 
-## Publicacao no Quente e GitHub em 05/11/2026
+### Base, skills e magia
 
-Servidor publicado e reiniciado com sucesso, fonte de runtime d2312a552ab8698cb37b49373e1629d4cad60b98, SHA-256 do executavel nativo e9ab25412e552e7dc0a6663bb392ca4dcf1bf4708d448d97e82c7a3ae5380075. Compilado no proprio Ubuntu do Quente, sem copiar binario da WSL. Portas 7171/7172 abertas e nenhuma mensagem de erro no log de inicializacao verificado. O servidor continua gerenciado pelo servico canary existente.
+- Maximum Health; Maximum Mana.
+- Attack; Armor; Defense; Movement Speed.
+- Sword Fighting; Axe Fighting; Club Fighting; Distance Fighting; Fist Fighting; Shielding.
+- Magic Level.
+- Fire Magic Level; Earth Magic Level; Energy Magic Level; Ice Magic Level; Holy Magic Level; Death Magic Level; Healing Magic Level.
+- Health Regeneration; Mana Regeneration — quantidade a cada 10 segundos, fora de combate e fora de protection zone.
 
-Cliente e assets publicados juntos na revisao 42, fonte c392611e501981dab03431d94108dec8a9213073. Foram preservados 16.332 arquivos do manifesto e publicados 13 pacotes alterados, sem exclusoes. Todos os pacotes novos tiveram tamanho, hash compactado e hash descompactado verificados por HTTPS publico. O teste real TestPublishedNativePackages do launcher passou, incluindo caminho com caractere #. Os jogadores devem fechar o OTC e abri-lo pelo launcher para receber a revisao 42.
+Skill: +1 / +1 / +1–2 / +2–3; teto adicional +10 por skill no conjunto. ML geral: Rare +1, Epic +1–2, Ultra +2, teto +6 no conjunto. ML especializado: +1 / +1–2 / +2–3 / +3–4, teto +10 por especialização.
 
-start.sh, recompile.sh, config.lua e market.local.lua tiveram seus hashes preservados. Configuracao localhost local preservada. Banco e mapas de jogadores nao foram substituidos. Alteracoes de codigo que ja estavam no Quente foram revisadas e preservadas no Git: validacao de sessao de dois fatores, acesso de contas staff durante manutencao e coleta de powergamers. Backup de codigo, manifests e configuracao nginx em /var/backups/baiakeros/rarity-r42-20261105; patch de codigo anterior tambem preservado em stash.
+ML especializado entra apenas na fórmula nativa que usa ML e o elemento correspondente. +3 Ice Magic Level não significa +3% de dano e não aumenta uma fórmula física de knight baseada em skill/attack. Healing ML melhora fórmulas de cura que usam ML, não dano.
 
-Branches de trabalho enviadas para origin/dudantas/item-rarity-20261105 nos dois repositorios. PRs: https://github.com/caiojosef/baiakeros/pull/16 e https://github.com/caiojosef/baiakeros-client/pull/20. Nenhum merge na main foi realizado. PRs anteriores #14/#15 do servidor e #19 do cliente tem sobreposicao de historico com estas branches.
+Attack usa aproximadamente 1–5% do ataque base, arredondado com mínimo +1, conforme a raridade. Armor/Defense: +1 / +1–2 / +2–3 / +3–4, mais +1 a partir da banda 2. Movement Speed: +1–2 / +2–3 / +3–4 / +4–5, mais até +1. Regeneração: +2–4 / +4–7 / +6–10 / +8–14, mais +2 por banda. Relógio único por personagem impede acelerar regeneração trocando equipamento.
 
-Auditoria final: nenhum commit da main remota estava faltando nas duas copies locais. Nenhuma outra branch do servidor tinha commits ausentes. No cliente, attack-controls-layout e node-stand-route possuem patches equivalentes ja incorporados; parte de paladin-helper-1525 tambem. Seu commit historico cbdd31a contem alternativas antigas de efeitos de ataque e Alt-Tab/fullscreen que nao foram reaplicadas automaticamente. chore/update-vcpkg-baseline tem dois commits automaticos de dependencia pendentes, mantidos separados desta publicacao. Esses casos sao pendencias de revisao, nao atualizacoes novas do colaborador na main.
+### Dano por origem e elemento
 
-Validacao adicional: 334 arquivos Lua da publicacao integrada passaram no parser LuaJIT; testes de Warzones, manutencao, /i, bolsas de boss e Arcane Bag passaram localmente e no Quente. As bolsas rolam antes da entrega; falta de espaco ou falha de criacao/rolagem preserva a bolsa e remove a instancia temporaria.
+- Basic Attack Damage.
+- Offensive Spell Damage.
+- Offensive Rune Damage.
+- Wand and Rod Damage.
+- Physical Damage; Fire Damage; Earth Damage; Energy Damage; Ice Damage; Holy Damage; Death Damage.
+
+Dano amplo premium: Rare +0,50–1%, Epic +1–2%, Ultra +2–3%. Dano elemental: Common +0,25–0,50%, Rare +1–2%, Epic +2–3%, Ultra +3–4%; Physical segue +0,25–0,50 / +0,50–1 / +1–2 / +2–3%.
+
+O modificador é aplicado a cada parcela compatível do golpe. Não converte o elemento do item. Básico, spell e rune são origens distintas. Os bônus de dano da raridade somam uma vez antes de aplicar: teto +8% por origem ampla, +12% por elemento, +15% por magia específica e +25% combinados no mesmo componente. Exemplo: +3% Rune, +4% Ice e +6% Avalanche = +13% na parcela de gelo da Avalanche.
+
+### Runas específicas
+
+- Avalanche Rune Damage.
+- Great Fireball Rune Damage.
+- Thunderstorm Rune Damage.
+- Stone Shower Rune Damage.
+- Sudden Death Rune Damage.
+- Icicle Rune Damage.
+- Heavy Magic Missile Rune Damage.
+
+Faixas: Rare +2–3%, Epic +3–4,50%, Ultra +4,50–6%. Afetam o uso ofensivo da runa nomeada; não a magia que cria a runa, cargas, cura ou outras runas.
+
+### Magias específicas
+
+| Vocação do equipamento | Magias com bônus Damage e Mana Cost Reduction |
+|---|---|
+| Sorcerer | Energy Wave; Great Energy Beam; Hell's Core; Rage of the Skies |
+| Druid | Ice Wave; Terra Wave; Eternal Winter; Wrath of Nature |
+| Knight | Berserk; Fierce Berserk; Groundshaker; Front Sweep; Brutal Strike; Annihilation |
+| Paladin | Divine Caldera; Divine Grenade; Ethereal Spear; Strong Ethereal Spear; Divine Barrage |
+| Monk | Flurry of Blows; Sweeping Takedown; Thousand Fist Blows |
+
+Nomes como Fierce Berserk Damage são percentuais no resultado da magia, com a mesma faixa das runas específicas. Não simulam ML para exori gran. Mana Cost Reduction da magia nomeada: Rare +0,50–1%, Epic +1–2%, Ultra +2–3%.
+
+Druid também pode receber Heal Friend Effectiveness e Mass Healing Effectiveness: Rare +0,50–1%, Epic +1–2%, Ultra +2–3%. Reconhecimento pela identidade canônica da magia, independente de maiúsculas, espaços e apóstrofos. Não copiar bônus para magias de familiar/reflexo por coincidência.
+
+### Ritmo, crítico, sustain e proteção
+
+- Attack Speed.
+- Offensive Rune Cooldown Reduction.
+- Offensive Spell Cooldown Reduction.
+- Spell Mana Cost Reduction.
+- Critical Hit Chance; Critical Extra Damage.
+- Life Leech Amount; Mana Leech Amount.
+- Healing Received.
+- Physical Protection; Fire Protection; Earth Protection; Energy Protection; Ice Protection; Holy Protection; Death Protection; Life Drain Protection.
+
+| Família | Faixa por item (Rare / Epic / Ultra) | Teto adicional no conjunto |
+|---|---|---|
+| Attack Speed / Offensive Rune Cooldown Reduction | 3–6 / 6–9 / 9–12%, mais 0,60% por banda | 25% separados; piso de 1500 ms |
+| Offensive Spell Cooldown Reduction | 0,50–1 / 1–1,50 / 1,50–2%, mais 0,10% por banda | 5%; piso nativo preservado |
+| Critical Hit Chance | 0,25–0,40 / 0,40–0,60 / 0,60–0,75 ponto percentual | +2 pontos percentuais |
+| Critical Extra Damage | 1–1,50 / 1,50–2,25 / 2,25–3 pontos percentuais | +10 pontos percentuais |
+| Life/Mana Leech Amount | 0,25–0,50 / 0,50–0,75 / 0,75–1 ponto percentual | +3 pontos por tipo |
+| Spell Mana Cost Reduction | 0,50–1 / 1–2 / 2–3% | 8%, somado à redução específica |
+| Healing Received / cura específica | 0,50–1 / 1–2 / 2–3% | 8% por categoria |
+| Physical Protection | 0,50–0,75 / 0,75–1 / 1–1,50% | 4% |
+| Proteção elemental | 1–1,50 / 1,50–2,25 / 2,25–3% | 8% por elemento |
+| Life Drain Protection | 0,50–1 / 1–2 / 2–3% | 8% |
+
+Common também pode sortear proteção: física 0,25–0,50%, elemental 0,50–1%, life drain 0,25–0,50%. Healing Received aumenta cura por magia/runas nomeadas, não poções/leech. Custo de mana aplica-se a instant spells; custo positivo não fica menor que 1. Leech segue chance e redução de área nativas, sem garantir recuperação em cada acerto.
+
+Ataque automático e runas de base 2.000 ms: 10% → 1.800 ms; 20% → 1.600 ms; 25% → 1.500 ms. Uma runa de 6.000 ms com 25% continua em 4.500 ms. Instant spells mantêm o teto de 5% e piso do grupo Attack de 1.000 ms. Cura, suporte e grupos secundários conservam seus cooldowns. Se a regra nativa já estiver abaixo do piso, a raridade não aumenta nem reduz esse intervalo.
+
+Os bônus percentuais de dano funcionam no caminho nativo de combate, inclusive PvP após suas regras existentes; não há multiplicador PvP exclusivo. ML, crítico e velocidade podem elevar DPS além do teto percentual de dano. Esta calibração local ainda exige avaliação de gameplay antes de publicação.
+
+## 5. Persistência, compatibilidade e visual
+
+Versão, resultado, perfil, banda, origem, chaves/valores, quantidade e orçamento ficam na instância. Equipar aplica e desequipar remove. Apenas slots de combate contam, nunca backpack/depot. Os bônus originais, imbuements, resistências e regras de vocação continuam separados.
+
+Itens anteriores não recebem novos atributos nem vida/mana maiores retroativamente. A conversão v3 de velocidade pré-v3 continua idempotente (multiplica uma vez por seis os rolls antigos até 2,30%). Outros números/raridades originais são preservados. Texto em inglês mantém o detalhe original do item.
+
+O OTC recebe a mesma raridade por instância pelo protocolo bkrarity1 / recurso 136. Fundo e borda usam as quatro cores; slots normais/vazios limpam a cor. Arrastar/soltar não apaga a borda persistente. O tooltip orienta usar Look, sem prometer quantidade fixa de bônus; a lista completa está no Look.
+
+Rare/Epic/Ultra mantêm proteção contra venda NPC em lote/por ID. Normal/Common podem ser vendidos pelo preço original. Mercado de commodities bloqueia raridades; troca direta e Market real preservam atributos serializados. Nenhum bônus de preço NPC foi adicionado.
+
+## 6. Comando /i para testes
+
+A sintaxe antiga continua. Para forçar uma raridade com atributos aleatórios novos:
+
+```text
+/i bow, 1, ultra
+/i quiver, 1, epic
+/i wand of vortex, 1, rare
+/i 53226, 1, ultra
+```
+
+Também aceita `/i item, quantidade, forgeTier, raridade`. Nomes Common/Rare/Epic/Ultra e aliases portugueses continuam disponíveis. `random` segue as chances novas e pode gerar normal. Cada instância tem seu próprio sorteio; não rerrola equipamento existente.
+
+## 7. Validação e fontes
+
+- Compilação release nativa da WSL concluída com o cache existente.
+- 54.400 combinações de equipamento/raridade/banda verificam contagem, orçamento, incompatibilidades, faixas e preservação de itens antigos.
+- Simulação de 100 mil drops verifica distribuição 55/30/10/4/1.
+- Teste C++ independente verifica soma única, categorias/elementos, identificação de magias, caps, custo de mana e piso de 1500 ms.
+- Testes de /i, reward bags, Arcane Bag e manutenção preservados.
+- Cliente real 15.11: recursos acima de 100 sem cura ao equipar; Avalanche/Ice sem aumentar GFB; Fierce Berserk separado de Berserk; Ice ML chega à fórmula e sai ao desequipar; crítico/leech nas unidades nativas; Heal Friend, Healing Received e Fire Protection; serialização e relogin do loot v4.
+
+Fontes: `data/libs/systems/item_rarity.lua`, `src/utils/rarity_effects.hpp`, integração em Player/Combat/Spell/Movement; no OTC, `modules/game_interface/widgets/uiitem.lua`. Os testes manuais ficam em `tools/local-test`, fora do autoload. Nenhum dado de conta/banco/credencial faz parte do código.
+
+Executar na raiz do servidor:
+
+```sh
+luajit tests/lua/item_rarity_spec.lua
+g++ -std=c++20 -Isrc tests/unit/utils/rarity_effects_standalone.cpp -o /tmp/rarity-effects-test
+/tmp/rarity-effects-test
+g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test
+/tmp/rarity-balance-test
+```
+
+Não usar `-DNDEBUG` nos testes independentes, que usam assert. Balanceamento em combate contínuo, medição real de intervalos, regeneração temporizada e custo de casts reais devem ser avaliados em gameplay; os testes matemáticos não substituem essa avaliação.
+
+## 8. Produção anterior, separada desta implementação
+
+Em 05/11/2026 a v3 foi publicada e reiniciada no Quente por solicitação anterior, com Common 85% / Rare 10% / Epic 4% / Ultra 1% e cliente/assets r42. Runtime do servidor: d2312a552ab8698cb37b49373e1629d4cad60b98; cliente: c392611e501981dab03431d94108dec8a9213073. PRs anteriores: https://github.com/caiojosef/baiakeros/pull/16 e https://github.com/caiojosef/baiakeros-client/pull/20. Esta v4 não atualiza essas publicações automaticamente.
+
+Trabalho v4 na branch local `dudantas/item-affixes-v4-20261105` em ambos os repositórios. Não alterados start.sh, recompile.sh nem os endpoints localhost nesta implementação. Backup do executável e dos relatórios anteriores em G:/otserv/BACKUPS/antes-rarity-v4-20261105. Publicação no GitHub/Quente depende da próxima solicitação.
