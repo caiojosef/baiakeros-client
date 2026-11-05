@@ -107,6 +107,8 @@ public:
     uint32_t getObtainCategoryFlags() const { return m_obtainCategoryFlags; }
     bool isManagedContainer() const { return m_quickLootCategoryFlags != 0 || m_obtainCategoryFlags != 0; }
     uint8_t getTier() { return m_tier; }
+    void setRarity(uint8_t rarity) { m_rarity = rarity <= 4 ? rarity : 0; }
+    uint8_t getRarity() const { return m_rarity; }
 
     bool isValid() { return getThingType() != nullptr; }
 
@@ -190,6 +192,7 @@ private:
     uint32_t m_quickLootCategoryFlags{ 0 };
     uint32_t m_obtainCategoryFlags{ 0 };
     uint8_t m_tier{ 0 };
+    uint8_t m_rarity{ 0 };
     uint8_t m_phase{ 0 };
 
     Color m_color{ Color::white };
