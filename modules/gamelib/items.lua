@@ -88,7 +88,37 @@ function ItemsDatabase.getClipAndImagePath(item)
     return clip, imagePath, clipObject
 end
 
+ItemsDatabase.equipmentRarities = {
+    { name = 'Comum', color = '#4299ff', background = '#163557' },
+    { name = 'Raro', color = '#ac66ff', background = '#382253' },
+    { name = 'Epico', color = '#ffd447', background = '#554719' },
+    { name = 'Ultra', color = '#ff4545', background = '#551c1c' },
+}
+
 function ItemsDatabase.setRarityItem(widget, item, style)
+    if widget then
+        local rarity = item and type(item) ~= 'number' and item.getRarity and item:getRarity() or 0
+        local info = ItemsDatabase.equipmentRarities[rarity]
+        if info then
+            -- Instance rarity always wins over the old market-price decoration.
+            if not widget.baiakerosRarityState then
+                widget.baiakerosRarityState = { background = widget:getBackgroundColor(), border = widget:getBorderTopColor(), width = widget:getBorderTopWidth(), source = widget:getImageSource() }
+            end
+            widget:setImageSource('')
+            widget:setImageClip(nil)
+            widget:setBackgroundColor(info.background)
+            widget:setBorderColor(info.color)
+            widget:setBorderWidth(1)
+            return
+        elseif widget.baiakerosRarityState then
+            local state = widget.baiakerosRarityState
+            widget:setBackgroundColor(state.background)
+            widget:setBorderColor(state.border)
+            widget:setBorderWidth(state.width)
+            widget:setImageSource(state.source)
+            widget.baiakerosRarityState = nil
+        end
+    end
     if not g_game.getFeature(GameColorizedLootValue) or not widget then
         return
     end

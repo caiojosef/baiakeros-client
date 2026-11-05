@@ -244,8 +244,17 @@ end
 
 function UIItem:onItemChange()
     local tooltip = ""
+    local item = self:getItem()
+    local rarity = item and item.getRarity and item:getRarity() or 0
+    if ItemsDatabase and (rarity > 0 or self.baiakerosRarityState) then
+        ItemsDatabase.setRarityItem(self, item)
+    end
     if self:getItem() and self:getItem():getTooltip():len() > 0 then
         tooltip = self:getItem():getTooltip()
+    end
+    if rarity > 0 and ItemsDatabase and ItemsDatabase.equipmentRarities[rarity] then
+        local name = ItemsDatabase.equipmentRarities[rarity].name
+        tooltip = (tooltip ~= "" and tooltip .. "\n" or "") .. name .. " - " .. rarity .. " atributo(s). Use Look para ver os bonus."
     end
     self:setTooltip(tooltip)
 end

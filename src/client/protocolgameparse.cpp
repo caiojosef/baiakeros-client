@@ -4468,6 +4468,9 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     if (g_game.getFeature(Otc::GameItemTooltipV8)) {
         item->setTooltip(msg->getString());
     }
+    if (g_game.getFeature(Otc::GameItemRarity)) {
+        item->setRarity(msg->getU8());
+    }
 
     return item;
 }
