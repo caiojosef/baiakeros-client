@@ -91,7 +91,7 @@ end
 ItemsDatabase.equipmentRarities = {
     { name = 'Comum', color = '#4299ff', background = '#163557' },
     { name = 'Raro', color = '#ac66ff', background = '#382253' },
-    { name = 'Epico', color = '#ffd447', background = '#554719' },
+    { name = 'Épico', color = '#ffd447', background = '#554719' },
     { name = 'Ultra', color = '#ff4545', background = '#551c1c' },
 }
 
