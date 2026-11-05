@@ -88,6 +88,8 @@ Salvar raridade, versao da regra, perfil, banda de nivel, origem e atributos na 
 
 OTC recebe a raridade real por instancia, independente do preco medio. Exibe fundo e borda azul/roxa/amarela/vermelha e limpa a cor ao trocar/esvaziar o slot. Negociacao bkrarity1/recurso 136 mantem o pacote anterior para clientes antigos.
 
+O encerramento de drag, drop rejeitado, saida de hover e destruicao da origem arrastada devem restaurar a borda da raridade do item que permanece no slot. Limpar o destaque temporario de drag nao pode apagar a borda persistente. Itens comuns sem raridade e slots vazios continuam limpando a borda temporaria. Regressao: `luajit tests/lua/item_rarity_border_spec.lua`, alem do teste nativo `tests/native/item_rarity.lua` com widgets reais.
+
 Rare/Epic/Ultra sao protegidos contra venda NPC em lote ou por ID nesta primeira versao; Common pode ser vendido pelo preco original. O mercado nativo de commodities bloqueia raridades pois recria por tipo. Troca direta e Market real usam a serializacao da instancia. Nao aumentar o pagamento NPC por raridade.
 
 ## Criacao administrativa com /i
