@@ -1,6 +1,6 @@
 # Raridades e atributos — Baiakeros Tibia nativo / OTC
 
-Versão 4, implementada e compilada localmente em 05/11/2026. Exclusiva do MMO Canary e OTC; não pertence ao Idler/mobile. Esta versão não foi publicada no Quente. A publicação anterior de produção continua sendo a v3 com cliente r42, registrada no final deste documento.
+Versão 4, implementada na WSL e publicada no Quente em 05/11/2026, com cliente/assets r43. Exclusiva do MMO Canary e OTC; não pertence ao Idler/mobile. Compilação nativa, reinício do serviço e atualização pública verificados.
 
 ## 1. Chances e quantidade de atributos
 
@@ -141,7 +141,7 @@ Common também pode sortear proteção: física 0,25–0,50%, elemental 0,50–1
 
 Ataque automático e runas de base 2.000 ms: 10% → 1.800 ms; 20% → 1.600 ms; 25% → 1.500 ms. Uma runa de 6.000 ms com 25% continua em 4.500 ms. Instant spells mantêm o teto de 5% e piso do grupo Attack de 1.000 ms. Cura, suporte e grupos secundários conservam seus cooldowns. Se a regra nativa já estiver abaixo do piso, a raridade não aumenta nem reduz esse intervalo.
 
-Os bônus percentuais de dano funcionam no caminho nativo de combate, inclusive PvP após suas regras existentes; não há multiplicador PvP exclusivo. ML, crítico e velocidade podem elevar DPS além do teto percentual de dano. Esta calibração local ainda exige avaliação de gameplay antes de publicação.
+Os bônus percentuais de dano funcionam no caminho nativo de combate, inclusive PvP após suas regras existentes; não há multiplicador PvP exclusivo. ML, crítico e velocidade podem elevar DPS além do teto percentual de dano. Esta calibração publicada continua sujeita à avaliação de gameplay e ajustes de balanceamento.
 
 ## 5. Persistência, compatibilidade e visual
 
@@ -193,4 +193,20 @@ Não usar `-DNDEBUG` nos testes independentes, que usam assert. Balanceamento em
 
 Em 05/11/2026 a v3 foi publicada e reiniciada no Quente por solicitação anterior, com Common 85% / Rare 10% / Epic 4% / Ultra 1% e cliente/assets r42. Runtime do servidor: d2312a552ab8698cb37b49373e1629d4cad60b98; cliente: c392611e501981dab03431d94108dec8a9213073. PRs anteriores: https://github.com/caiojosef/baiakeros/pull/16 e https://github.com/caiojosef/baiakeros-client/pull/20. Esta v4 não atualiza essas publicações automaticamente.
 
-Trabalho v4 na branch local `dudantas/item-affixes-v4-20261105` em ambos os repositórios. Não alterados start.sh, recompile.sh nem os endpoints localhost nesta implementação. Backup do executável e dos relatórios anteriores em G:/otserv/BACKUPS/antes-rarity-v4-20261105. Publicação no GitHub/Quente depende da próxima solicitação.
+Trabalho v4 enviado à branch `dudantas/item-affixes-v4-20261105` em ambos os repositórios. Não alterados start.sh, recompile.sh nem os endpoints localhost nesta implementação. Backup local do executável e dos relatórios anteriores em G:/otserv/BACKUPS/antes-rarity-v4-20261105.
+
+## 9. Publicação v4 / r43 em 05/11/2026
+
+Publicação e reinício explicitamente autorizados pelo usuário. O Quente recebeu a distribuição Normal 55% / Common 30% / Rare 10% / Epic 4% / Ultra 1%, pools de atributos com orçamento e recursos novos acima de 100.
+
+Fonte de runtime do servidor: `d78c26f679356ae4d1bdce6dc35fa0cad6ba58c2`. Executável compilado no próprio Quente, SHA-256 `2249696b4b5c2e0c6110fc35335ae323e2efd1bd30f4b37dd6122ba330a0af0e`. Serviço canary ativo, portas 7171/7172 abertas e inicialização sem erros. O novo drop-in do serviço permite reverter para o executável anterior.
+
+Cliente de produção na revisão 43, fonte `f9157456c3fd59517c118384502b022979577d65`. O empacotador gera init.lua com revisão 43 apenas no artefato e usa environment.production.lua; o ambiente localhost do checkout continua preservado. Ambos os manifestos públicos estão em 43, com 16.332 arquivos, dois pacotes alterados e nenhuma exclusão.
+
+Pacotes alterados: init.lua e modules/game_interface/widgets/uiitem.lua. Todos passaram por tamanho/hash compactado e descompactado via HTTPS público. A configuração de produção também foi verificada pelo pacote publicado. O teste real do updater TestPublishedNativePackages passou, incluindo o caminho com #. Nenhuma recompilação do OTC foi necessária para esta mudança de Lua; o executável com suporte à raridade por instância permanece o mesmo.
+
+Os testes Lua de raridade, bolsas, /i, Arcane Bag e manutenção, e os testes C++ de cálculo, passaram também no Quente antes do reinício. Os hashes de start.sh, recompile.sh, config.lua e market.local.lua foram preservados. Banco e mapas não foram substituídos.
+
+Backup remoto: /var/backups/baiakeros/rarity-r43-20261105, incluindo código anterior, definição do serviço, manifestos anteriores, configuração nginx e registro de ativação. O cliente e os assets foram publicados após o servidor ficar saudável. Para receber a atualização, fechar o OTC e abrir novamente pelo launcher.
+
+PRs: https://github.com/caiojosef/baiakeros/pull/17 e https://github.com/caiojosef/baiakeros-client/pull/21. Os commits estão nas branches de trabalho; merge na main depende de revisão e solicitação. Os PRs incluem a base de raridade dos PRs anteriores #16/#20, que deve ser considerada na ordem de integração.
