@@ -1,6 +1,6 @@
 # Raridades e atributos — Baiakeros Tibia nativo / OTC
 
-Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas ate 25%, piso de 1500 ms). Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. O Quente nao e alterado por esta implementacao local.
+Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas ate 25%, piso de 1500 ms). Exclusivo do servidor Canary e OTC nativo; nao pertence ao Idler/mobile. Publicado no Quente por solicitacao explicita em 05/11/2026, junto com o cliente nativo r42.
 
 ## Raridades e loot
 
@@ -13,7 +13,7 @@ Atualizado em 05/11/2026: regra de atributos v3 (Attack Speed e runas ofensivas 
 
 O monstro/boss sorteia seu loot normal. Equipamento elegivel novo que cair recebe exatamente uma raridade; nao ha resultado normal sem raridade. Bonus VIP, loot rate e contribuicao continuam afetando a queda normal, sem multiplicar a raridade novamente. Distribuicao aprovada para publicacao em 05/11/2026: 85% Common, 10% Rare, 4% Epic e 1% Ultra. Continua sem equipamento elegivel normal apos cair.
 
-Elegiveis: helmet, armor, legs, boots, shield, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva suas regras de municao e capacidade. Excluir rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, consumiveis e produtos de criatura. Loja/NPC/comando/quest nao reclassificam automaticamente os itens.
+Elegiveis: helmet, armor, legs, boots, shield, sword/axe/club, distance, wraps de monk, wand/rod e quiver. Quiver preserva suas regras de municao e capacidade. Excluir rings, amulets, backpacks, demais containers, municoes, runas, exercises/training weapons, moedas, consumiveis e produtos de criatura. Loja/NPC/comando/quest nao reclassificam automaticamente os itens. Excecao de loot de bosses: Bag You Desire, Primal Bag e Bag You Covet aplicam a raridade ao equipamento entregue ao abrir a bolsa, antes de enviar sua instancia ao cliente. Arcane Bag mantem o fluxo proprio sem reclassificacao.
 
 Atributos seguem o equipamento e suas restricoes, nao a vocacao de quem matou. Requisitos originais de vocacao, level e elemento continuam valendo. O primeiro atributo e basico; demais atributos sao sorteados sem repeticao no mesmo grupo.
 
@@ -114,14 +114,28 @@ Aceita common, rare, epic, ultra e random; aliases comum, raro, epico/épico e a
 
 Fonte local: WSL Ubuntu-24.04, /home/baiakeros/baiakeros. OTC: G:\otserv\otclient-main. Branches: dudantas/item-rarity-20261105. Preservar localhost, start.sh e recompile.sh. Publicacao no Quente precisa de solicitacao explicita.
 
-Testes v2: 192 combinacoes de grupos/ranks/bandas; intervalos crescentes; grupos de mage e armas fisicas; quiver; loot normal/boss/nested; traducao exata do exemplo Rare sem mudar numeros; idempotencia; 100 mil sorteios. Teste C++ cobre reducoes reais em milissegundos, teto de 5%, pisos, valores negativos/corrompidos e intervalos pequenos.
+Testes de regras e regressao: 192 combinacoes de grupos/ranks/bandas; intervalos crescentes; grupos de mage e armas fisicas; quiver; loot normal/boss/nested; traducao exata do exemplo Rare sem mudar numeros; idempotencia; 100 mil sorteios. Teste C++ cobre reducoes reais em milissegundos, tetos separados de 25% para ataque/runa e 5% para instant spells, pisos, valores negativos/corrompidos e intervalos pequenos.
 
 Compilacao release do servidor v2 concluida. Validacao nativa com personagem descartavel confirmou equip/de-equip de boots, quiver e wand, aplicacao e remocao de vida/mana/skills/magic level/movement speed, descricao em ingles e preservacao exata dos atributos em dois logins reais com save/load no banco. OTC confirmou o recurso 136 e a instancia Ultra recebida. A conta, personagem, equipamentos e credenciais temporarios foram removidos.
 
-Cooldowns foram verificados por testes C++ de calculo e integracao no caminho nativo; medicao de casts em combate e balanceamento de gameplay/mercados ainda precisam de testes antes de publicar no Quente.
+Cooldowns foram verificados por testes C++ de calculo e integracao no caminho nativo; medicao de casts em combate e balanceamento de gameplay/mercados continuam sujeitos a avaliacao de gameplay apos esta publicacao autorizada.
 
 Reproduzir testes de regras a partir da raiz do servidor: luajit tests/lua/item_rarity_spec.lua. Teste C++ independente: g++ -std=c++20 -Isrc tests/unit/utils/rarity_balance_standalone.cpp -o /tmp/rarity-balance-test && /tmp/rarity-balance-test. Nao compilar esse teste com -DNDEBUG, pois usa assert.
 
 Testes adicionais de /i: sintaxe antiga e nova, combinacao Forge/raridade, lote por instancia, nomes/aliases, random, rejeicao sem criar item, falha de rolagem sem entregar item normal e preservacao do Mini Obelisk. API valida ranks administrativos e impede rerrolar itens existentes; 192 combinacoes e 100 mil sorteios de loot continuam passando.
 
-Validacao v3: migracao dos rolls reais 2,11%/1,85% e de runa 2,00%, idempotencia, preservacao dos demais atributos, grupos de mage com runa e intervalos C++ ate 1.500 ms. Instant spells preservam o teto de 5%. Compilacao release concluida e v3 ativada localmente em 05/11/2026, com zero jogadores conectados no reinicio. Teste nativo de startup passou: instancias reais de bow/quiver/rod, migracao uma unica vez, preservacao dos outros atributos, serialize/clone e faixas de rolls novas. Os itens temporarios foram removidos e o teste deixou de ser carregado no startup. Servidor online em 7171/7172; ainda e necessario avaliar o balanceamento em combate. O Quente nao foi alterado.
+Validacao v3: migracao dos rolls reais 2,11%/1,85% e de runa 2,00%, idempotencia, preservacao dos demais atributos, grupos de mage com runa e intervalos C++ ate 1.500 ms. Instant spells preservam o teto de 5%. Compilacao release concluida e v3 ativada localmente em 05/11/2026, com zero jogadores conectados no reinicio. Teste nativo de startup passou: instancias reais de bow/quiver/rod, migracao uma unica vez, preservacao dos outros atributos, serialize/clone e faixas de rolls novas. Os itens temporarios foram removidos e o teste deixou de ser carregado no startup. Servidor online em 7171/7172; ainda e necessario avaliar o balanceamento em combate. A publicacao no Quente foi concluida posteriormente nesta mesma data, conforme o registro abaixo.
+
+## Publicacao no Quente e GitHub em 05/11/2026
+
+Servidor publicado e reiniciado com sucesso, fonte de runtime d2312a552ab8698cb37b49373e1629d4cad60b98, SHA-256 do executavel nativo e9ab25412e552e7dc0a6663bb392ca4dcf1bf4708d448d97e82c7a3ae5380075. Compilado no proprio Ubuntu do Quente, sem copiar binario da WSL. Portas 7171/7172 abertas e nenhuma mensagem de erro no log de inicializacao verificado. O servidor continua gerenciado pelo servico canary existente.
+
+Cliente e assets publicados juntos na revisao 42, fonte c392611e501981dab03431d94108dec8a9213073. Foram preservados 16.332 arquivos do manifesto e publicados 13 pacotes alterados, sem exclusoes. Todos os pacotes novos tiveram tamanho, hash compactado e hash descompactado verificados por HTTPS publico. O teste real TestPublishedNativePackages do launcher passou, incluindo caminho com caractere #. Os jogadores devem fechar o OTC e abri-lo pelo launcher para receber a revisao 42.
+
+start.sh, recompile.sh, config.lua e market.local.lua tiveram seus hashes preservados. Configuracao localhost local preservada. Banco e mapas de jogadores nao foram substituidos. Alteracoes de codigo que ja estavam no Quente foram revisadas e preservadas no Git: validacao de sessao de dois fatores, acesso de contas staff durante manutencao e coleta de powergamers. Backup de codigo, manifests e configuracao nginx em /var/backups/baiakeros/rarity-r42-20261105; patch de codigo anterior tambem preservado em stash.
+
+Branches de trabalho enviadas para origin/dudantas/item-rarity-20261105 nos dois repositorios. PRs: https://github.com/caiojosef/baiakeros/pull/16 e https://github.com/caiojosef/baiakeros-client/pull/20. Nenhum merge na main foi realizado. PRs anteriores #14/#15 do servidor e #19 do cliente tem sobreposicao de historico com estas branches.
+
+Auditoria final: nenhum commit da main remota estava faltando nas duas copies locais. Nenhuma outra branch do servidor tinha commits ausentes. No cliente, attack-controls-layout e node-stand-route possuem patches equivalentes ja incorporados; parte de paladin-helper-1525 tambem. Seu commit historico cbdd31a contem alternativas antigas de efeitos de ataque e Alt-Tab/fullscreen que nao foram reaplicadas automaticamente. chore/update-vcpkg-baseline tem dois commits automaticos de dependencia pendentes, mantidos separados desta publicacao. Esses casos sao pendencias de revisao, nao atualizacoes novas do colaborador na main.
+
+Validacao adicional: 334 arquivos Lua da publicacao integrada passaram no parser LuaJIT; testes de Warzones, manutencao, /i, bolsas de boss e Arcane Bag passaram localmente e no Quente. As bolsas rolam antes da entrega; falta de espaco ou falha de criacao/rolagem preserva a bolsa e remove a instancia temporaria.
