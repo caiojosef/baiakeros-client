@@ -210,3 +210,7 @@ Os testes Lua de raridade, bolsas, /i, Arcane Bag e manutenção, e os testes C+
 Backup remoto: /var/backups/baiakeros/rarity-r43-20261105, incluindo código anterior, definição do serviço, manifestos anteriores, configuração nginx e registro de ativação. O cliente e os assets foram publicados após o servidor ficar saudável. Para receber a atualização, fechar o OTC e abrir novamente pelo launcher.
 
 PRs: https://github.com/caiojosef/baiakeros/pull/17 e https://github.com/caiojosef/baiakeros-client/pull/21. Os commits estão nas branches de trabalho; merge na main depende de revisão e solicitação. Os PRs incluem a base de raridade dos PRs anteriores #16/#20, que deve ser considerada na ordem de integração.
+
+## Correção do Rashid publicada em 06/11/2026
+
+Rashid aceita itens com raridade do seu catálogo pelo preço normal. Sell All confirma a redução real, repete vendas parciais/rejeitadas e verifica sobras, respeitando blacklist e equipamentos ignorados. O catálogo de abertura inclui tipos que só possuem cópias coloridas. Publicação de servidor e cliente/assets r44 validada; detalhes em docs/rashid-sales.md (cliente) e docs/systems/rashid-sales.md (servidor). As chances de drop do Quente foram preservadas.
