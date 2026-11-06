@@ -488,7 +488,7 @@ function controllerNpcTrader:onUpdateEquippedImbuements(items)
                     break
                 end
             end
-            if hasActiveImbuement then
+            if hasActiveImbuement and (not self.rashidTrade or not ptr.getTier or (ptr:getTier() or 0) == 0) then
                 local id = ptr:getId()
                 counts[id] = (counts[id] or 0) + ptr:getCount()
             end
@@ -538,7 +538,8 @@ function controllerNpcTrader:getSellQuantity(itemPtr)
         local equippedCount = 0
         for i = 1, 10 do
             local item = player:getInventoryItem(i)
-            if item and item:getId() == id and item:getSubType() == subType then
+            if item and item:getId() == id and item:getSubType() == subType and
+                    (not self.rashidTrade or not item.getTier or (item:getTier() or 0) == 0) then
                 equippedCount = equippedCount + item:getCount()
             end
         end

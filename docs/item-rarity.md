@@ -151,7 +151,7 @@ Itens anteriores não recebem novos atributos nem vida/mana maiores retroativame
 
 O OTC recebe a mesma raridade por instância pelo protocolo bkrarity1 / recurso 136. Fundo e borda usam as quatro cores; slots normais/vazios limpam a cor. Arrastar/soltar não apaga a borda persistente. O tooltip orienta usar Look, sem prometer quantidade fixa de bônus; a lista completa está no Look.
 
-Rare/Epic/Ultra mantêm proteção contra venda NPC em lote/por ID. Normal/Common podem ser vendidos pelo preço original. Mercado de commodities bloqueia raridades; troca direta e Market real preservam atributos serializados. Nenhum bônus de preço NPC foi adicionado.
+Rashid aceita Normal/Common/Rare/Epic/Ultra pelo preço original do catálogo, inclusive em Sell All. Outros NPCs mantêm sua política anterior de raridades. Forge e imbuements ativos continuam protegidos. Mercado de commodities bloqueia raridades; troca direta e Market real preservam atributos serializados. Nenhum bônus de preço NPC foi adicionado.
 
 ## 6. Comando /i para testes
 
