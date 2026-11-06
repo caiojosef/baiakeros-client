@@ -1755,6 +1755,12 @@ end
 
 BaiakHelperExplorerV2.isAutoExplorerActive = isAutoExplorerActive
 
+-- Keep combat owned by the running session, rather than by recent user input
+-- or movement. Expired quota and Party Hunt routes do not grant this lease.
+function BaiakHelperExplorerV2.isCombatAutomationActive()
+    return g_game.isOnline() and running and not routeController and remainingMs() > 0
+end
+
 function shouldHoldExplorerAttack()
     if routeController then return false end
     if options.huntStyle == 'chase' or options.huntStyle == 'lure' then return false end
