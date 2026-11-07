@@ -230,8 +230,12 @@ function Cyclopedia.loadCharacterAppearances(color, outfits, mounts, familiars)
 end
 
 function Cyclopedia.characterItemsSearch(text)
+    if not UI or UI:isDestroyed() then
+        return
+    end
     local filter = UI.CharacterItems.filters
     local activeFilters = {}
+    local query = (text or ""):lower()
 
     for i = 1, filter:getChildCount() do
         local child = filter:getChildByIndex(i)
@@ -240,42 +244,37 @@ function Cyclopedia.characterItemsSearch(text)
         end
     end
 
-    for _, item in ipairs(Cyclopedia.Character.Items) do
+    for _, item in ipairs(Cyclopedia.Character.Items or {}) do
         local data = item.data
-        local name = data.name:lower()
-        local meetsSearchCriteria = text == "" or string.find(name, text:lower()) ~= nil
-        local meetsFilterCriteria = #activeFilters == 0 or table.contains(activeFilters, data.type)
-        data.visible = meetsSearchCriteria and meetsFilterCriteria
+        local matchesSearch = query == "" or data.name:lower():find(query, 1, true) ~= nil
+        data.visible = matchesSearch and table.contains(activeFilters, data.type)
     end
 
     Cyclopedia.reloadCharacterItems()
 end
 
 function Cyclopedia.characterItemsFilter(widget, force)
+    if not UI or UI:isDestroyed() then
+        return
+    end
     if force then
         widget:setChecked(true)
     end
-
-    local id = widget:getId()
-
-    for _, item in ipairs(Cyclopedia.Character.Items) do
-        local data = item.data
-        if data.type == id then
-            data.visible = widget:isChecked()
-        end
-    end
-
-    Cyclopedia.reloadCharacterItems()
+    -- Source checkboxes and the text search always describe the same result set.
+    Cyclopedia.characterItemsSearch(UI.CharacterItems.filters.SearchEdit:getText())
 end
 
 function Cyclopedia.reloadCharacterItems()
+    if not UI or UI:isDestroyed() then
+        return
+    end
     UI.CharacterItems.ListBase.list:destroyChildren()
     UI.CharacterItems.gridBase.grid:destroyChildren()
 
     local colors = {"#484848", "#414141"}
     local colorIndex = 1
 
-    for _, item in ipairs(Cyclopedia.Character.Items) do
+    for _, item in ipairs(Cyclopedia.Character.Items or {}) do
         local itemId, data = item.itemId, item.data
 
         if data.visible then
@@ -297,6 +296,9 @@ function Cyclopedia.reloadCharacterItems()
 end
 
 function Cyclopedia.loadCharacterItems(data)
+    if not UI or UI:isDestroyed() then
+        return
+    end
     local inventory = data.inventory
     local store = data.store
     local stash = data.stash
@@ -320,10 +322,10 @@ function Cyclopedia.loadCharacterItems(data)
             type = type
         }
 
-        local itemKey = data.itemId .. "-" .. (data.tier or "no_tier")
+        local itemKey = type .. "-" .. data.itemId .. "-" .. (data.tier or "no_tier")
         local insertedItem = Cyclopedia.Character.Items[itemKey]
-        if insertedItem and insertedItem.amount then
-            insertedItem.amount = insertedItem.amount + data.amount
+        if insertedItem then
+            insertedItem.data.amount = insertedItem.data.amount + data.amount
         else
             Cyclopedia.Character.Items[itemKey] = {
                 itemId = data.itemId,
@@ -334,6 +336,7 @@ function Cyclopedia.loadCharacterItems(data)
     end
 
     local function processContainer(container, containerType)
+        container = container or {}
         for i = 0, #container do
             local data = container[i]
             if data then
