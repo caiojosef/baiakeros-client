@@ -570,6 +570,7 @@ function controllerShop:onGameStart()
 end
 
 function controllerShop:onGameEnd()
+    HirelingStore.close(true)
     if controllerShop.ui:isVisible() then
         controllerShop.ui:hide()
     end
@@ -585,6 +586,7 @@ function controllerShop:onGameEnd()
 end
 
 function controllerShop:onTerminate()
+    HirelingStore.close(true)
     destroyWindow({transferPointsWindow, changeNameWindow, acceptWindow, processingWindow,messageBox})
     purchaseStatusCloseEvent = nil
     purchaseAnimationEvent = nil
@@ -610,6 +612,7 @@ function onParseStoreGetCoin(getTibiaCoins, getTransferableCoins)
     controllerShop.ui.lblCoins.lblTibiaCoins:setText(formatNumberWithCommas(getTibiaCoins))
     controllerShop.ui.lblCoins.lblTibiaTransfer:setText(string.format("(Including: %s",
         formatNumberWithCommas(getTransferableCoins)))
+    HirelingStore.refresh()
 end
 
 function onParseStoreOfferDescriptions(offerId, description)
@@ -620,6 +623,7 @@ function onParseStoreOfferDescriptions(offerId, description)
 end
 
 function onParseStoreGetPurchaseStatus(purchaseStatus)
+    HirelingStore.onSuccess()
     destroyWindow({processingWindow, messageBox})
     controllerShop.ui:hide()
     messageBox = g_ui.createWidget('confirmarSHOP', g_ui.getRootWidget())
@@ -689,11 +693,16 @@ function onParseStoreCreateProducts(storeProducts)
         row.product, row.type = product, product.type
 
         row.lblName:setText(product.name)
+        row.lblName:setTooltip(product.name)
 
         local subOffers = product.subOffers or { product }
         local offerCount = #subOffers
-        row:setHeight(math.max(78, 34 + offerCount * 22))
-        row.StackOffers:setHeight(offerCount * 20 + math.max(0, offerCount - 1) * 2)
+        -- Reserve separate areas for the full title, offer rows and the New badge.
+        local titleHeight = math.max(28, row.lblName:getTextSize().height)
+        local offersHeight = offerCount * 20 + math.max(0, offerCount - 1) * 2
+        row.lblName:setHeight(titleHeight)
+        row.StackOffers:setHeight(offersHeight)
+        row:setHeight(math.max(96, 6 + titleHeight + 6 + offersHeight + 5))
         for _, subOffer in ipairs(subOffers) do
             if subOffer.state == GameStore.States.STATE_NEW then
                 row.newBadge:setVisible(true)
@@ -774,6 +783,7 @@ function onParseStoreCreateHome(offer)
         local row = g_ui.createWidget('HomeOfferRow', isPromotion and promotionProducts or homeProductos)
         row.product, row.type = product, product.type
         row.lblName:setText(product.name)
+        row.lblName:setTooltip(product.name)
         row.lblPrice:setText(product.price)
         row.newBadge:setVisible(product.unknownByte2 == GameStore.States.STATE_NEW)
         if isPromotion then
@@ -800,7 +810,7 @@ function onParseStoreCreateHome(offer)
         if rows == 0 then
             return 42
         end
-        return 31 + rows * 72 + (rows - 1) * 4
+        return 31 + rows * 96 + (rows - 1) * 4
     end
     controllerShop.ui.HomePanel.HomeContent.HomePromotions:setHeight(sectionHeight(promotionCount))
     controllerShop.ui.HomePanel.HomeContent.HomeRecentlyAdded:setHeight(sectionHeight(purchasedCount))
@@ -1001,7 +1011,9 @@ function onParseStoreError(errorMessage)
     destroyWindow(processingWindow)
     -- A failed request must not leave the category menu locked forever.
     enableAllButtons()
-    displayErrorBox(controllerShop.ui:getText(), errorMessage)
+    if not HirelingStore.onError(errorMessage) then
+        displayErrorBox(controllerShop.ui:getText(), errorMessage)
+    end
 end
 
 -- /*=============================================
@@ -1126,6 +1138,10 @@ function chooseOffert(self, focusedChild)
     offerStackPanel:destroyChildren()
 
     local offers = not table.empty(subOffers) and subOffers or { product }
+    -- Descriptions start below every buy option, including three-quantity offers.
+    local columns = math.max(1, math.floor((offerStackPanel:getWidth() + 3) / 148))
+    local offersHeight = math.ceil(#offers / columns) * 53 - 3
+    panel.previewSpacer:setHeight(math.max(imagePanel:getHeight(), offersHeight))
     for _, offer in ipairs(offers) do
         local offerPanel = g_ui.createWidget('OfferPanel2', offerStackPanel)
 
@@ -1138,11 +1154,14 @@ function chooseOffert(self, focusedChild)
         end
 
         if product.configurable then
-            offerPanel:getChildById('btnBuy'):setText("Configurable")
+            offerPanel:getChildById('btnBuy'):setText(HirelingStore.isHireling(product) and "Configure" or "Configurable")
         end
 
         local isTransferable = offer.coinType == GameStore.CoinType.Transferable
         local currentBalance = isTransferable and transferableCoins or (normalCoins + transferableCoins)
+        if HirelingStore.isHireling(product) then
+            currentBalance = HirelingStore.spendableBalance(offer, normalCoins, transferableCoins)
+        end
 
         if isTransferable then
             priceLabel:setIcon("/game_store/images/icon-tibiacointransferable")
@@ -1187,12 +1206,15 @@ function chooseOffert(self, focusedChild)
                 destroyWindow(acceptWindow)
             end
 
-            if product.configurable or product.name == "Character Name Change" then
-                return displayChangeName(offer)
+            if HirelingStore.isHireling(product) then
+                return HirelingStore.open(offer, product, controllerShop.ui, function()
+                    local total, transferable = getCoinsBalance()
+                    return HirelingStore.spendableBalance(offer, total, transferable)
+                end)
             end
 
-            if product.name == "Hireling Apprentice" then
-                return displayErrorBox(controllerShop.ui:getText(), "not yet, UI missing")
+            if product.configurable or product.name == "Character Name Change" then
+                return displayChangeName(offer)
             end
 
             local function acceptFunc()

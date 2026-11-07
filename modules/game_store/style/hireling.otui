@@ -1,0 +1,132 @@
+MainWindow
+  id: hirelingPurchaseWindow
+  text: Configure Hireling
+  size: 490 364
+  @onEscape: modules.game_store.HirelingStore.close()
+  @onEnter: modules.game_store.HirelingStore.confirm()
+
+  Label
+    id: introduction
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 28
+    text-wrap: true
+    text: Choose a name and gender for your personal NPC.
+
+  Label
+    id: nameLabel
+    anchors.top: introduction.bottom
+    anchors.left: parent.left
+    margin-top: 8
+    size: 70 22
+    text: Name:
+    font: verdana-bold_11
+
+  TextEdit
+    id: nameEdit
+    anchors.left: nameLabel.right
+    anchors.right: parent.right
+    anchors.top: nameLabel.top
+    margin-left: 8
+    height: 22
+    max-length: 18
+    placeholder: Hireling name
+    @onTextChange: modules.game_store.HirelingStore.onChange()
+
+  Label
+    id: genderLabel
+    anchors.top: nameLabel.bottom
+    anchors.left: parent.left
+    margin-top: 10
+    size: 70 22
+    text: Gender:
+    font: verdana-bold_11
+
+  ComboBox
+    id: gender
+    anchors.left: nameEdit.left
+    anchors.right: parent.right
+    anchors.top: genderLabel.top
+    height: 22
+    @onOptionChange: modules.game_store.HirelingStore.onChange()
+
+  Creature
+    id: preview
+    anchors.top: genderLabel.bottom
+    anchors.left: parent.left
+    margin-top: 14
+    size: 96 96
+    phantom: true
+
+  Label
+    id: previewCaption
+    anchors.top: preview.bottom
+    anchors.left: preview.left
+    anchors.right: preview.right
+    height: 16
+    text-align: center
+    font: verdana-11px-antialised
+
+  Label
+    id: price
+    anchors.top: preview.top
+    anchors.left: preview.right
+    anchors.right: parent.right
+    margin-left: 14
+    height: 22
+    font: verdana-bold_11
+
+  Label
+    id: balance
+    anchors.top: price.bottom
+    anchors.left: price.left
+    anchors.right: price.right
+    margin-top: 4
+    height: 20
+
+  Label
+    id: delivery
+    anchors.top: balance.bottom
+    anchors.left: price.left
+    anchors.right: price.right
+    margin-top: 8
+    height: 44
+    text-wrap: true
+    text: Your hireling arrives in a magic lamp in your Store Inbox. Use it in a house you own.
+
+  Label
+    id: message
+    anchors.top: previewCaption.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    height: 40
+    text-wrap: true
+    text-align: topLeft
+
+  HorizontalSeparator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: cancel.top
+    margin-bottom: 10
+
+  QtButton
+    id: cancel
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    size: 80 24
+    font: verdana-bold_11
+    text: Cancel
+    @onClick: modules.game_store.HirelingStore.close()
+
+  QtButton
+    id: buy
+    anchors.right: cancel.left
+    anchors.top: cancel.top
+    margin-right: 9
+    size: 80 24
+    font: verdana-bold_11
+    text: Buy
+    enabled: false
+    @onClick: modules.game_store.HirelingStore.confirm()
