@@ -63,9 +63,11 @@ MainWindow
 
   VerticalScrollBar
     id: scrollbar
-    anchors.top: results.top
-    anchors.bottom: results.bottom
+    anchors.top: status.bottom
+    anchors.bottom: closeButton.top
     anchors.right: parent.right
+    margin-top: 6
+    margin-bottom: 10
     step: 35
     pixels-scroll: true
 

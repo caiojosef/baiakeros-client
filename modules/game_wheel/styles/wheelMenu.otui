@@ -11,6 +11,7 @@ PerksPanel < Panel
     color: #c0c0c0
     text-auto-resize: true
   Label
+    height: 16
     id: value
     !text: tr('0%%')
     width: 88
@@ -214,7 +215,7 @@ Panel
         id: dedicationPb
         size: 200 15
         !text: tr('0 / 0')
-        font: Verdana Bold-11px
+        font: verdana-bold_10
         color: #c0c0c0
         image-source: /images/game/wheel/progressBar
         anchors.top: prev.top
@@ -482,7 +483,7 @@ Panel
             id: dedicationPB2
             size: 200 15
             !text: tr('0 / 0')
-            font: Verdana Bold-11px
+            font: verdana-bold_10
             color: #c0c0c0
             image-source: /images/game/wheel/progressBar
             anchors.top: prev.top
@@ -785,6 +786,7 @@ Panel
         anchors.left: parent.left
         size: 200 16
         Label
+          height: 16
           id: perk
           !text: tr('Hit Points')
           width: 100
@@ -794,6 +796,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('0')
           width: 88
@@ -809,6 +812,7 @@ Panel
         anchors.left: parent.left
         size: 200 16
         Label
+          height: 16
           id: perk
           !text: tr('Mana')
           width: 100
@@ -818,6 +822,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('0')
           width: 88
@@ -833,6 +838,7 @@ Panel
         anchors.left: parent.left
         size: 200 16
         Label
+          height: 16
           id: perk
           !text: tr('Capacity')
           width: 100
@@ -842,6 +848,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('0')
           width: 88
@@ -857,6 +864,7 @@ Panel
         anchors.left: parent.left
         size: 200 16
         Label
+          height: 16
           id: perk
           !text: tr('Mitigation Mult.')
           width: 102
@@ -866,6 +874,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('0%%')
           width: 88
@@ -1001,6 +1010,7 @@ Panel
         anchors.left: parent.left
         size: 200 16
         Label
+          height: 16
           id: dmgHealing
           !text: tr('Damage and Healing')
           width: 140
@@ -1010,6 +1020,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('+0')
           width: 88
@@ -1035,6 +1046,7 @@ Panel
         margin-top: 2
         size: 200 16
         Label
+          height: 16
           id: perk1
           !text: tr('Avatar Of Nature')
           width: 135
@@ -1044,6 +1056,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('Locked')
           width: 88
@@ -1070,6 +1083,7 @@ Panel
         size: 200 16
         margin-top: 2
         Label
+          height: 16
           id: perk2
           !text: tr('Blessing of the...')
           width: 135
@@ -1079,6 +1093,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('Locked')
           width: 88
@@ -1105,6 +1120,7 @@ Panel
         size: 200 16
         margin-top: 2
         Label
+          height: 16
           id: perk3
           !text: tr('Gift Of Life')
           width: 135
@@ -1114,6 +1130,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('Locked')
           width: 88
@@ -1140,6 +1157,7 @@ Panel
         size: 200 16
         margin-top: 2
         Label
+          height: 16
           id: perk4
           !text: tr('Twin Bursts')
           width: 135
@@ -1149,6 +1167,7 @@ Panel
           font: Verdana Bold-11px
           color: #c0c0c0
         Label
+          height: 16
           id: value
           !text: tr('Locked')
           width: 88

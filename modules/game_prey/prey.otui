@@ -875,8 +875,7 @@ PreyCreature < Panel
     anchors.left: prev.right
     margin-left: 5
     anchors.top: parent.top
-    anchors.bottom: prev.bottom
-    margin-bottom: 7
+    height: 16
     anchors.right: parent.right
     text: Inactive
     font: verdana-bold_11

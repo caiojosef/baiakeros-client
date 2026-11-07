@@ -17,7 +17,7 @@ UIWidget
       text: "killin a monster has 10% chance to deal physical damage equal to 15& of its maximum health to all monsters in a small rabius"
       width: 165
       text-wrap: true
-      margin-top: 25
+      margin-top: 8
       margin-right: 5
     BorderBox
       id: ItemBase

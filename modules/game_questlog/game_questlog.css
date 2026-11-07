@@ -129,3 +129,10 @@
   width: 10%;
   text-align: right;
 }
+/* Keep the sorting caption on one line inside the dropdown. */
+#comboBoxFilter {
+  white-space: nowrap;
+  --text-wrap: false;
+  --text-auto-resize: false;
+  height: 20px;
+}

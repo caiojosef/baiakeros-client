@@ -37,7 +37,7 @@ HistoryEntry < UIWidget
     margin-left: 242
 
 HomeOfferRow < StoreLightFlatPanel
-  height: 72
+  height: 96
   border: 1 #666666
 
   $focus:
@@ -56,12 +56,18 @@ HomeOfferRow < StoreLightFlatPanel
       size: 52 52
       anchors.centerIn: parent
 
-  UIWidget
+  Label
     id: newBadge
-    size: 30 30
-    anchors.left: image.left
-    anchors.bottom: image.bottom
-    image-source: /game_store/images/store-new-ribbon
+    size: 40 16
+    anchors.horizontalCenter: image.horizontalCenter
+    anchors.top: image.bottom
+    margin-top: 3
+    text: New
+    font: verdana-bold_11
+    text-align: center
+    color: #b9ef9d
+    background-color: #25451e
+    border: 1 #6d9b50
     phantom: true
     visible: false
 
@@ -73,8 +79,8 @@ HomeOfferRow < StoreLightFlatPanel
     margin-top: 5
     margin-left: 6
     margin-right: 4
-    height: 30
-    font: verdana-11px-rounded
+    height: 42
+    font: verdana-11px-antialised
     color: #5ebd3c
     text-align: left
     text-wrap: true
@@ -100,7 +106,7 @@ HomeOfferRow < StoreLightFlatPanel
     anchors.right: parent.right
     margin-right: 3
     margin-bottom: 3
-    font: verdana-11px-rounded
+    font: verdana-11px-antialised
     text-align: right
     text-offset: -19 0
     image-color: #171717c0
@@ -109,7 +115,7 @@ HomeOfferRow < StoreLightFlatPanel
     icon-offset: -2 0
 
 RowStore < StoreLightFlatPanel
-  height: 78
+  height: 96
   margin: 2
   border: 0 white
 
@@ -129,12 +135,18 @@ RowStore < StoreLightFlatPanel
       size: 52 52
       anchors.centerIn: parent
 
-  UIWidget
+  Label
     id: newBadge
-    size: 30 30
-    anchors.left: image.left
-    anchors.bottom: image.bottom
-    image-source: /game_store/images/store-new-ribbon
+    size: 40 16
+    anchors.horizontalCenter: image.horizontalCenter
+    anchors.top: image.bottom
+    margin-top: 3
+    text: New
+    font: verdana-bold_11
+    text-align: center
+    color: #b9ef9d
+    background-color: #25451e
+    border: 1 #6d9b50
     phantom: true
     visible: false
 
@@ -146,8 +158,8 @@ RowStore < StoreLightFlatPanel
     margin-top: 6
     margin-left: 8
     margin-right: 4
-    height: 25
-    font: verdana-11px-rounded
+    height: 28
+    font: verdana-11px-antialised
     color: #dfdfdf
     text-align: left
     text-wrap: true
@@ -211,7 +223,7 @@ StoreWindow
 
   Panel
     id: lblCoins
-    size: 260 20
+    size: 400 20
     anchors.bottom: parent.bottom
     anchors.left: parent.left
     margin-bottom: 2
@@ -285,8 +297,8 @@ StoreWindow
     @onClick: modules.game_store.getCoinsWebsite()
 
     $pressed:
-      text-offset: -18 0
-      icon-offset: 10 0
+      text-offset: -9 1
+      icon-offset: 11 0
 
   StoreButton
     id: transferPoints
@@ -374,17 +386,20 @@ StoreWindow
       anchors.top: parent.top
       anchors.left: parent.left
       anchors.right: parent.right
-      layout: horizontalBox
-      margin-right:22
+
       QtComboBox
         id: showAll
+        anchors.left: parent.left
+        anchors.top: parent.top
         width: 260
         height: 20
         mouse-scroll: false
 
       QtComboBox
         id: MostPopularFirst
-        width: 260
+        anchors.left: showAll.right
+        anchors.right: parent.right
+        anchors.top: parent.top
         margin-left: 12
         height: 20
         mouse-scroll: false
@@ -414,13 +429,16 @@ StoreWindow
     Label
       id: lblName
       anchors.top: comboBoxContainer.bottom
-      anchors.horizontalCenter: parent.horizontalCenter
-      margin-left: 140
+      anchors.left: scrollList.right
+      anchors.right: parent.right
+      margin-left: 8
+      margin-right: 4
+      margin-top: 5
+      height: 42
       text-wrap: true
-      text-auto-resize: true
+      text-vertical-auto-resize: true
       text-align: center
       text: Prismatic Unicorn
-      margin-top:5
 
     Box
       id: image
@@ -443,11 +461,19 @@ StoreWindow
         fit-children: true
 
     UIWidget
+      id: previewSpacer
+      anchors.top: image.top
+      anchors.left: image.left
+      anchors.right: parent.right
+      height: 96
+      phantom: true
+
+    UIWidget
       id: descriptionPanel
       image-source: /game_store/images/panel_flat
       image-border: 1
       clipping: true
-      anchors.top: image.bottom
+      anchors.top: previewSpacer.bottom
       anchors.left: scrollList.right
       anchors.right: parent.right
       anchors.bottom: scrollList.bottom
@@ -498,6 +524,7 @@ StoreWindow
       anchors.bottom: parent.bottom
       anchors.right: parent.right
       margin-bottom:-5
+      width: 70
       !text: tr('Next Page')
       @onClick: modules.game_store.requestTransactionHistory(self)
 
@@ -512,6 +539,7 @@ StoreWindow
       anchors.bottom: parent.bottom
       anchors.left: parent.left
       margin-bottom:-5
+      width: 70
       !text: tr('Prev Page')
       @onClick: modules.game_store.requestTransactionHistory(self)
 
@@ -584,7 +612,7 @@ StoreWindow
           auto-focus: none
           layout:
             type: grid
-            cell-size: 245 72
+            cell-size: 245 96
             cell-spacing: 4
             flow: true
 
@@ -599,6 +627,6 @@ StoreWindow
           auto-focus: none
           layout:
             type: grid
-            cell-size: 245 72
+            cell-size: 245 96
             cell-spacing: 4
             flow: true

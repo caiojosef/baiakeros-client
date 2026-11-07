@@ -40,6 +40,7 @@ SmallScrollBar < UIScrollBar
 
   Label
     id: valueLabel
+    font: verdana-bold_10
     anchors.fill: parent
     color: white
     text-align: center

@@ -542,7 +542,7 @@ MarketMainWindow < Panel
     font: Verdana Bold-11px
     text-auto-resize: true
     color: #C0C0C0
-    text-offset: 14 -2
+    text-offset: 14 0
     anchors.left: parent.left
     anchors.top: prev.bottom
     margin-top: 6
@@ -1257,7 +1257,7 @@ MarketMainWindow < Panel
       font: Verdana Bold-11px
       text-auto-resize: true
       color: #C0C0C0
-      text-offset: 16 -2
+      text-offset: 16 0
       anchors.left: parent.left
       anchors.top: prev.bottom
       margin-top: 7
@@ -1276,7 +1276,7 @@ MarketMainWindow < Panel
       font: Verdana Bold-11px
       text-auto-resize: true
       color: #C0C0C0
-      text-offset: 16 -2
+      text-offset: 16 0
       anchors.left: parent.left
       anchors.top: prev.bottom
       margin-top: 6
@@ -1435,7 +1435,7 @@ MarketMainWindow < Panel
       font: Verdana Bold-11px
       text-auto-resize: true
       color: #C0C0C0
-      text-offset: 14 -2
+      text-offset: 14 0
       anchors.left: profitLabel.right
       anchors.top: profitLabel.bottom
       margin-top: 8

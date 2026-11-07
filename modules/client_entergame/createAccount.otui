@@ -208,6 +208,7 @@ MainWindow
 
         Button
           text: "Suggest Name"
+          width: 78
           font: cipsoftFont
           @onClick: onClickSuggestName()
       Panel
@@ -271,6 +272,7 @@ MainWindow
             image-source: /images/ui/createaccount/icon-no
         Button
           text: "Change World"
+          width: 78
           font: cipsoftFont
           margin-left: -30
           @onClick: toggleMainPanels(true)

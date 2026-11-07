@@ -476,7 +476,7 @@ OutfitWindow < MainWindow
           anchors.left: parent.left
           text-offset: 15 0
           text: Outfit:
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           width: 84
           color: #c0c0c0
@@ -502,7 +502,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Mount:
           width: 84
@@ -535,7 +535,7 @@ OutfitWindow < MainWindow
           anchors.left: parent.left
           text-offset: 15 0
           text: Familiar:
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           width: 84
           @onSetup: |
@@ -569,7 +569,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Wings:
           width: 84
@@ -596,7 +596,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Aura:
           width: 84
@@ -623,7 +623,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Shader:
           width: 84
@@ -650,7 +650,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Health Bar:
           width: 84
@@ -677,7 +677,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: Effects:
           width: 84
@@ -704,7 +704,7 @@ OutfitWindow < MainWindow
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
           text-offset: 15 0
-          size: 12 12
+          size: 12 16
           font: Verdana Bold-11px
           text: title :
           width: 84
