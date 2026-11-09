@@ -442,7 +442,8 @@ end
 -- =            SetObject html Windows             =
 -- =============================================*/
 local function canEquipItem(item)
-    if item:isContainer() then
+    -- Quivers are containers worn in the right-hand slot.
+    if item:isContainer() and item:getClothSlot() ~= InventorySlotRight then
         return false
     end
     if not g_game.getFeature(GameEnterGameShowAppearance) then -- old protocol
