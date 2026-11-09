@@ -54,7 +54,7 @@ function BaiakHelperToolsV2.sync()
         hasteSlot:setEnabled(#hasteSpells > 0 or state.autoHasteSpell ~= '')
         hasteIcon:setVisible(selectedSpell ~= nil)
         if selectedSpell then
-            hasteIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+            hasteIcon:setImageSource(Spells.getIconFileByProfile('Default', selectedSpell.clientId))
             hasteIcon:setImageClip(Spells.getImageClip(selectedSpell.clientId, 'Default'))
             hasteSlot:setTooltip(string.format('%s\n%s\nLevel %d | Mana %d\nRight-click: Assign Haste or Clear. Cast in PZ allows casting in a protection zone.',
                 selectedSpell.name, selectedSpell.words,

@@ -795,7 +795,8 @@ function setupButtonTooltip(button, isEmpty)
                 local aimNames = {
                     [1] = "Target or Self",
                     [2] = "Cursor Position",
-                    [3] = "Crosshair"
+                    [3] = "Crosshair",
+                    [4] = "Selected Target Only"
                 }
                 actionDesc = actionDesc .. "\n      Aim:  " .. (aimNames[cache.positionSpellAimMode or 1] or aimNames[1])
             end
@@ -991,6 +992,7 @@ function configureButtonMouseRelease(button)
                 menu:addOption(tr('Aim: Target or Self'), function() setAimMode(1) end)
                 menu:addOption(tr('Aim: Cursor Position'), function() setAimMode(2) end)
                 menu:addOption(tr('Aim: Crosshair'), function() setAimMode(3) end)
+                menu:addOption(tr('Aim: Selected Target Only'), function() setAimMode(4) end)
             end
 
             local buttonHasMulti = hasMultiActions(button.cache.multiActions)
@@ -1249,7 +1251,7 @@ function updateButton(button)
                 print("Warning Spell ID not found L734 modules/game_actionbar/logics/ActionButtonLogic.lua")
                 return
             end
-            local source = SpelllistSettings['Default'].iconFile
+            local source = Spells.getIconFileByProfile('Default', spellId)
             local clip = Spells.getImageClip(spellId, 'Default')
 
             button.item.text:setImageSource(source)

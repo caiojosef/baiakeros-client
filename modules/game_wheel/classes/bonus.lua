@@ -42,14 +42,14 @@ WheelConsts = {
 		[2] = {"Positional Tactics", "Gain +3 distance fighting while no monster is within 1 squares.\nOtherwise gain +3 holy magic level and +3 healing magic level."},
 		[3] = {"Runic Mastery", "If you use a rune, you have a 25% chance of increasing your magic\nlevel by 10%, or by 20% if you use a rune that can be created by\nyour vocation."},
 		[4] = {"Healing Link", "If you heal someone with Nature's Embrace or Heal Friend, you\nalso heal yourself for 25% of the applied healing."},
-		[5] = {"Guiding Presence", "Gain an aura that shares 50% of your mantra with members of your group."},
+		[5] = {"Guiding Presence", "Gain an aura that shares 100% of your mantra with nearby party members while in combat. Enhances passive vocation bonuses by 33%."},
 	},
 	["special_2"] = {
 		[1] = {"Battle Healing", "Increases all Knight healing spells by 10%. This bonus is doubled\nwhile wielding a shield, for a total healing increase of 20%."},
 		[2] = {"Ballistic Mastery", "The critical extra damage for attacks with a crossbow is increased\nby 10%. While wielding a bow your attacks and spells treat the\ntargets physical and holy sensitivity as being 2% higher."},
 		[3] = {"Focus Mastery", "After casting a focus spell, the next damage spell within 12 seconds deals +35% damage. Focus spells also have -2s primary cooldown."},
 		[4] = {"Runic Mastery", "If you use a rune, you have a 25% chance of increasing your magic\nlevel by 10%, or by 20% if you use a rune that can be created by\nyour vocation."},
-		[5] = {"Sanctuary", "Consuming Harmony creates a field lasting 5 seconds, increasing your damage and healing done by 2% for each Harmony consumed."},
+		[5] = {"Sanctuary", "Consuming Harmony creates a field lasting 5 seconds, increasing your damage and healing done by 2% for each Harmony consumed. Also grants +10% damage/healing to adjacent targets."},
 	},
 	["mitigation"] = 0.075,
 	["manaleech"] = 0.25,
@@ -221,7 +221,7 @@ function getConvictionBonusTooltip(index)
 		elseif vocation == DRUID then
 			return "If you heal someone with Nature's Embrace or Heal Friend, you\nalso heal yourself for 25% of the applied healing."
 		elseif vocation == MONK then
-			return "Gain an aura that shares 50% of your\nmantra with members of your group."
+			return "Gain an aura that shares 100% of your\nmantra with members of your group."
 		end
 	elseif bonus.conviction == "special_2" then
 		if vocation == KNIGHT then
@@ -439,7 +439,7 @@ function getConvictionBonus(index, fullMessage)
 			else
 				setStringColor(t, "II", "white")
 			end
-			setStringColor(t, ": Affected area enlarged", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
+			setStringColor(t, ": -4s Cooldown", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
 			return t
 		end
 	elseif bonus.conviction == "spell_3" then
@@ -561,13 +561,13 @@ function getConvictionBonus(index, fullMessage)
 			else
 				setStringColor(t, "I", "white")
 			end
-			setStringColor(t, ": Adds 5% life leech to this\n spell\n", (firstSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
+			setStringColor(t, ": Affected area enlarged\n", (firstSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
 			if not secondSpellIsUnlocked(attribute) then
 				setStringColor(t, "II", "white")
 			else
 				setStringColor(t, "II", "white")
 			end
-			setStringColor(t, ": +15% Base Damage", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
+			setStringColor(t, ": +12% Base Damage", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
 			return t
 		end
 	elseif bonus.conviction == "spell_5" then
@@ -615,19 +615,19 @@ function getConvictionBonus(index, fullMessage)
 		        return t
 		elseif vocation == MONK then
 			local t = {}
-			setStringColor(t, "Aug. Sweeping Takedown\n", (points >= bonus.maxPoints and "#C0C0C0" or "#707070"))
+			setStringColor(t, "Aug. Thousand Fist Blows\n", (points >= bonus.maxPoints and "#C0C0C0" or "#707070"))
 			if not firstSpellIsUnlocked(attribute) then
 				setStringColor(t, "I", "white")
 			else
 				setStringColor(t, "I", "white")
 			end
-			setStringColor(t, ": Adds 3% mana leech to\nthis spell\n", (firstSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
+			setStringColor(t, ": +40% Critical Extra Damage\n", (firstSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
 			if not secondSpellIsUnlocked(attribute) then
 				setStringColor(t, "II", "white")
 			else
 				setStringColor(t, "II", "white")
 			end
-			setStringColor(t, ": Adds 25% critical extra \ndamage for this spell and ...", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
+			setStringColor(t, ": -4s Cooldown", (secondSpellIsUnlocked(attribute) and "#C0C0C0" or "#707070"))
 			return t
 		end
 	elseif bonus.conviction == "special_1" then
@@ -657,9 +657,9 @@ function getConvictionBonus(index, fullMessage)
 			end
 		elseif vocation == MONK then
 			if not fullMessage then
-				return "Guiding Presence\nGain an aura that shares 50% of your\nmantra with members of your\ngroup."
+				return "Guiding Presence\nShare 100% mantra with nearby\nparty members while in combat.\nPassive vocation bonuses +33%."
 			else
-				return "Guiding Presence\nGain an aura that shares 50% of your\nmantra with members of your\ngroup."
+				return "Guiding Presence\nShare 100% mantra with nearby\nparty members while in combat.\nPassive vocation bonuses +33%."
 			end
 		end
 	elseif bonus.conviction == "special_2" then
@@ -687,7 +687,7 @@ function getConvictionBonus(index, fullMessage)
 			if not fullMessage then
 				return "Sanctuary\nConsuming Harmony creates\na field lasting 5 seconds,\nincreasing damage and..."
 			else
-				return "Sanctuary\nConsuming Harmony creates\na field lasting 5 seconds,\nincreasing your damage and\nhealing done by 2% for each\nHarmony consumed."
+				return "Sanctuary\nConsuming Harmony grants +2%\ndamage/healing per stack for 5s.\nAlso +10% damage/healing to\nadjacent targets."
 			end
 		end
 	end
@@ -1394,7 +1394,7 @@ function getConvictionPerks()
 		        convictions[t].tooltip = message
 		elseif vocation == MONK then
 			if not convictions[t] then
-				convictions[t] = {perk = "Aug. Sweeping Takedown", points = 0, stringPoint = ""}
+				convictions[t] = {perk = "Aug. Thousand Fist Blows", points = 0, stringPoint = ""}
 			end
 			convictions[t].points = convictions[t].points + 1
 			if convictions[t].points == 1 then

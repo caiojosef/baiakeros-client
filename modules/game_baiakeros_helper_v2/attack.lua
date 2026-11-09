@@ -23,7 +23,7 @@ local function renderSlot(kind, index, state)
     if spellIcon then spellIcon:setVisible(slot.spell ~= nil) end
     itemIcon:setVisible(slot.rune ~= nil)
     if slot.spell then
-        spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+        spellIcon:setImageSource(Spells.getIconFileByProfile('Default', slot.spell.clientId))
         spellIcon:setImageClip(Spells.getImageClip(slot.spell.clientId, 'Default'))
         assign:setTooltip(string.format('%s\n%s\nLevel %d | Mana %d\nRight-click to change or remove',
             slot.spell.name, slot.spell.words,
@@ -68,7 +68,7 @@ local function renderPostures(kind, state)
         local option = options[index]
         button:setVisible(option ~= nil)
         if option then
-            button:setImageSource(Spells.getIconFileByProfile('Default'))
+            button:setImageSource(Spells.getIconFileByProfile('Default', option.clientId))
             button:setImageClip(Spells.getImageClip(option.clientId, 'Default'))
             local remaining = math.max(0, option.cooldownExpiry - g_clock.millis())
             button:setEnabled(not state.shooter and remaining == 0)
@@ -147,7 +147,7 @@ function BaiakHelperAttackV2.sync()
         local lureSpell = state.lureSpell
         lureIcon:setVisible(showLure and lureSpell ~= nil)
         if lureSpell then
-            lureIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+            lureIcon:setImageSource(Spells.getIconFileByProfile('Default', lureSpell.clientId))
             lureIcon:setImageClip(Spells.getImageClip(lureSpell.clientId, 'Default'))
             lureButton:setTooltip(lureSpell.name .. '\n' .. lureSpell.words ..
                 '\nRight-click to change or clear')

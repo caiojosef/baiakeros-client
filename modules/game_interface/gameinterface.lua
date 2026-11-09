@@ -920,7 +920,14 @@ function castPositionSpell(words, aimMode)
         return false
     end
 
-    if aimMode == 1 then
+    if aimMode == 4 then
+        local target = g_game.getAttackingCreature()
+        if not target then
+            return false
+        end
+        g_game.talkPosition(words, target:getPosition(), 1)
+        return true
+    elseif aimMode == 1 then
         local target = g_game.getAttackingCreature()
         local position = target and target:getPosition() or localPlayer:getPosition()
         g_game.talkPosition(words, position, 1)

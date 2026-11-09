@@ -40,7 +40,7 @@ function BaiakHelperTrainingV2.sync()
         local spell = state.manaSpell
         manaIcon:setVisible(spell ~= nil)
         if spell then
-            manaIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+            manaIcon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
             manaIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
         end
         local manaTooltip = spell and
