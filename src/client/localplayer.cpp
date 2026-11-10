@@ -369,12 +369,12 @@ void LocalPlayer::setLevel(const uint16_t level, const uint16_t levelPercent)
         return;
 
     const uint16_t oldLevel = m_level;
-    const uint16_t oldLevelPercent = m_levelPercent;
+    const uint16_t oldLevelPercent = getLevelPercent();
 
     m_level = level;
     m_levelPercent = levelPercent;
 
-    callLuaField("onLevelChange", level, levelPercent, oldLevel, oldLevelPercent);
+    callLuaField("onLevelChange", level, getLevelPercent(), oldLevel, oldLevelPercent);
 }
 
 uint16_t LocalPlayer::getLevelPercent()

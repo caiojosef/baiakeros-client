@@ -83,7 +83,9 @@ function screenshot_onGameStart()
     end
 
     notificationsController:registerEvents(LocalPlayer, {
-        onTakeScreenshot = onScreenShot
+        onTakeScreenshot = function(localPlayer, screenshotType)
+            onScreenShot(screenshotType)
+        end
     })
     optionPanel:recursiveGetChildById("keepBlacklog"):disable() -- no compatibility 11/07/24
    
@@ -146,7 +148,47 @@ function destroyOptionsModule()
     end
 end
 
-function onScreenShot(type)
+-- 15.21+ Client Events reuse the screenshot opcode with different identifiers.
+-- Keep the saved option IDs stable for existing users and older protocols.
+local simpleEventScreenshots = {
+    [1] = ScreenshotType.BOSS_DEFEATED,
+    [2] = ScreenshotType.DEATH_PVE,
+    [3] = ScreenshotType.DEATH_PVP,
+    [4] = ScreenshotType.PLAYER_KILL_ASSIST,
+    [5] = ScreenshotType.PLAYER_KILL,
+    [6] = ScreenshotType.PLAYER_ATTACKING,
+    [7] = ScreenshotType.TREASURE_FOUND,
+    [8] = ScreenshotType.GIFT_OF_LIFE_TRIGGERED
+}
+
+function screenshot_onClientEvent(category, ...)
+    if g_game.getClientVersion() < 1521 then
+        return
+    end
+    local args = {...}
+    local screenshotType
+    if category == 2 then -- achievement
+        screenshotType = ScreenshotType.ACHIEVEMENT
+    elseif category == 4 then -- level
+        screenshotType = ScreenshotType.LEVEL_UP
+    elseif category == 5 then -- skill
+        screenshotType = ScreenshotType.SKILL_UP
+    elseif category == 6 then -- bestiary
+        if args[2] == 1 then
+            screenshotType = ScreenshotType.BESTIARY_ENTRY_UNLOCKED
+        elseif args[2] == 3 then
+            screenshotType = ScreenshotType.BESTIARY_ENTRY_COMPLETED
+        end
+    end
+    if screenshotType then
+        onScreenShot(screenshotType, true)
+    end
+end
+
+function onScreenShot(type, legacyType)
+    if g_game.getClientVersion() >= 1521 and not legacyType then
+        type = simpleEventScreenshots[type]
+    end
     if not optionPanel or not optionPanel.Opciones3.enableScreenshots:isChecked() then
         return
     end
