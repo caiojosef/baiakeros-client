@@ -1,4 +1,5 @@
 MiniWindow < UIMiniWindow
+  color: #ffffff00
   font: verdana-11px-antialised
   width: 192
   height: 200

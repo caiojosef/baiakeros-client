@@ -32,6 +32,11 @@ local bonuses = {}
 local actualUsed = {}
 -- @ variable
 local bonusShrine = 0
+local rewardClockEvent
+local rewardDeadline = 0
+local rewardClaimed = false
+local rewardRefreshRequested = false
+local rewardStreak = 0
 -- @ const
 local COLORS = {
     BASE_1 = "#484848",
@@ -125,18 +130,14 @@ local function premiumStatusWindwos(isPremium)
     rewardWallController.ui.premiumStatus.premiumMessage:setText(isPremium and
                                                                      "Great! You benefit from the best possible rewards and bonuses due to your premium status." or
                                                                      "With a Premium account, you would benefit from even better rewards and bonuses.")
-    rewardWallController.ui.restingAreaPanel.streakWarning:setText(isPremium and
-        "Great! You benefit from the best possible rewards and bonuses due to your premium status." or
-        "With a Premium account, you would benefit from even better rewards and bonuses.")
     rewardWallController.ui.premiumStatus.premiumButton:setOn(not isPremium)
     rewardWallController.ui.infoPanel.free:setColor(isPremium and "#909090" or "#FFFFFF")
     rewardWallController.ui.infoPanel.premium:setColor(isPremium and "#FFFFFF" or "#909090")
-    if isPremium then
-        for i, widget in pairs(rewardWallController.ui.restingAreaPanel.bonusIcons:getChildren()) do
-            if widget then
-                widget:setOn(true)
-            end
-        end
+    for i, widget in ipairs(rewardWallController.ui.restingAreaPanel.bonusIcons:getChildren()) do
+        local requiredDays = bonuses[i] and bonuses[i].id or i + 1
+        local unlocked = rewardStreak >= requiredDays and (isPremium or requiredDays <= 3)
+        widget:setOn(unlocked)
+        widget:setOpacity(unlocked and 1 or 0.5)
     end
 end
 
@@ -177,60 +178,37 @@ local function showRewardMessage(text, colored)
     end
 end
 
-local function updateDailyRewards(dayStreakDay, wasDailyRewardTaken)
-    local dailyRewardsPanel = rewardWallController.ui.dailyRewardsPanel
+local function updateDailyRewards(dayStreakDay, wasDailyRewardTaken, claimCost)
+    local panel = rewardWallController.ui.dailyRewardsPanel
+    local taken = wasDailyRewardTaken ~= 0
+    local collected = taken and dayStreakDay == 0 and 7 or dayStreakDay
     for i = 1, 7 do
-        dailyRewardsPanel:getChildById('reward' .. i):getChildById('rewardGold' .. i):destroyChildren()
-        local arrow = dailyRewardsPanel:getChildById('arrow' .. i)
-        if arrow then arrow:setImageClip('0 0 5 7') end
-    end
-    for i = 1, dayStreakDay do
-        local rewardWidget = dailyRewardsPanel:getChildById("reward" .. i)
-        local rewardArrow = dailyRewardsPanel:getChildById("arrow" .. i)
-        if rewardWidget then
-            local test = g_ui.createWidget("RewardButton", rewardWidget:getChildById("rewardGold" .. i))
-            test:setOn(true)
-            test:fill("parent")
-            test:setPhantom(true)
-            if rewardArrow then rewardArrow:setImageClip("5 0 5 7") end
-            rewardWidget:getChildById("rewardButton" .. i):setOn(true)
-            rewardWidget:getChildById("rewardButton" .. i).ditherpattern:setVisible(true)
-            rewardWidget:getChildById("rewardGold" .. i).status = 1
-        end
-    end
-
-    local currentReward = dailyRewardsPanel:getChildById("reward" .. dayStreakDay + 1)
-    if currentReward then
-        local test = g_ui.createWidget("GoldLabel2", currentReward:getChildById("rewardGold" .. dayStreakDay + 1))
-        test:setOn(true)
-        test:fill("parent")
-        test:setPhantom(true)
-        test.text:setText(wasDailyRewardTaken)
-        if wasDailyRewardTaken < g_game.getLocalPlayer():getResourceBalance(ResourceTypes.DAILYREWARD_STREAK) then
-            test.text:setColor("white")
+        local day = panel:getChildById('reward' .. i)
+        local button = day:getChildById('rewardButton' .. i)
+        local status = day:getChildById('rewardGold' .. i)
+        status:destroyChildren()
+        local complete = i <= collected
+        local available = not taken and i == collected + 1
+        status.status = complete and STATUS.COLLECTED or available and STATUS.ACTIVE or STATUS.LOCKED
+        button:setOn(not available)
+        button.ditherpattern:setVisible(not available)
+        if available then
+            local price = g_ui.createWidget('GoldLabel2', status)
+            price:fill('parent')
+            price:setPhantom(true)
+            price.text:setText(claimCost)
+            local player = g_game.getLocalPlayer()
+            local balance = player and player:getResourceBalance(ResourceTypes.DAILYREWARD_STREAK) or 0
+            price.text:setColor(claimCost <= balance and 'white' or 'red')
+            price.gold:setImageSource('/game_rewardwall/images/instant-reward-access-icon')
         else
-            test.text:setColor("red")
+            local badge = g_ui.createWidget('RewardButton', status)
+            badge:setOn(complete)
+            badge:fill('parent')
+            badge:setPhantom(true)
         end
-        test.gold:setImageSource("/game_rewardwall/images/icon-daily-reward-joker")
-        test.gold:setImageSize("11 11")
-        test.gold:setImageOffset("0 0")
-        currentReward:getChildById("rewardGold" .. dayStreakDay + 1).status = 2
-        currentReward:setOn(false)
-        currentReward:getChildById("rewardButton" .. dayStreakDay + 1).ditherpattern:setVisible(false)
-        currentReward:getChildById("rewardButton" .. dayStreakDay + 1):setOn(false)
-    end
-
-    for i = dayStreakDay + 2, 7 do
-        local rewardWidget = dailyRewardsPanel:getChildById("reward" .. i)
-        if rewardWidget then
-            local test = g_ui.createWidget("RewardButton", rewardWidget:getChildById("rewardGold" .. i))
-            test:setOn(false)
-            test:fill("parent")
-            test:setPhantom(true)
-            rewardWidget:getChildById("rewardButton" .. i):setOn(true)
-            rewardWidget:getChildById("rewardButton" .. i).ditherpattern:setVisible(true)
-            rewardWidget:getChildById("rewardGold" .. i).status = 3
-        end
+        local arrow = panel:getChildById('arrow' .. i)
+        if arrow then arrow:setImageClip(complete and '5 0 5 7' or '0 0 5 7') end
     end
 end
 
@@ -363,6 +341,41 @@ local function disconnectOnServerError()
     })
 end
 
+local function stopRewardClock()
+    if rewardClockEvent then removeEvent(rewardClockEvent); rewardClockEvent = nil end
+end
+
+local function updateRewardClock()
+    stopRewardClock()
+    local ui = rewardWallController.ui
+    if not ui then return end
+    local remaining = math.max(0, rewardDeadline - os.time())
+    local clock = ui.restingAreaPanel.restingAreaInfo.timeLeft
+    if remaining <= 0 then
+        clock:setText('Expired')
+    elseif remaining < 60 then
+        clock:setText('< 1 min')
+    else
+        clock:setText(string.format('%02d:%02d', math.floor(remaining / 3600), math.floor(remaining % 3600 / 60)))
+    end
+    clock:setPercent(math.min(100, remaining / 86400 * 100))
+    local warning = ui.restingAreaPanel.streakWarning
+    if rewardClaimed and remaining > 0 then
+        warning:setText('You have claimed your daily reward.\nYour next reward will be available after server save.')
+    elseif remaining > 0 then
+        warning:parseColoredText("Claim your daily reward before server save.\nIf you don't claim your reward now, [color=#D33C3C]your streak will be reset.[/color]", '#c0c0c0')
+    else
+        warning:setText('Claim your daily reward to start a new streak.')
+    end
+    if ui:isVisible() then
+        if remaining <= 0 and not rewardRefreshRequested and g_game.isOnline() then
+            rewardRefreshRequested = true
+            g_game.sendOpenRewardWall()
+        end
+        rewardClockEvent = scheduleEvent(updateRewardClock, 1000)
+    end
+end
+
 local function onOpenRewardWall(bonusShrines, nextRewardTime, dayStreakDay, wasDailyRewardTaken, errorMessage, tokens,
     timeLeft, dayStreakLevel)
     if bonusShrines == OPEN_WINDOWS.SHRINE then
@@ -371,17 +384,23 @@ local function onOpenRewardWall(bonusShrines, nextRewardTime, dayStreakDay, wasD
         rewardWallController.ui:focus()
     end
     bonusShrine = bonusShrines
-    updateDailyRewards(dayStreakDay, wasDailyRewardTaken)
-    rewardWallController.ui.restingAreaPanel.restingAreaInfo.rewardStreakIcon:setText(dayStreakLevel)
-    rewardWallController.ui.restingAreaPanel.restingAreaInfo.timeLeft:setText(
-        (timeLeft == 0 and "Expired") or (timeLeft == 90001 and "< 1 min") or timeLeft)
+    rewardClaimed = wasDailyRewardTaken ~= 0
+    rewardStreak = math.max(0, math.floor(tonumber(dayStreakLevel) or 0))
+    local timestamp = rewardClaimed and nextRewardTime or timeLeft
+    local nextDeadline = timestamp == 90001 and os.time() + 59 or math.max(0, tonumber(timestamp) or 0)
+    if nextDeadline ~= rewardDeadline then rewardRefreshRequested = false end
+    rewardDeadline = nextDeadline
+    updateDailyRewards(dayStreakDay, wasDailyRewardTaken, bonusShrines == OPEN_WINDOWS.SHRINE and 0 or 1)
+    rewardWallController.ui.restingAreaPanel.restingAreaInfo.rewardStreakIcon:setText(rewardStreak)
     rewardWallController.ui.restingAreaPanel.restingAreaInfo.restingAreaGold.text:setText(tokens)
     rewardWallController.ui.footerPanel.footerGold1.text:setText(tokens)
     rewardWallController.ui.restingAreaPanel.restingAreaInfo.rewardStreakIcon:setImageSource(
-        "/game_rewardwall/images/" .. getDayStreakIcon(dayStreakLevel))
+        "/game_rewardwall/images/" .. getDayStreakIcon(rewardStreak))
 
     rewardWallController.ui.footerPanel.footerGold2.text:setText(
         g_game.getLocalPlayer():getResourceBalance(ResourceTypes.DAILYREWARD_STREAK))
+    premiumStatusWindwos(g_game.getLocalPlayer():isPremium())
+    updateRewardClock()
 end
 
 local function onRewardHistory(rewardHistory)
@@ -426,12 +445,14 @@ function show()
     end
     connectOnServerError()
     premiumStatusWindwos(g_game.getLocalPlayer():isPremium())
+    updateRewardClock()
 end
 
 function hide(bool)
     if not rewardWallController.ui then
         return
     end
+    stopRewardClock()
     rewardWallController.ui:hide()
     if ButtonRewardWall then
         ButtonRewardWall:setOn(false)
@@ -464,7 +485,7 @@ local function setupRewardWallLayout()
     for i = 1, 6 do
         local icon = g_ui.createWidget('imgBonuses', icons)
         icon:setId('bonusIcon' .. i)
-        icon:setSize({width = 68, height = 70})
+        icon:setSize({width = 64, height = 64})
         icon:setIconClip({x = (i - 1) * 64, y = 0, width = 64, height = 64})
         hover(icon, 'onhoverBonus')
     end
@@ -475,7 +496,7 @@ local function setupRewardWallLayout()
         day:setId('reward' .. i)
         day:addAnchor(AnchorLeft, 'parent', AnchorLeft)
         day:addAnchor(AnchorTop, 'parent', AnchorTop)
-        day:setMarginLeft(14 + (i - 1) * 80)
+        day:setMarginLeft((i - 1) * 71)
         local button, status = day.rewardButton, day.rewardGold
         button:setId('rewardButton' .. i)
         status:setId('rewardGold' .. i)
@@ -489,7 +510,7 @@ local function setupRewardWallLayout()
             arrow:setImageClip({x = 0, y = 0, width = 5, height = 7})
             arrow:addAnchor(AnchorLeft, 'parent', AnchorLeft)
             arrow:addAnchor(AnchorTop, 'parent', AnchorTop)
-            arrow:setMarginLeft(85 + (i - 1) * 80)
+            arrow:setMarginLeft(66 + (i - 1) * 71)
             arrow:setMarginTop(30)
             arrow:setPhantom(true)
         end
@@ -500,7 +521,7 @@ local function setupRewardWallLayout()
     loop:setImageSource('/game_rewardwall/images/icon-rewardarrow-loop-inactive')
     loop:addAnchor(AnchorHorizontalCenter, 'parent', AnchorHorizontalCenter)
     loop:addAnchor(AnchorTop, 'parent', AnchorTop)
-    loop:setMarginTop(104)
+    loop:setMarginTop(94)
     loop:setPhantom(true)
 
     local resting = ui.restingAreaPanel.restingAreaInfo
@@ -516,6 +537,7 @@ end
 -- =============================================*/
 function rewardWallController:onInit()
     g_fonts.importFontWithSize('/fonts/ttf/verdana-bold.ttf', 11)
+    g_fonts.importFontWithSize('/fonts/ttf/verdana-bold.ttf', 10)
     g_ui.importStyle('styles/style.otui')
     rewardWallController:loadUI('game_rewardwall')
     rewardWallController.ui:hide()
@@ -531,6 +553,7 @@ function rewardWallController:onInit()
 end
 
 function rewardWallController:onTerminate()
+    stopRewardClock()
     generalBox, windowsPickWindow, ButtonRewardWall = destroyWindows({generalBox, windowsPickWindow, ButtonRewardWall})
 end
 
@@ -548,6 +571,7 @@ function rewardWallController:onGameStart()
 end
 
 function rewardWallController:onGameEnd()
+    stopRewardClock()
     if rewardWallController.ui:isVisible() then
         rewardWallController.ui:hide()
         ButtonRewardWall:setOn(false)
@@ -648,12 +672,10 @@ function rewardWallController:onhoverBonus(event)
     end
 
     local isPremium = g_game.getLocalPlayer():isPremium()
-    local bonusText = string.format(
-        "Allow [color=#909090]%s[/color]%s\nThis bonus is active because you are [color=%s]Premium[/color] and reached a reward streak of at least [color=#44AD25]%d[/color].%s",
-        bonus.name, isPremium and "" or "[color=#ff0000](Locked)[/color]", isPremium and "#44AD25" or "#ff0000",
-        bonus.id,
-        isPremium and ("\n\nActive bonuses: [color=#909090]%s[/color]."):format(getBonusStrings(bonuses)) or "")
-
+    local unlocked = rewardStreak >= bonus.id and (isPremium or bonus.id <= 3)
+    local bonusText = string.format('%s\nRequires %d consecutive reward days.\nStatus: [color=%s]%s[/color].%s',
+        bonus.name, bonus.id, unlocked and '#44AD25' or '#D33C3C', unlocked and 'Active' or 'Locked',
+        bonus.id > 3 and '\nA Premium account is required.' or '')
     showRewardMessage(bonusText, true)
 end
 
@@ -664,9 +686,9 @@ function rewardWallController:onhoverStatusPlayer(event)
     end
 
     local playerStatus = {
-        rewardStreakIcon = "This explains the reward streak system. You need to claim your daily reward between regular server saves to maintain your streak. At a streak of 2+, your character gets resting area bonuses. Free accounts can reach a maximum bonus at streak level 3, while premium players can reach higher levels. Characters on the same account share the streak.",
-        timeLeft = "This is an urgent notification to claim your daily reward within one minute (before the next server save) to raise your reward streak by 1. It mentions that 3 Daily Reward Jokers will be used to prevent resetting your streak. It also encourages raising your streak to benefit from bonuses in resting areas.",
-        restingAreaGold = "This explains how Daily Reward Jokers work. They help you maintain your streak on days when you can't claim your daily reward. Each character receives one Daily Reward Joker on the first day of each month. The message recommends collecting rewards daily to stay safe."
+        rewardStreakIcon = "Claim your daily reward once per server day to increase your streak.\nMissing a reward day resets the counter to zero.\nResting area bonuses unlock from day 2; Premium accounts unlock all bonuses by day 7.",
+        timeLeft = "Time remaining until the next server save. Claim your reward each day to increase your consecutive streak. Missing a reward day resets the streak to zero.",
+        restingAreaGold = "Your Daily Reward Jokers. The consecutive-claim counter always resets after a missed reward day; jokers are not automatically consumed to preserve that counter."
     }
 
     local DEFAULT_MESSAGE = "Unknown bonus."
@@ -728,8 +750,8 @@ end
 
 function rewardWallController:onhoverStatusReward(event)
     local statusReward = {
-        [STATUS.COLLECTED] = "You have already collected this daily reward.\nThe daily rewards follow a specific cycle where each day you claim it, you get another reward. The cycle repeats after 7 claimed rewards. You will be able to claim this daily reward again as soon as you have reached this postion in the next cycle.",
-        [STATUS.ACTIVE] = "The daily reward can be claimed now.\nIf you claim this reward now, it will cost you one Instant Reward Access.\nGet your daily reward for free by visiting a reward shrine.\nYou did not claim your daily reward in time.\nToo bad, you do not have enough Daily Reward Jokers.",
+        [STATUS.COLLECTED] = "You have already collected this daily reward.\nThe reward cycle advances when you claim a reward and repeats after seven rewards.\nYour consecutive-day counter continues across cycles.",
+        [STATUS.ACTIVE] = "This reward can be claimed now.\nCollect at a reward shrine for free, or use one Instant Reward Access from this panel.\nClaim daily to maintain your consecutive streak.",
         [STATUS.LOCKED] = "This daily reward is still locked.\nFirst collect the previous daily rewards of this cycle."
     }
     if not event.value then

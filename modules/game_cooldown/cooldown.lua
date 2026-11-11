@@ -72,7 +72,7 @@ function loadIcon(iconId)
 
     local spellSettings = SpelllistSettings[profile]
     if spellSettings then
-        icon:setImageSource(spellSettings.iconsForGameCooldown)
+        icon:setImageSource(Spells.getCooldownIconFileByProfile(profile, spell.clientId))
         icon:setImageClip(Spells.getImageClipCooldown(spell.clientId, profile))
         icon.spellName = spellName
         local progressRect = icon:getChildById(iconId)

@@ -212,7 +212,7 @@ TabBarQtVertical < UITabBar
 
   UIWidget
     anchors.bottom: parent.bottom
-    anchors.right: parent.left
+    anchors.right: parent.right
     image-source: /images/ui/2pixel_up_frame_borderimage_dark
     image-clip: 98 98 2 2
     size: 2 2

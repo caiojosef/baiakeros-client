@@ -59,7 +59,7 @@ void ProtocolGame::sendLoginPacket(const uint32_t challengeTimestamp, const uint
         msg->addU32(g_game.getClientVersion());
 
     if (g_game.getClientVersion() >= 1281) {
-        msg->addString(std::to_string(g_game.getClientVersion()));
+        msg->addString(std::to_string(g_game.getClientVersion()) + "+bkrarity1");
     }
 
     if (g_game.getClientVersion() >= 1334) {
@@ -667,10 +667,11 @@ void ProtocolGame::sendChangeFightModes(const Otc::FightModes fightMode, const O
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientChangeFightModes);
-    msg->addU8(fightMode);
+    if (g_game.getClientVersion() < 1525)
+        msg->addU8(fightMode);
     msg->addU8(chaseMode);
     msg->addU8(safeFight);
-    if (g_game.getFeature(Otc::GamePVPMode))
+    if (g_game.getClientVersion() >= 1525 || g_game.getFeature(Otc::GamePVPMode))
         msg->addU8(pvpMode);
     send(msg);
 }

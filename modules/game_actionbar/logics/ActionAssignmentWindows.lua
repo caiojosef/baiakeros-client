@@ -77,7 +77,7 @@ function openFilteredSpellSelector(options)
         widget:setId(tostring(spellData.id))
         widget:setText(spellData.name .. '\n' .. spellData.words)
         widget.spellData = spellData
-        widget.source = defaultIconsFolder
+        widget.source = Spells.getIconFileByProfile('Default', spellData.clientId)
         widget.clip = Spells.getImageClip(spellData.clientId, 'Default')
         widget.param = false
         widget.image:setImageSource(widget.source)
@@ -197,7 +197,7 @@ function assignSpell(button, multiSlotIndex)
             widget:setText(spellName .. "\n" .. spellData.words)
             widget.voc = spellData.vocations
             widget.param = spellData.parameter
-            widget.source = defaultIconsFolder
+            widget.source = Spells.getIconFileByProfile('Default', spellData.clientId)
             widget.clip = clip
             widget.image:setImageSource(widget.source)
             widget.image:setImageClip(widget.clip)
@@ -247,7 +247,7 @@ function assignSpell(button, multiSlotIndex)
             return
         end
         local clip = Spells.getImageClip(spellId, 'Default')
-        imageWidget:setImageSource(defaultIconsFolder)
+        imageWidget:setImageSource(Spells.getIconFileByProfile('Default', spellId))
         imageWidget:setImageClip(clip)
         paramLabel:setOn(spellData.parameter)
         paramText:setEnabled(spellData.parameter)
@@ -337,7 +337,7 @@ function assignSpell(button, multiSlotIndex)
             widget:setText(spellName .. "\n" .. spellData.words)
             widget.voc = spellData.vocations
             widget.param = spellData.parameter
-            widget.source = defaultIconsFolder
+            widget.source = Spells.getIconFileByProfile('Default', spellData.clientId)
             widget.clip = clip
             widget.image:setImageSource(widget.source)
             widget.image:setImageClip(widget.clip)
@@ -442,7 +442,8 @@ end
 -- =            SetObject html Windows             =
 -- =============================================*/
 local function canEquipItem(item)
-    if item:isContainer() then
+    -- Quivers are containers worn in the right-hand slot.
+    if item:isContainer() and item:getClothSlot() ~= InventorySlotRight then
         return false
     end
     if not g_game.getFeature(GameEnterGameShowAppearance) then -- old protocol

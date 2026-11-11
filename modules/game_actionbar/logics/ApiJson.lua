@@ -617,7 +617,7 @@ function ApiJson.setPositionSpellAimMode(barId, buttonId, aimMode)
     barId = tonumber(barId)
     buttonId = tonumber(buttonId)
     aimMode = tonumber(aimMode)
-    if not barId or not buttonId or not aimMode or aimMode < 1 or aimMode > 3 then
+    if not barId or not buttonId or not aimMode or aimMode < 1 or aimMode > 4 then
         return
     end
 

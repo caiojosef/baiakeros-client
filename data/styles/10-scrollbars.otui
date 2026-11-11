@@ -9,6 +9,7 @@ ScrollBarSlider < UIButton
     opacity: 0
 
 ScrollBarValueLabel < Label
+  font: verdana-bold_10
   id: valueLabel
   anchors.fill: parent
   color: white

@@ -3,6 +3,7 @@ function notificationsController:onInit()
     self:registerEvents(g_game, {
         onClientEvent = function(...)
             self:onClientEvent(...)
+            screenshot_onClientEvent(...)
         end,
     })
 end

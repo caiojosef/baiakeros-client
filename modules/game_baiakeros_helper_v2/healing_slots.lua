@@ -25,7 +25,7 @@ local function renderSlot(slot, state)
     itemIcon:setVisible(potion ~= nil)
 
     if spell then
-        spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+        spellIcon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
         spellIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
         assign:setTooltip(string.format('%s\n%s\nLevel %d | Mana %d',
             spell.name, spell.words, spell.level or 0, spell.mana or 0))

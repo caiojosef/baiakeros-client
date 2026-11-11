@@ -26,7 +26,38 @@ local actionBarEquipTransformPairs = {
     { 31557, 31616 }, { 32621, 32635 }, { 39177, 39178 },
     { 39180, 39181 }, { 39183, 39184 }, { 39186, 39187 },
     { 39233, 39234 }, { 50147, 50148 }, { 50150, 50151 },
-    { 50152, 50153 }, { 50154, 50155 }, { 50191, 50192 }
+    { 50152, 50153 }, { 50154, 50155 }, { 50191, 50192 },
+    { 9392, 9394 },
+    { 9400, 9446 },
+    { 9401, 9447 },
+    { 22060, 22134 },
+    { 22062, 22127 },
+    { 22062, 22128 },
+    { 22062, 22129 },
+    { 22062, 22130 },
+    { 22062, 50192 },
+    { 22764, 22765 },
+    { 22764, 22766 },
+    { 29428, 30343 },
+    { 29429, 30345 },
+    { 31616, 31621 },
+    { 32635, 32636 },
+    { 39178, 39179 },
+    { 39181, 39182 },
+    { 39184, 39185 },
+    { 39187, 39188 },
+    { 39234, 39235 },
+    { 50155, 50156 },
+    { 53197, 53198 },
+    { 53198, 54510 },
+    { 53199, 53200 },
+    { 53200, 54511 },
+    { 53201, 53202 },
+    { 53202, 54512 },
+    { 53203, 53204 },
+    { 53204, 54513 },
+    { 53205, 53206 },
+    { 53206, 54514 }
 }
 
 for _, pair in ipairs(actionBarEquipTransformPairs) do
@@ -37,7 +68,28 @@ for _, pair in ipairs(actionBarEquipTransformPairs) do
     actionBarEquipEquivalentIds[secondId][firstId] = true
 end
 
+-- Include every stage of a transformation family, including depleted rings.
+-- The same hotkey can then remove the worn item after its timer expires.
+local actionBarEquipFamilies = {}
+for itemId in pairs(actionBarEquipEquivalentIds) do
+    local seen, queue = {}, { itemId }
+    local index = 1
+    while index <= #queue do
+        local current = queue[index]
+        index = index + 1
+        for equivalentId in pairs(actionBarEquipEquivalentIds[current] or {}) do
+            if not seen[equivalentId] then
+                seen[equivalentId] = true
+                queue[#queue + 1] = equivalentId
+            end
+        end
+    end
+    actionBarEquipFamilies[itemId] = seen
+end
+actionBarEquipEquivalentIds = actionBarEquipFamilies
+
 function getActionBarEquippedItem(itemId, tier)
+    tier = tier or 0
     if not player or not itemId or itemId == 0 then return nil end
 
     local configuredType = g_things.getThingType(itemId, ThingCategoryItem)
@@ -399,17 +451,17 @@ function onExecuteAction(button, isPress)
     if action == UseTypes["Equip"] and button.item then
         local tier = 0
         if g_game.getFeature(GameThingUpgradeClassification) then
-            tier = button.cache.upgradeTier
+            tier = button.cache.upgradeTier or 0
         end
         local equippedItem = getActionBarEquippedItem(button.cache.itemId, tier)
         if equippedItem then
             -- Send the transformed id currently worn so the server recognizes
             -- this as an unequip request.
             g_game.equipItem(equippedItem)
-        elseif player:getInventoryCount(button.cache.itemId, tier) > 0 then
-            g_game.equipItemId(button.cache.itemId, tier)
         else
-            return
+            -- Counts only cover equipment and open containers. Let the server
+            -- search closed/nested backpacks and validate the equip request.
+            g_game.equipItemId(button.cache.itemId, tier)
         end
     end
 
@@ -532,7 +584,7 @@ function updateButtonState(button)
     elseif button.cache.itemId ~= 0 then
         local tier = 0
         if g_game.getFeature(GameThingUpgradeClassification) then
-            tier = button.cache.upgradeTier
+            tier = button.cache.upgradeTier or 0
         end
         local equippedItem = getActionBarEquippedItem(button.cache.itemId, tier)
         local isItemEquipped = equippedItem ~= nil
@@ -743,7 +795,8 @@ function setupButtonTooltip(button, isEmpty)
                 local aimNames = {
                     [1] = "Target or Self",
                     [2] = "Cursor Position",
-                    [3] = "Crosshair"
+                    [3] = "Crosshair",
+                    [4] = "Selected Target Only"
                 }
                 actionDesc = actionDesc .. "\n      Aim:  " .. (aimNames[cache.positionSpellAimMode or 1] or aimNames[1])
             end
@@ -939,6 +992,7 @@ function configureButtonMouseRelease(button)
                 menu:addOption(tr('Aim: Target or Self'), function() setAimMode(1) end)
                 menu:addOption(tr('Aim: Cursor Position'), function() setAimMode(2) end)
                 menu:addOption(tr('Aim: Crosshair'), function() setAimMode(3) end)
+                menu:addOption(tr('Aim: Selected Target Only'), function() setAimMode(4) end)
             end
 
             local buttonHasMulti = hasMultiActions(button.cache.multiActions)
@@ -1197,7 +1251,7 @@ function updateButton(button)
                 print("Warning Spell ID not found L734 modules/game_actionbar/logics/ActionButtonLogic.lua")
                 return
             end
-            local source = SpelllistSettings['Default'].iconFile
+            local source = Spells.getIconFileByProfile('Default', spellId)
             local clip = Spells.getImageClip(spellId, 'Default')
 
             button.item.text:setImageSource(source)

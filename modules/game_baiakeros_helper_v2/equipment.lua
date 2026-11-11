@@ -258,8 +258,8 @@ function Equipment.init(window)
             else
                 local spell=SpellInfo.Default[key=='shield' and 'Magic Shield' or 'Cancel Magic Shield']
                 local icon=row:recursiveGetChildById('spell')
-                icon:setImageSource(Spells.getIconFileByProfile('Default'))
-                icon:setImageClip(Spells.getImageClip(spell.clientId,'Default'))
+                icon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
+                icon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
                 icon:show()
             end
         end

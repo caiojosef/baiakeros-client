@@ -102,6 +102,7 @@ CalendarGrid < MiniQtWindow
 
   Label
     id: calendarCurrentDate
+    width: 200
     anchors.right: parent.right
     anchors.verticalCenter: calendarCurrentMonth.verticalCenter
     !text: '2023-11-23, 11:23 CET'

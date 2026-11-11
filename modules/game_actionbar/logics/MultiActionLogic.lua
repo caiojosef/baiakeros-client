@@ -271,7 +271,7 @@ local function renderSlotOnWidget(widget, slotData, isMainButton)
         if spellData then
             local spellId = spellData.clientId
             if spellId then
-                local source = SpelllistSettings['Default'].iconFile
+                local source = Spells.getIconFileByProfile('Default', spellId)
                 local clip = Spells.getImageClip(spellId, 'Default')
                 widget.item.text:setText("")
                 widget.item.text:setImageSource(source)

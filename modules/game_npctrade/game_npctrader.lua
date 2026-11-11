@@ -15,8 +15,11 @@ controllerNpcTrader.rashidSellActive = false
 controllerNpcTrader.rashidSellSessionId = 0
 controllerNpcTrader.rashidSellIndex = 0
 controllerNpcTrader.rashidSellTotal = 0
+controllerNpcTrader.rashidGoodsVersion = 0
 
 local RASHID_SELL_DELAY = 180
+local RASHID_SELL_ACK_WAIT = 1800
+local RASHID_SELL_MAX_FAILURES = 3
 
 local RASHID_BLACKLIST_SETTINGS = 'RashidTradeBlacklists'
 
@@ -171,17 +174,21 @@ function controllerNpcTrader:cancelRashidSellQueue(message, silent)
     end
 end
 
-function controllerNpcTrader:finishRashidSellQueue()
+function controllerNpcTrader:finishRashidSellQueue(remaining)
     local state = self.rashidSellQueue
     if not state then return end
+    local completed = (remaining or 0) == 0
+    local message = completed and 'Selling complete.' or
+        string.format('%d item(s) remain unsold. The server did not confirm their sale.', remaining)
     self:resetSellAllState()
     if state.legacyMode then
         if refreshPlayerGoods then refreshPlayerGoods() end
     elseif self.refreshPlayerGoods then
         self:refreshPlayerGoods(true)
     end
+    if state.onFinish then state.onFinish(completed, false, message) end
     if modules.game_textmessage then
-        modules.game_textmessage.displayStatusMessage('Selling complete.')
+        modules.game_textmessage.displayStatusMessage(message)
     end
 end
 
@@ -198,11 +205,50 @@ function controllerNpcTrader:processRashidSellQueue(expectedSessionId)
 
     local entry = state.entries[state.index]
     if not entry then
-        self:finishRashidSellQueue()
+        if not state.verifying then
+            state.verifying = true
+            self:updateRashidSellProgress(state, 'Checking remaining items...')
+            self.rashidSellEvent = scheduleEvent(function()
+                self:processRashidSellQueue(expectedSessionId)
+            end, RASHID_SELL_DELAY * 3)
+            return
+        end
+        local remaining = 0
+        for _, candidate in ipairs(state.entries) do
+            if not self:isRashidItemBlocked(candidate.itemId) then
+                remaining = remaining + math.min(candidate.remaining,
+                    math.max(0, tonumber(state.getQuantity(candidate.ptr)) or 0))
+            end
+        end
+        self:finishRashidSellQueue(remaining)
         return
     end
 
     local currentAmount = math.max(0, tonumber(state.getQuantity(entry.ptr)) or 0)
+    local pending = state.pending
+    if pending then
+        local confirmed = self.rashidGoodsVersion > pending.goodsVersion
+        local sold = confirmed and math.max(0, pending.before - currentAmount) or 0
+        if sold > 0 or (confirmed and currentAmount == 0) then
+            entry.remaining = math.max(0, entry.remaining - math.min(sold, pending.amount))
+            entry.failures = 0
+            state.pending = nil
+        else
+            pending.waited = pending.waited + RASHID_SELL_DELAY
+            if pending.waited >= RASHID_SELL_ACK_WAIT then
+                entry.failures = (entry.failures or 0) + 1
+                state.pending = nil
+                if entry.failures >= RASHID_SELL_MAX_FAILURES then
+                    state.index = state.index + 1
+                    self.rashidSellIndex = state.index
+                end
+            end
+            self.rashidSellEvent = scheduleEvent(function()
+                self:processRashidSellQueue(expectedSessionId)
+            end, RASHID_SELL_DELAY)
+            return
+        end
+    end
     local remaining = math.max(0, tonumber(entry.remaining) or 0)
     if currentAmount <= 0 or remaining <= 0 or self:isRashidItemBlocked(entry.itemId) then
         state.index = state.index + 1
@@ -218,15 +264,11 @@ function controllerNpcTrader:processRashidSellQueue(expectedSessionId)
     local maximum = g_game.getFeature(GameDoubleShopSellAmount) and 10000 or 100
     local amount = math.min(currentAmount, remaining, maximum, 65535)
     self:updateRashidSellProgress(state, string.format('Selling %d/%d...', state.index, state.total))
+    -- Only authoritative goods updates confirm a sale. Exhaustion, partial
+    -- removals or a delayed response must not consume the requested amount.
+    state.pending = {before = currentAmount, amount = amount,
+        goodsVersion = self.rashidGoodsVersion, waited = 0}
     g_game.sellItem(entry.ptr, amount, state.getIgnoreEquipped())
-
-    -- Keep large stacks on the same item type until the snapshotted amount has
-    -- been processed. The live quantity still caps every individual request.
-    entry.remaining = remaining - amount
-    if entry.remaining <= 0 then
-        state.index = state.index + 1
-        self.rashidSellIndex = state.index
-    end
     self.rashidSellEvent = scheduleEvent(function()
         self:processRashidSellQueue(expectedSessionId)
     end, RASHID_SELL_DELAY)
@@ -310,6 +352,7 @@ function controllerNpcTrader:onGameStart()
             end
         end,
         onPlayerGoods = function(money, items)
+            self.rashidGoodsVersion = self.rashidGoodsVersion + 1
             if self:isLegacyMode() then
                 onPlayerGoods(money, items)
             else

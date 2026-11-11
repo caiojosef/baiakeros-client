@@ -34,6 +34,17 @@ local function isPlayerMonk()
     return player:isMonk()
 end
 
+local function updateEquipmentDecoration(slotPanel, item)
+    ItemsDatabase.setTier(slotPanel.item, item)
+    ItemsDatabase.setRarityItem(slotPanel.item, item)
+    if not item then
+        -- The slot silhouette is a sibling underneath this UIItem. A generic
+        -- item background left by a price/rarity frame must not cover it.
+        slotPanel.item:setImageClip(nil)
+        slotPanel.item:setImageSource('')
+    end
+end
+
 local function updateMonkMirrorItem(leftItem)
     if not g_game.getFeature(GameVocationMonk) then
         return
@@ -73,6 +84,7 @@ local function updateMonkMirrorItem(leftItem)
         shieldItemWidget:setEnabled(false)
         shieldItemWidget:setFlipDirection(FlipDirection.Horizontal)
         shieldSlot.shield:setEnabled(false)
+        updateEquipmentDecoration(shieldSlot, leftItem)
     else
         monkMirrorItem = nil
         shieldItemWidget:setItem(nil)
@@ -84,6 +96,7 @@ local function updateMonkMirrorItem(leftItem)
         if shieldItemWidget.tier then
             shieldItemWidget.tier:setVisible(false)
         end
+        updateEquipmentDecoration(shieldSlot, nil)
     end
 end
 
@@ -143,7 +156,7 @@ local function inventoryEvent(player, slot, item, oldItem)
     
     slotPanel.item:setShowDuration(g_game.getFeature(GameThingClock) and modules.client_options.getOption('showExpiryInInvetory'))
     slotPanel.item:setShowCharges(g_game.getFeature(GameThingCounter) and modules.client_options.getOption('showExpiryInInvetory'))
-    ItemsDatabase.setTier(slotPanel.item, item)
+    updateEquipmentDecoration(slotPanel, item)
 
     if slot == InventorySlotLeft then
         if item and modules.game_proficiency then

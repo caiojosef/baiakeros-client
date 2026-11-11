@@ -233,7 +233,6 @@ SpellInfo = {
         ['Virtue of Harmony'] = { id = 274, name = 'Virtue of Harmony', words = 'utori virtu', type = 'Instant', level = 20, mana = 210, soul = 0, maglevel = 0, icon = '', clientId = 162, group = { [3] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 2000, premium = false, vocations = {9, 10}, special = false, source = 0, },
         ['Virtue of Justice'] = { id = 275, name = 'Virtue of Justice', words = 'utito virtu', type = 'Instant', level = 20, mana = 210, soul = 0, maglevel = 0, icon = '', clientId = 163, group = { [3] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 10000, premium = false, vocations = {9, 10}, special = false, source = 0, }, 
         ['Virtue of Sustain'] = { id = 276, name = 'Virtue of Sustain', words = 'utura tio', type = 'Instant', level = 20, mana = 210, soul = 0, maglevel = 0, icon = '', clientId = 164, group = { [3] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 2000, premium = false, vocations = {9, 10}, special = false, source = 0, },
-        ['Mentor Other'] = { id = 277, name = 'Mentor Other', words = 'uteta tio', type = 'Instant', level = 150, mana = 110, soul = 0, maglevel = 0, icon = '', clientId = 165, group = { [3] = 2000 }, needTarget = true, parameter = true, range = -1, exhaustion = 2000, premium = false, vocations = {9, 10}, special = false, source = 0, }, 
         ['Enlighten Party'] = { id = 278, name = 'Enlighten Party', words = 'utevo mas sio', type = 'Instant', level = 32, mana = 75, soul = 0, maglevel = 0, icon = '', clientId = 166, group = { [3] = 1000 }, needTarget = false, parameter = false, range = -1, exhaustion = 300000, premium = false, vocations = {9, 10}, special = false, source = 0, }, 
         ['Focus Harmony'] = { id = 279, name = 'Focus Harmony', words = 'utevo nia', type = 'Instant', level = 275, mana = 500, soul = 0, maglevel = 0, icon = '', clientId = 167, group = { [3] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 120000, premium = false, vocations = {9, 10}, special = false, source = 0, }, 
         ['Balanced Brawl'] = { id = 280, name = 'Balanced Brawl', words = 'exori mas res', type = 'Instant', level = 175, mana = 80, soul = 0, maglevel = 0, icon = '', clientId = 168, group = { [3] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 10000, premium = true, vocations = {9, 10}, special = false, source = 0, }, 
@@ -246,15 +245,15 @@ SpellInfo = {
         ['Flurry of Blows'] = { id = 287, name = 'Flurry of Blows', words = 'exori mas pug', type = 'Instant', level = 35, mana = 110, soul = 0, maglevel = 0, icon = '', clientId = 175, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 4000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Chained Penance'] = { id = 288, name = 'Chained Penance', words = 'exori med pug', type = 'Instant', level = 70, mana = 180, soul = 0, maglevel = 0, icon = '', clientId = 176, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 4000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Greater Flurry of Blows'] = { id = 289, name = 'Greater Flurry of Blows', words = 'exori gran mas pug', type = 'Instant', level = 90, mana = 300, soul = 0, maglevel = 0, icon = '', clientId = 177, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 10000, premium = true, vocations = {9, 10}, special = false, source = 0, },
-        ['Mystic Repulse'] = { id = 290, name = 'Mystic Repulse', words = 'exori amp pug', type = 'Instant', level = 30, mana = 150, soul = 0, maglevel = 0, icon = '', clientId = 178, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 7, exhaustion = 14000, premium = true, vocations = {9, 10}, special = false, source = 0, },
+        ['Mystic Repulse'] = { id = 290, name = 'Mystic Repulse', words = 'exori amp pug', type = 'Instant', level = 30, mana = 150, soul = 0, maglevel = 0, icon = '', clientId = 178, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 7, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Tiger Clash'] = { id = 291, name = 'Tiger Clash', words = 'exori infir nia', type = 'Instant', level = 1, mana = 18, soul = 0, maglevel = 0, icon = '', clientId = 179, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 1, exhaustion = 8000, premium = false, vocations = {9, 10}, special = false, source = 0, },
         ['Greater Tiger Clash'] = { id = 292, name = 'Greater Tiger Clash', words = 'exori nia', type = 'Instant', level = 18, mana = 50, soul = 0, maglevel = 0, icon = '', clientId = 180, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 1, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
-        ['Devastating Knockout'] = { id = 293, name = 'Devastating Knockout', words = 'exori gran nia', type = 'Instant', level = 125, mana = 210, soul = 0, maglevel = 0, icon = '', clientId = 181, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 1, exhaustion = 24000, premium = true, vocations = {9, 10}, special = false, source = 0, },
+        ['Devastating Knockout'] = { id = 293, name = 'Devastating Knockout', words = 'exori gran nia', type = 'Instant', level = 125, mana = 210, soul = 0, maglevel = 0, icon = '', clientId = 181, group = { [1] = 2000 }, needTarget = true, parameter = false, range = 7, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Sweeping Takedown'] = { id = 294, name = 'Sweeping Takedown', words = 'exori mas nia', type = 'Instant', level = 60, mana = 195, soul = 0, maglevel = 0, icon = '', clientId = 182, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Spiritual Outburst'] = { id = 295, name = 'Spiritual Outburst', words = 'exori gran mas nia', type = 'Instant', level = 300, mana = 425, soul = 0, maglevel = 0, icon = '', clientId = 183, group = { [1] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 60000, premium = true, vocations = {9, 10}, special = false, source = 0, },
-        ['Mass Spirit Mend'] = { id = 296, name = 'Mass Spirit Mend', words = 'exura mas nia', type = 'Instant', level = 150, mana = 250, soul = 0, maglevel = 0, icon = '', clientId = 184, group = { [2] = 2000 }, needTarget = false, parameter = false, range = -1, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
+        ['Mass Spirit Mend'] = { id = 296, name = 'Mass Spirit Mend', words = 'exura mas nia', type = 'Instant', level = 150, mana = 400, soul = 0, maglevel = 0, icon = '', clientId = 184, group = { [2] = 1000 }, needTarget = false, parameter = false, range = -1, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
         ['Restore Balance'] = { id = 297, name = 'Restore Balance', words = 'exura tio sio', type = 'Instant', level = 18, mana = 120, soul = 0, maglevel = 0, icon = '', clientId = 185, group = { [2] = 1000 }, needTarget = true, parameter = true, range = -1, exhaustion = 2000, premium = true, vocations = {9, 10}, special = false, source = 0, },
-        ['Thousand Fist Blows'] = { id = 301, name = 'Thousand Fist Blows', words = 'exori mas amp pug', type = 'Instant', level = 120, mana = 145, soul = 0, maglevel = 0, icon = '', clientId = 177, group = { [1] = 2000 }, needTarget = true, positionTarget = true, parameter = false, range = 7, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
+        ['Thousand Fist Blows'] = { id = 301, name = 'Thousand Fist Blows', words = 'exori mas amp pug', type = 'Instant', level = 120, mana = 145, soul = 0, maglevel = 0, icon = '', clientId = 186, group = { [1] = 2000 }, needTarget = true, positionTarget = true, parameter = false, range = 7, exhaustion = 8000, premium = true, vocations = {9, 10}, special = false, source = 0, },
     }
 }
 
@@ -606,11 +605,26 @@ function Spells.getPrimaryGroup(spell)
     return Spells.getGroupIds(spell)[1] or -1
 end
 
-function Spells.getIconFileByProfile(profile)
-    return SpelllistSettings[profile]['iconFile']
+local function getSpellIconOverride(profile, clientId)
+    if (profile == nil or profile == 'Default') and tonumber(clientId) == 186 then
+        -- Original CipSoft 38px icon, with its frame clipped to the 32px spell tile.
+        return '/images/game/spells/thousand-fist-blows-official', '3 3 32 32'
+    end
+end
+
+function Spells.getIconFileByProfile(profile, clientId)
+    local source = getSpellIconOverride(profile, clientId)
+    return source or SpelllistSettings[profile or 'Default'].iconFile
+end
+
+function Spells.getCooldownIconFileByProfile(profile, clientId)
+    local source = getSpellIconOverride(profile, clientId)
+    return source or SpelllistSettings[profile or 'Default'].iconsForGameCooldown
 end
 
 function Spells.getImageClip(indexClip, profile)
+    local _, clip = getSpellIconOverride(profile, indexClip)
+    if clip then return clip end
     if profile == nil then
         profile = "Default"
     end
@@ -618,6 +632,8 @@ function Spells.getImageClip(indexClip, profile)
 end
 
 function Spells.getImageClipCooldown(indexClip, profile)
+    local _, clip = getSpellIconOverride(profile, indexClip)
+    if clip then return clip end
     if profile == nil then
         profile = "Default"
     end

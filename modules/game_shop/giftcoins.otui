@@ -4,11 +4,11 @@ GiftCoinsLabel < Label
 MainWindow
   id: transferWindow
   !text: tr('Gift Tibia Coins')
-  size: 280 238
+  size: 320 350
   color: #909090
   @onEscape: modules.game_shop.cancelGiftCoins()
   $on:
-    size: 280 300
+    size: 320 350
 
   GiftCoinsLabel
     anchors.top: parent.top

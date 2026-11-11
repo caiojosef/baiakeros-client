@@ -920,7 +920,14 @@ function castPositionSpell(words, aimMode)
         return false
     end
 
-    if aimMode == 1 then
+    if aimMode == 4 then
+        local target = g_game.getAttackingCreature()
+        if not target then
+            return false
+        end
+        g_game.talkPosition(words, target:getPosition(), 1)
+        return true
+    elseif aimMode == 1 then
         local target = g_game.getAttackingCreature()
         local position = target and target:getPosition() or localPlayer:getPosition()
         g_game.talkPosition(words, position, 1)
@@ -1550,9 +1557,12 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                         -- For pickupable containers like quivers, backpacks, etc., open them instead of quicklooting
                         g_game.open(useThing)
                         return true
-                    elseif g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
-                        -- For containers in the world (not inside another container), quickloot
+                    elseif useThing:isLyingCorpse() and g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
+                        -- Quick Loot applies to corpses; quest chests must receive a normal use request.
                         g_game.sendQuickLoot(1, useThing)
+                        return true
+                    else
+                        g_game.open(useThing)
                         return true
                     end
                 elseif useThing:isMultiUse() then
@@ -1710,8 +1720,8 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                             -- For depot chests, lockers, depot boxes, inbox, etc., always open them
                             g_game.open(useThing)
                             return true
-                        elseif g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
-                            -- For containers in the world, quickloot
+                        elseif useThing:isLyingCorpse() and g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
+                            -- Only corpses can be quick-looted; open other world containers normally.
                             g_game.sendQuickLoot(1, useThing)
                             return true
                         else
@@ -1799,11 +1809,14 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                 end
             end
 
-            -- SHIFT+Right click: quickloot on containers
+            -- SHIFT+Right click: quickloot corpses and use ordinary containers
             if mouseButton == MouseRightButton and keyboardModifiers == KeyboardShiftModifier then
                 if useThing and (useThing:isContainer() or useThing:isLyingCorpse()) then
-                    if g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
+                    if useThing:isLyingCorpse() and g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
                         g_game.sendQuickLoot(1, useThing)
+                        return true
+                    elseif not useThing:isLyingCorpse() then
+                        g_game.open(useThing, useThing:getParentContainer())
                         return true
                     end
                 end
@@ -1830,7 +1843,7 @@ function processMouseAction(menuPosition, mouseButton, autoWalkPos, lookThing, u
                             -- For depot chests, lockers, depot boxes, inbox, etc., always open them
                             g_game.open(useThing)
                             return true
-                        elseif g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
+                        elseif useThing:isLyingCorpse() and g_game.getFeature(GameThingQuickLoot) and modules.game_quickloot then
                             g_game.sendQuickLoot(1, useThing)
                             return true
                         else

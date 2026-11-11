@@ -318,10 +318,16 @@ function QuickLoot.Define()
 
             color = color == "#484848" and "#414141" or "#484848"
         end
+        QuickLoot.search(quickLootController.ui.search:getText())
     end
 
     function QuickLoot.search(text)
-        return
+        local query = (text or ""):lower():match("^%s*(.-)%s*$")
+        for _, row in ipairs(quickLootController.ui.ignoreList:getChildren()) do
+            local name = row.label:getText():lower()
+            local matches = query == "" or name:find(query, 1, true) or row:getId():find(query, 1, true)
+            row:setVisible(matches and true or false)
+        end
     end
 
     function QuickLoot.clearSearch()
@@ -354,6 +360,7 @@ function QuickLoot.Define()
 
     function QuickLoot.confirmError()
         QuickLoot.ErrorWindow:destroy()
+        QuickLoot.ErrorWindow = nil
         quickLootController.ui:show()
     end
 
@@ -403,7 +410,10 @@ function QuickLoot.Define()
         end
 
         if item then
-            QuickLoot.lastSelectBag.item:setItem(item)
+            local target = QuickLoot.actionsId == 0 and QuickLoot.lastSelectBag.item2 or QuickLoot.lastSelectBag.item
+            target:setItem(item)
+        end
+        if item or not QuickLoot.ErrorWindow or QuickLoot.ErrorWindow:isDestroyed() then
             quickLootController.ui:show()
         end
 
@@ -419,11 +429,8 @@ function QuickLoot.Define()
     end
 
     function QuickLoot:openContainer()
-        for _, container in pairs(g_game.getContainers()) do
-            if container:getContainerItem():getId() == self:getItemId() then
-                return false
-            end
-        end
+        -- Item IDs identify bag types, not the individual assigned container.
+        -- The server resolves the category to the correct bag and window.
         g_game.openContainerQuickLoot(self.click, self:getParent():getId(), {}, nil, nil, nil)
         return true
     end

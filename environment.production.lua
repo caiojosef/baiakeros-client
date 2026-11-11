@@ -1,7 +1,7 @@
 -- Baiakeros public production environment.
 -- During staging this file is copied to the runtime as environment.lua.
 
--- Keep the 15.11 network protocol while loading the complete 15.25 appearance catalog.
+-- Baiakeros 15.25 protocol with the existing adapted 15.25 appearance catalog.
 CLIENT_ASSET_VERSION = 1525
 
 Services = {
@@ -19,7 +19,7 @@ Services = {
 Servers_init = {
     ["https://www.baiakeros.com/login.php"] = {
         port = 443,
-        protocol = 1511,
+        protocol = 1525,
         httpLogin = false,
         useAuthenticator = false
     }

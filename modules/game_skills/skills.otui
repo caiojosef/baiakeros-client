@@ -106,13 +106,14 @@ MiniWindow
     id: miniwindowTitle
     anchors.top: miniwindowHeader.top
     anchors.left: miniwindowHeader.left
-    anchors.right: miniwindowHeader.right
+    anchors.right: lockButton.left
     margin-top: 2
     margin-left: 20
-    margin-right: 50
-    font: verdana-11px-monochrome
-    height: 13
+    margin-right: 3
+    font: cipsoftFont
+    height: 12
     !text: tr('Skills')
+    !tooltip: tr('Skills')
     color: #9d9d9dff
 
   MiniWindowContents

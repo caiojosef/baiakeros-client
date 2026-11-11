@@ -30,7 +30,7 @@ StoreWindow
     !text: tr('Recipient:')
     anchors.top: descriptionText.bottom
     anchors.left: parent.left
-    size: 57 12
+    size: 62 16
     margin: 7
     margin-top: 12
 
@@ -43,14 +43,14 @@ StoreWindow
     margin: 7
     margin-right: 13
     text-align: left
-    text-offset: -18 0
+    text-offset: 0 0
 
   Label
     id: transferableAmount
     !text: tr('Transferable Tibia Coins:')
     anchors.top: recipient.bottom
     anchors.left: parent.left
-    size: 155 12
+    size: 155 16
     margin: 7
     margin-top: 10
 

@@ -83,7 +83,8 @@ Panel
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.verticalCenter: parent.verticalCenter
       !text: tr('There is no mod that matches your filters.')
-      font:  Verdana Bold-11px
+      font: Verdana Bold-11px
+      height: 16
       color: #c0c0c0
       margin-top: 2
   Panel
@@ -421,6 +422,7 @@ Panel
 
       //Grade IV
       Label
+        height: 16
         id: grade3
         anchors.top: parent.top
         anchors.left: modBg3.right
@@ -441,6 +443,7 @@ Panel
 
       //Grade III
       Label
+        height: 16
         id: grade2
         anchors.top: grade3.bottom
         anchors.left: modBg3.right
@@ -461,6 +464,7 @@ Panel
 
       //Grade II
       Label
+        height: 16
         id: grade1
         anchors.top: grade2.bottom
         anchors.left: modBg3.right
@@ -481,6 +485,7 @@ Panel
 
       //Grade I
       Label
+        height: 16
         id: grade0
         anchors.top: grade1.bottom
         anchors.left: modBg3.right

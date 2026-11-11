@@ -374,6 +374,7 @@ local ATTACK_SPELL_AREAS = {
     },
 
     -- Monk
+    ['exori mas amp pug'] = { shape = 'targetCircle', castRange = 7, radius = 2, manhattan = 3 },
     ['exori mas pug'] = { shape = 'directional', area = 'flurry' },
     ['exori gran mas pug'] = { shape = 'directional', area = 'greaterFlurry' },
     ['exori mas nia'] = { shape = 'directional', area = 'sweeping' },
@@ -767,7 +768,7 @@ local function updateAttackPostureControls()
                     end
                     button.postureKind = kind
                     button.postureOption = option
-                    button:setImageSource(Spells.getIconFileByProfile('Default'))
+                    button:setImageSource(Spells.getIconFileByProfile('Default', option.clientId))
                     button:setImageClip(Spells.getImageClip(option.clientId, 'Default'))
                     button:setTooltip(string.format('%s\n%s%s', option.name,
                         option.words, editable and '' or
@@ -1338,7 +1339,7 @@ end
 local function applySpell(slot, spell)
     slot.assignedSpell = spell
     slot.itemIcon:hide()
-    slot.spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+    slot.spellIcon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
     slot.spellIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
     slot.spellIcon:show()
     slot.assignedName:setText(spell.name)
@@ -1853,7 +1854,7 @@ local function refreshAttackSlot(slot)
     setHelperItemSlotEmptyVisual(assignButton, true)
     if slot.assignedAttackSpell then
         local spell = slot.assignedAttackSpell
-        spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+        spellIcon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
         spellIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
         spellIcon:show()
         setHelperItemSlotEmptyVisual(assignButton, true)
@@ -2464,7 +2465,7 @@ function updateManaTrainingControls()
         slot.itemIcon:hide()
         slot.spellIcon:setVisible(selected)
         if selected then
-            slot.spellIcon:setImageSource(Spells.getIconFileByProfile('Default'))
+            slot.spellIcon:setImageSource(Spells.getIconFileByProfile('Default', spell.clientId))
             slot.spellIcon:setImageClip(Spells.getImageClip(spell.clientId, 'Default'))
         end
         setHelperItemSlotEmptyVisual(slot.assignButton, not selected)
@@ -4288,14 +4289,29 @@ function resetAttackAfkTimer()
 end
 
 function checkAttackAfkTimeout()
-    if (not autoAttackEnabled and not attackRotationEnabled) or not g_game.isOnline() then
+    if not g_game.isOnline() then
         ATTACK_AFK.trackingSince = 0
         return false
     end
 
     local explorer = modules.game_baiakeros_helper_v2
-    if explorer and ((explorer.BaiakHelperExplorerV2 and explorer.BaiakHelperExplorerV2.isAutoExplorerActive()) or
-        (explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive())) then
+    local cavebot = explorer and explorer.BaiakHelperExplorerV2
+    local cavebotActive = cavebot and
+        (cavebot.isCombatAutomationActive or cavebot.isAutoExplorerActive)
+    -- An active, timed Cavebot session owns both combat switches. Reconcile
+    -- them before the disabled/idle gates, including while standing to fight.
+    if cavebotActive and cavebotActive() then
+        if not autoAttackEnabled then setAutoAttackEnabled(true) end
+        if not attackRotationEnabled then setAttackRotationEnabled(true) end
+        ATTACK_AFK.trackingSince = g_clock.millis()
+        return false
+    end
+
+    if not autoAttackEnabled and not attackRotationEnabled then
+        ATTACK_AFK.trackingSince = 0
+        return false
+    end
+    if explorer and explorer.PartyHuntV2 and explorer.PartyHuntV2.isActive() then
         ATTACK_AFK.trackingSince = g_clock.millis()
         return false
     end

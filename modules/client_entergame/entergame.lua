@@ -1183,7 +1183,7 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     end
     enterGame:setWidth(windowWidth)
     if not windowHeight then
-        windowHeight = 205
+        windowHeight = 221
     end
 
     enterGame:setHeight(windowHeight)
