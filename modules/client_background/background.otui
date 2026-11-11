@@ -1,6 +1,6 @@
 Panel
   id: background
-  image-source: /images/background-baiakeros-graphite-left-1530-v2
+  image-source: /images/background-baiakeros-inferno-1525
   image-smooth: true
   image-fixed-ratio: true
   anchors.top: parent.top
