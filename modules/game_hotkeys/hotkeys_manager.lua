@@ -531,7 +531,7 @@ function doKeyCombo(keyCombo)
 
     local helper=modules.game_baiakeros_helper
     if helper and helper.notifyManualAction and not hotKey.action then
-        if hotKey.itemId then helper.notifyManualAction('item')
+        if hotKey.itemId then helper.notifyManualAction('item', hotKey.itemId)
         elseif hotKey.autoSend and hotKey.value and Spells.getSpellDataByParamWords(hotKey.value) then
             helper.notifyManualAction('spell')
         end

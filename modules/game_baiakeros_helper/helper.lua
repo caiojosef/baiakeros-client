@@ -31,12 +31,27 @@ lastAttackTurnAt = 0
 local manualSpellPriorityUntil, manualItemPriorityUntil = 0, 0
 local MANUAL_ACTION_PRIORITY_MS = 750
 
-function notifyManualAction(kind)
+function notifyManualAction(kind, itemId)
     if not g_game.isOnline() then return end
     local deadline=g_clock.millis()+MANUAL_ACTION_PRIORITY_MS
-    manualSpellPriorityUntil=deadline
-    if kind=='item' then manualItemPriorityUntil=deadline end
-    pendingAttackTurnDirection=nil
+    local category
+    if kind=='item' and tonumber(itemId) and tonumber(itemId)>0 then
+        local item=Item.create(tonumber(itemId))
+        local market=item and item:getMarketData()
+        category=market and market.category
+    end
+    if kind=='item' and category==MarketCategory.Potions then
+        -- A manual potion reserves the potion lane, not offensive runes/spells.
+        manualItemPriorityUntil=deadline
+    elseif kind=='item' and category==MarketCategory.Runes then
+        -- A manual rune may reserve combat without pausing automatic potions.
+        manualSpellPriorityUntil=deadline
+        pendingAttackTurnDirection=nil
+    else
+        manualSpellPriorityUntil=deadline
+        if kind=='item' then manualItemPriorityUntil=deadline end
+        pendingAttackTurnDirection=nil
+    end
 end
 
 function isManualActionPending()

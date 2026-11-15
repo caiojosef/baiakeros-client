@@ -721,7 +721,9 @@ function onMultiUseCooldown(multiUseCooldown)
             if multiUseCooldown and button.item and button.cache and button.cache.itemId then
                 local item = button.item:getItem()
                 if item and item:isMultiUse() then
-                    local marketArray = {MarketCategory.Potions, MarketCategory.Runes, MarketCategory.Tools}
+                    -- Rune animations use the server's spell cooldown events.
+                    -- Potion/tool packets must not paint a rune cooldown.
+                    local marketArray = {MarketCategory.Potions, MarketCategory.Tools}
                     if table.contains(marketArray, item:getMarketData().category) then
                         updateCooldown(button, multiUseCooldown)
                     end

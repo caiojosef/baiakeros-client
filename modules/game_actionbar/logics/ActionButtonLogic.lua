@@ -428,7 +428,7 @@ function onExecuteAction(button, isPress)
         elseif button.item and (cache.actionType==UseTypes['Use'] or cache.actionType==UseTypes['UseOnYourself'] or
             cache.actionType==UseTypes['UseOnTarget'] or cache.actionType==UseTypes['SelectUseTarget'] or
             cache.actionType==UseTypes['UseAtCursorPosition']) then
-            helper.notifyManualAction('item')
+            helper.notifyManualAction('item', button.item:getItemId())
         end
     end
     if cache.lastClick > g_clock.millis() then return true end
