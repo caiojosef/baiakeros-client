@@ -39,6 +39,10 @@ function controllerNpcTrader:onOpenNpcTrade(items, currencyId, currencyName, npc
         end
     end
 
+    if controllerNpcTrader.shopNpcName and controllerNpcTrader.shopNpcName ~= "" then
+        controllerNpcTrader.creatureName = controllerNpcTrader.shopNpcName
+    end
+
     if items and type(items) == "table" then
         controllerNpcTrader.buyItems = {}
         controllerNpcTrader.sellItems = {}

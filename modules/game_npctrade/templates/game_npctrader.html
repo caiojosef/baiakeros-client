@@ -14,7 +14,10 @@
     
     /* Typography */
     .fontText { font: verdana-11px-antialised; }
-    .fontTitle { font: verdana-11px-rounded; }
+    .fontTitle { font: cipsoftFont; }
+    .tradeCommand { --image-source: /images/ui/buttons; --image-clip: 0 0 43 20; --image-border: 1; --text-offset: 0 0; color: #dfdfdf; padding: 0; }
+    .tradeCommand:active { --image-clip: 0 20 43 20; }
+    .tradeCommand:disabled { color: #888888; }
     
     /* Color Palette */
     .colorGrey { color: #cccccc; }
@@ -33,10 +36,10 @@
     /* ==============================================================================================
        MAIN WINDOW & STRUCTURE
        ============================================================================================== */
-    .modal-message { width: 400px; height: 400px; display: block; --image-source: /images/ui/window_new; --image-border: 6; --image-border-top: 27; }
-    .leftPanel {width: 395px; height: 400px; float: left;}
-    .rightPanel { width: 195px; height: 368px; margin-top: 27px; margin-left: 10px; float: left;}
-    .verticalSep { height: 340px; margin-top: 25px; float: left;  margin-left: -10px;}
+    .modal-message { width: 400px; height: 440px; display: block; --image-source: /images/ui/window_new; --image-border: 6; --image-border-top: 27; padding: 0; }
+    .leftPanel { width: 395px; height: 440px; float: left; }
+    .rightPanel { width: 255px; height: 400px; margin-top: 27px; margin-left: 10px; float: left; position: relative; }
+    .verticalSep { height: 380px; margin-top: 25px; float: left; margin-left: -10px; }
     .dragHandle { height: 27px; background-color: alpha; }
     .closeButton { --image-clip: 28 0 14 14; margin-right: 10px; }
     .closeButton:hover { --image-clip: 28 14 14 14; }
@@ -55,7 +58,7 @@
     .creature-display { width: 64px; height: 64px; margin-left: 10px; margin-top: 10px; }
 
     /* Chat & Console */
-    .panelConsole { margin-top: 80px; --image-border: 4; padding: 1; padding-right: 12; padding-left: 4; padding-top: 4; padding-bottom: 4; height: 238px; --image-source: /images/ui/3pixel_frame_borderimage; }
+    .panelConsole { margin-top: 80px; --image-border: 4; padding: 1; padding-right: 12; padding-left: 4; padding-top: 4; padding-bottom: 4; height: 278px; --image-source: /images/ui/3pixel_frame_borderimage; }
     .inputConsole { margin-bottom: 10px; display: inline-block; width: 288px; margin-left: 15px; margin-top: 5px; --placeholder: "Type here to chat"; --placeholder-color: #6E706F}
     .bottonChat { display: inline; margin-left: 308px; margin-bottom: 10px; font: cipsoftFont; }
     
@@ -67,18 +70,18 @@
        TRADE INTERFACE (RIGHT PANEL)
        ============================================================================================== */
     /* Trade Header */
-    .tradeHeader { padding: 5px; height: 50px; }
-    .currencySection { display: block; width: 100px; }
-    .tradeCurrencyName { margin-top: 2px; }
-    .tradeCurrencyIcon { margin-right: 5px; }
-    .tradeTabs { width: 50px; height: 34px; display: block; margin-left: auto; }
-    .tradeTab { width: 30px; height: -5px;  }
+    .tradeHeader { height: 66px; width: 255px;  margin-left: 0px; margin-top: 0px; }
+    .currencySection { width: 195px; height: 36px;  margin-left: 0px; margin-top: 0px; }
+    .tradeCurrencyName { height: 16px; width: 190px;  margin-left: 0px; margin-top: 18px; }
+    .tradeCurrencyIcon {  margin-right: 4px; margin-top: 0px; }
+    .tradeTabs { width: 255px; height: 22px;  margin-left: 0px; margin-top: 44px; }
+    .tradeTab { width: 78px; height: 22px;  margin-top: 0px; padding: 0; }
     .bottonTrade { --image-clip: 28 0 14 14; margin-right: 40px; }
     .bottonTrade:hover { --image-clip: 28 14 14 14; }
     .bottonTrade:active { --image-clip: 28 28 14 14; }
 
     /* Item List */
-    .tradeListScroll { height: 220; margin: 2 0; background-color: #404040; overflow: scroll; }
+    .tradeListScroll { height: 164px; width: 255px;  margin-top: 72px; margin-left: 0px; margin: 0; background-color: #404040; overflow: scroll; }
     .tradeScrollBar { width: 15px; height: 215px; margin-right: 2px; background-color: #222222; }
     .itemListContainer { width: 175px; height: 215px; }
     .tradeListItem { height: 48; padding: 4 4; border: 1 transparent; margin-left: 2px; margin-top: 2px; }
@@ -91,25 +94,25 @@
     .tradeItemInfo { display: block; width: 100%; }
 
     /* Search Bar */
-    .tradeSearchRow { height: 21px; margin: 2px 5px; }
-    .tradeSearchInput {  margin-left: -5px; --placeholder: "Type to search"; --placeholder-color: #6E706F; width: 100%;display: block; float: left;}
-    .tradeSearchClear { --image-source: /game_cyclopedia/images/button_clear_search; float: right; margin-right: 5px; }
+    .tradeSearchRow { height: 22px; width: 255px;  margin-top: 242px; margin-left: 0px; margin: 0; }
+    .tradeSearchInput {  margin-left: 0px; margin-top: 0px; width: 229px; height: 22px; --placeholder: "Type to search"; --placeholder-color: #6E706F; padding: 0; }
+    .tradeSearchClear { --image-source: /game_cyclopedia/images/button_clear_search;  margin-right: 2px; margin-top: 2px; width: 18px; height: 18px; }
 
     /* Trade Footer & Controls */
-    .tradeFooter { height: 60px; padding: 4px; position: relative; }
-    .tradeTopRow { padding-right: 56px; height: 14px; }
-    #amountScrollBar { width: 130px; }
-    .tradePreviewBox { background: #1a1a1a; position: absolute; right: 4px; top: 4px; }
-    .tradeBuyButton { width: 29px; height: -15px; position: absolute; right: 2px; bottom: 0px; }
-    .tradeRows { margin-top: 2px; padding-right: 56px; }
-    .tradeRow { height: 14px; }
-    .tradeFooterLabel { width: 55px; }
-    .tradeFooterValue { width: 70px; text-align: right; }
-    .tradeFooterAmountInput { width: 68px; height: 16px; text-align: right; padding-right: 2px; }
-    .rashidSellAllButton { width: 52px; height: 16px; position: absolute; left: 2px; bottom: 0px; }
-    .rashidCancelSellButton { width: 52px; height: 16px; position: absolute; left: 58px; bottom: 0px; }
-    .rashidSellProgress { height: 12px; position: absolute; left: 4px; right: 4px; top: 1px; background-color: #2f78c4; }
-    .rashidSellProgressLabel { height: 12px; position: absolute; left: 4px; right: 4px; top: 1px; text-align: center; }
+    .tradeFooter { height: 128px; width: 255px;  margin-left: 0px; margin-top: 270px; }
+    .tradeTopRow {  margin-left: 4px; margin-top: 18px; width: 188px; height: 12px; }
+    #amountScrollBar { width: 188px; height: 12px; }
+    .tradePreviewBox { background: #1a1a1a;  margin-right: 4px; margin-top: 36px; }
+    .tradeBuyButton { width: 70px; height: 22px;  margin-right: 4px; margin-bottom: 4px; padding: 0; }
+    .tradeRows {  margin-left: 4px; margin-top: 36px; width: 188px; height: 54px; }
+    .tradeRow { height: 18px; width: 188px; display: block;  }
+    .tradeFooterLabel { width: 55px; height: 18px;  margin-left: 0px; margin-top: 0px; }
+    .tradeFooterValue { width: 128px; height: 18px;  margin-left: 60px; margin-top: 0px; text-align: right; }
+    .tradeFooterAmountInput { width: 128px; height: 18px;  margin-left: 60px; margin-top: 0px; text-align: right; padding-right: 2px; padding: 0; }
+    .rashidSellAllButton { width: 80px; height: 22px;  margin-left: 4px; margin-bottom: 4px; padding: 0; }
+    .rashidCancelSellButton { width: 72px; height: 22px;  margin-left: 90px; margin-bottom: 4px; padding: 0; }
+    .rashidSellProgress { width: 247px; height: 14px;  margin-left: 4px; margin-right: 4px; margin-top: 0px; background-color: #2f78c4; }
+    .rashidSellProgressLabel { width: 247px; height: 14px;  margin-left: 4px; margin-right: 4px; margin-top: 0px; text-align: center; }
 </style>
 
 
@@ -152,21 +155,21 @@
     <!-- Right Panel (Trade) -->
     <div class="rightPanel" *visible="self.isTradeOpen">
         <!-- Header -->
-        <div class="tradeHeader flex">
-            <div class="currencySection">
+        <div class="tradeHeader" placement="top-left">
+            <div class="currencySection" placement="top-left">
                 <label class="fontText colorGrey" text="Currency:"></label>
-                <label class="tradeCurrencyName fontText colorWhite" text="Gold Coin"></label>
+                <label class="tradeCurrencyName fontText colorWhite" placement="top-left" text="Gold Coin"></label>
             </div>
-            <UIItem class="tradeCurrencyIcon iconBox sunkenBorder" item-id="3031" item-count="100" always-show-count="false" />
-            <div class="tradeTabs">
-                <button id="tabBuy" class="tradeTab fontTitle" text="Buy" onclick="self:setTradeMode(self.BUY)"></button>
-                <button id="tabSell" class="tradeTab fontTitle" style="display:block;margin-top: 5px;" text="Sell" onclick="self:setTradeMode(self.SELL)"></button>
-                <button id="tabBlacklist" class="tradeTab fontTitle" style="display:block;margin-top: 5px;" text="Blacklist" *visible="self.rashidTrade" onclick="self:setTradeMode(self.BLACKLIST)"></button>
+            <UIItem class="tradeCurrencyIcon iconBox sunkenBorder" placement="top-right" item-id="3031" item-count="100" always-show-count="false" />
+            <div class="tradeTabs" placement="top-left">
+                <UIButton id="tabBuy" class="tradeTab fontTitle tradeCommand" placement="top-left" style="margin-left: 0px;" text="Buy" onclick="self:setTradeMode(self.BUY)"></UIButton>
+                <UIButton id="tabSell" class="tradeTab fontTitle tradeCommand" placement="top-left" style="margin-left: 86px;" text="Sell" onclick="self:setTradeMode(self.SELL)"></UIButton>
+                <UIButton id="tabBlacklist" class="tradeTab fontTitle tradeCommand" placement="top-left" style="margin-left: 172px;" text="Blacklist" *visible="self.rashidTrade" onclick="self:setTradeMode(self.BLACKLIST)"></UIButton>
             </div>
         </div>
 
         <!-- List Container -->
-        <div id="tradeListScroll" class="tradeListScroll borderGrey fullWidth sunkenBorder" layout="type: verticalBox">
+        <div id="tradeListScroll" placement="top-left" class="tradeListScroll borderGrey fullWidth sunkenBorder" layout="type: verticalBox">
             <div *for="local item in self.tradeItems" *for-finished="self:onTradeListRendered()" class="tradeListItem flex fullWidth"
                 *trade-item="item"
                 *class-tradeListItemSelected="self.selectedItem == item">
@@ -180,48 +183,48 @@
 
         <!-- Search -->
 
-        <div class="tradeSearchRow borderGrey bgDark">
-            <input class="tradeSearchInput fontText colorLightGrey" onchange="self:filterTradeList(event.value)"/>
-            <uibutton class="tradeSearchClear" onclick="self:clearSearch()"></uibutton>
+        <div class="tradeSearchRow borderGrey bgDark" placement="top-left">
+            <input class="tradeSearchInput fontText colorLightGrey" placement="top-left" onchange="self:filterTradeList(event.value)"/>
+            <uibutton class="tradeSearchClear" placement="top-right" onclick="self:clearSearch()"></uibutton>
         </div>
         <!-- Footer -->
-        <div class="tradeFooter">
+        <div class="tradeFooter" placement="top-left">
 
-            <ProgressBar id="rashidSellProgress" class="rashidSellProgress" visible="false" />
-            <label id="rashidSellProgressLabel" class="rashidSellProgressLabel fontText colorWhite" visible="false"></label>
+            <ProgressBar id="rashidSellProgress" class="rashidSellProgress" placement="top-left" visible="false" />
+            <label id="rashidSellProgressLabel" class="rashidSellProgressLabel fontText colorWhite" placement="top-left" visible="false"></label>
 
             <!-- Scrollbar (top left) -->
-            <div class="tradeTopRow">
+            <div class="tradeTopRow" placement="top-left">
                 <HorizontalScrollBar id="amountScrollBar" minimum="1" maximum="100" step="1"
                     onchange="self:onAmountScrollBarChange(event.value)" disabled />
             </div>
 
             <!-- Preview (right) -->
-            <UIItem class="tradePreviewBox item borderGrey iconBox sunkenBorder" *item="self.selectedItem and self.selectedItem.ptr or nil" />
+            <UIItem class="tradePreviewBox item borderGrey iconBox sunkenBorder" placement="top-right" *item="self.selectedItem and self.selectedItem.ptr or nil" />
 
             <!-- Buy button (bottom right) -->
-            <button id="toggleButton" class="tradeBuyButton fontTitle" text="Buy" onclick="self:executeTrade()"></button>
-            <button id="rashidSellAllButton" class="rashidSellAllButton fontTitle" text="Sell All"
+            <UIButton id="toggleButton" class="tradeBuyButton fontTitle tradeCommand" placement="bottom-right" text="Buy" onclick="self:executeTrade()"></UIButton>
+            <UIButton id="rashidSellAllButton" class="rashidSellAllButton fontTitle tradeCommand" placement="bottom-left" text="Sell All"
                 *visible="self.rashidTrade and self.tradeMode == self.SELL"
-                onclick="self:startRashidSellAllModern()"></button>
-            <button id="rashidCancelSellButton" class="rashidCancelSellButton fontTitle" text="Cancel"
-                visible="false" onclick="self:cancelRashidSellAllModern()"></button>
+                onclick="self:startRashidSellAllModern()"></UIButton>
+            <UIButton id="rashidCancelSellButton" class="rashidCancelSellButton fontTitle tradeCommand" placement="bottom-left" text="Cancel"
+                visible="false" onclick="self:cancelRashidSellAllModern()"></UIButton>
 
             <!-- Rows (left) -->
-            <div class="tradeRows">
+            <div class="tradeRows" placement="top-left">
                 <div class="tradeRow">
-                    <div class="tradeFooterLabel fontText colorGrey inlineBlock">Amount:</div>
-                    <input id="amountInput" class="tradeFooterAmountInput fontText colorWhite bgDark borderGrey inlineBlock" *text="self.amount" onchange="self:onAmountInputChange(event)" />
+                    <div class="tradeFooterLabel fontText colorGrey inlineBlock" placement="top-left">Amount:</div>
+                    <input id="amountInput" class="tradeFooterAmountInput fontText colorWhite bgDark borderGrey inlineBlock" placement="top-left" *text="self.amount" onchange="self:onAmountInputChange(event)" />
                 </div>
 
                 <div class="tradeRow">
-                    <div class="tradeFooterLabel fontText colorGrey inlineBlock">Price:</div>
-                    <label class="tradeFooterValue fontText colorWhite inlineBlock">{{self.totalPrice}}</label>
+                    <div class="tradeFooterLabel fontText colorGrey inlineBlock" placement="top-left">Price:</div>
+                    <label class="tradeFooterValue fontText colorWhite inlineBlock" placement="top-left">{{self.totalPrice}}</label>
                 </div>
 
                 <div class="tradeRow">
-                    <div class="tradeFooterLabel fontText colorGrey inlineBlock">Gold:</div>
-                    <label id="playerMoneyDisplay" class="tradeFooterValue fontText colorWhite inlineBlock" text="0"></label>
+                    <div class="tradeFooterLabel fontText colorGrey inlineBlock" placement="top-left">Gold:</div>
+                    <label id="playerMoneyDisplay" class="tradeFooterValue fontText colorWhite inlineBlock" placement="top-left" text="0"></label>
                 </div>
             </div>
 
