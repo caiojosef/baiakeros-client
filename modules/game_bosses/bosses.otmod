@@ -1,0 +1,13 @@
+Module
+  name: game_bosses
+  description: Baiakeros boss travel and waiting players
+  author: Baiakeros
+  autoload: true
+  sandboxed: true
+  dependencies:
+    - game_interface
+    - game_mainpanel
+    - game_progress
+  scripts: [ bosses ]
+  @onLoad: init()
+  @onUnload: terminate()

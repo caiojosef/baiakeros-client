@@ -1,0 +1,170 @@
+BossTravelCard < UIWidget
+  size: 180 204
+  image-source: /images/ui/window_headless
+  image-border: 5
+
+  Label
+    id: name
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    margin-left: 7
+    margin-right: 7
+    margin-top: 7
+    height: 32
+    text-align: center
+    text-wrap: true
+    font: verdana-11px-antialised
+    color: #f0d48a
+    phantom: true
+
+  UICreature
+    id: portrait
+    size: 64 64
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: name.bottom
+    margin-top: 4
+    image-source: /images/ui/item
+    image-border: 1
+    padding: 3
+    phantom: true
+
+  Label
+    id: cooldown
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: portrait.bottom
+    margin-top: 7
+    margin-left: 5
+    margin-right: 5
+    height: 15
+    text-align: center
+    color: #9fd18a
+    phantom: true
+
+  Label
+    id: waiting
+    anchors.left: cooldown.left
+    anchors.right: cooldown.right
+    anchors.top: cooldown.bottom
+    margin-top: 3
+    height: 15
+    text-align: center
+    color: #c8c8c8
+    phantom: true
+
+  QtButton
+    id: travel
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-left: 8
+    margin-right: 8
+    margin-bottom: 9
+    height: 23
+    text: Ir a alavanca
+
+BossTravelWindow < MainWindow
+  id: bossTravelWindow
+  text: Bosses
+  size: 800 610
+  visible: false
+  @onEscape: modules.game_bosses.hide()
+
+  Label
+    id: usage
+    anchors.left: parent.left
+    anchors.right: search.left
+    anchors.top: parent.top
+    margin-top: 4
+    margin-right: 10
+    height: 20
+    font: verdana-11px-antialised
+    color: #f0d48a
+    text: Carregando bosses...
+
+  TextEdit
+    id: search
+    anchors.right: parent.right
+    anchors.top: parent.top
+    size: 200 22
+    placeholder: Buscar boss...
+    @onTextChange: modules.game_bosses.filter()
+
+  Label
+    id: protection
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: search.bottom
+    margin-top: 7
+    height: 16
+    color: #bcbcbc
+    text: Teleporte disponivel apenas em protection zone.
+
+  UIScrollArea
+    id: list
+    anchors.top: protection.bottom
+    anchors.bottom: status.top
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 8
+    margin-bottom: 7
+    margin-right: 18
+    padding-right: 2
+    vertical-scrollbar: scrollbar
+    layout:
+      type: grid
+      cell-size: 180 204
+      cell-spacing: 8
+      num-columns: 4
+
+  VerticalScrollBar
+    id: scrollbar
+    anchors.top: list.top
+    anchors.bottom: list.bottom
+    anchors.right: parent.right
+    step: 70
+    pixels-scroll: true
+
+  Label
+    id: status
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: separator.top
+    margin-bottom: 7
+    height: 28
+    text-wrap: true
+    color: #bcbcbc
+    text: Aguardando resposta do servidor...
+
+  HorizontalSeparator
+    id: separator
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: closeButton.top
+    margin-bottom: 9
+
+  Label
+    id: count
+    anchors.left: parent.left
+    anchors.right: refreshButton.left
+    anchors.verticalCenter: closeButton.verticalCenter
+    margin-right: 8
+    color: #a8a8a8
+
+  QtButton
+    id: refreshButton
+    text: Atualizar
+    size: 80 22
+    anchors.right: closeButton.left
+    anchors.bottom: parent.bottom
+    margin-right: 8
+    @onClick: modules.game_bosses.requestSync()
+
+  QtButton
+    id: closeButton
+    text: Fechar
+    size: 64 22
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    @onClick: modules.game_bosses.hide()

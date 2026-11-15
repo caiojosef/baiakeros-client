@@ -25,6 +25,32 @@ local tabStack = {}
 local previousType = nil
 local windowTypes = {}
 local magicalArchives = nil
+local customPanel = nil
+local customModules = { codex = 'game_codex', tasks = 'game_hunting_tasks' }
+
+-- These panels belong to their own modules. Preserve them when changing pages
+-- or unloading the Cyclopedia, instead of destroying them with the page host.
+local function releaseCustomPanel()
+    if customPanel then
+        if previousType == 'tasks' then
+            modules.game_hunting_tasks.onTabHidden()
+        end
+        customPanel:hide()
+        customPanel:breakAnchors()
+        customPanel:setParent(rootWidget)
+        customPanel = nil
+    end
+end
+
+local function showCustomPanel(parent, tab)
+    local module = modules[customModules[tab]]
+    if not module then return end
+    customPanel = module.createPanel(parent)
+    if customPanel then
+        customPanel:show()
+        module.refreshFromServer()
+    end
+end
 local BESTIARY_DISCOVERY_OPCODE = 217
 local BOSSTIARY_DISCOVERY_OPCODE = 223
 local ECHO_WARDEN_PROGRESS_OPCODE = 221
@@ -210,6 +236,7 @@ function controllerCyclopedia:onGameStart()
 
         contentContainer = controllerCyclopedia.ui:recursiveGetChildById('contentContainer')
         buttonSelection = controllerCyclopedia.ui:recursiveGetChildById('buttonSelection')
+        buttonSelection.onGeometryChange = Cyclopedia.layoutTabs
         items = buttonSelection:recursiveGetChildById('items')
         bestiary = buttonSelection:recursiveGetChildById('bestiary')
         charms = buttonSelection:recursiveGetChildById('charms')
@@ -231,6 +258,8 @@ function controllerCyclopedia:onGameStart()
             bosstiary = { obj = bosstiary, func = showBosstiary },
             bossSlot = { obj = bossSlot, func = showBossSlot },
             magicalArchives = { obj = magicalArchives, func = showMagicalArchives },
+            codex = { obj = buttonSelection:getChildById('codex'), func = function(parent) showCustomPanel(parent, 'codex') end },
+            tasks = { obj = buttonSelection:getChildById('tasks'), func = function(parent) showCustomPanel(parent, 'tasks') end },
         }
 
         g_ui.importStyle("cyclopedia_widgets")
@@ -474,6 +503,7 @@ function controllerCyclopedia:onGameEnd()
 end
 
 function controllerCyclopedia:onTerminate()
+    hide()
     if trackerButton then
         trackerButton:destroy()
         trackerButton = nil
@@ -520,6 +550,9 @@ function hide()
         return
     end
     resetCyclopediaTabs()
+    if modules.game_progress and modules.game_progress.setCyclopediaTab then
+        modules.game_progress.setCyclopediaTab(nil)
+    end
     controllerCyclopedia.ui:hide()
     if CyclopediaButton then
         CyclopediaButton:setOn(false)
@@ -533,6 +566,7 @@ function hide()
 end
 
 function resetCyclopediaTabs()
+    releaseCustomPanel()
     tabStack = {}
     controllerCyclopedia.ui.BackButton:setEnabled(false)
     if previousType then
@@ -572,6 +606,10 @@ function Cyclopedia.openTab(tabName)
     return true
 end
 
+function Cyclopedia.getCurrentTab()
+    return previousType
+end
+
 function toggleBack()
     local previousTab = table.remove(tabStack, #tabStack)
     if #tabStack < 1 then
@@ -580,7 +618,33 @@ function toggleBack()
     SelectWindow(previousTab, true)
 end
 
+-- Match the RubinOT reference: compact inactive icons, a fixed-width active
+-- page and an unused trailing area. Parked pages do not reserve a tab cell.
+function Cyclopedia.layoutTabs()
+    if not buttonSelection then return end
+    local order = { 'items', 'bestiary', 'charms', 'map', 'houses', 'character',
+        'bosstiary', 'bossSlot', 'magicalArchives', 'codex', 'tasks' }
+    local visible = {}
+    for _, id in ipairs(order) do
+        local tab = buttonSelection:getChildById(id)
+        if tab and tab:isExplicitlyVisible() then visible[#visible + 1] = tab end
+    end
+    local activeWidth = 200
+    local offset = 1
+    for _, tab in ipairs(visible) do
+        tab:breakAnchors()
+        tab:addAnchor(AnchorLeft, 'parent', AnchorLeft)
+        tab:addAnchor(AnchorTop, 'parent', AnchorTop)
+        tab:setMarginLeft(offset)
+        tab:setMarginTop(1)
+        tab:setWidth(tab:isOn() and activeWidth or 34)
+        offset = offset + tab:getWidth() + 1
+    end
+end
+
 function SelectWindow(type, isBackButtonPress)
+    if not windowTypes[type] then return end
+    releaseCustomPanel()
     if previousType then
         local previousWindow = windowTypes[previousType]
         previousWindow.obj:enable()
@@ -591,6 +655,20 @@ function SelectWindow(type, isBackButtonPress)
         end
     end
     contentContainer:destroyChildren()
+    -- Custom pages have the same working area as the existing Adventures hub.
+    -- Leave the regular Cyclopedia pages at their original dimensions.
+    if modules.game_progress and modules.game_progress.setCyclopediaTab then
+        modules.game_progress.setCyclopediaTab(type)
+    end
+    local custom = customModules[type] ~= nil
+    controllerCyclopedia.ui:setSize(custom and { width = 900, height = 610 } or { width = 700, height = 560 })
+    contentContainer:setMarginBottom(custom and 52 or 0)
+    if custom then
+        controllerCyclopedia.ui.GoldBase:show()
+        controllerCyclopedia.ui.CharmsBase:hide()
+        controllerCyclopedia.ui.CharmsBase1410:hide()
+        controllerCyclopedia.ui.BestiaryTrackerButton:hide()
+    end
 
     local window = windowTypes[type]
     if window then
@@ -601,8 +679,9 @@ function SelectWindow(type, isBackButtonPress)
             window.func(contentContainer)
         end
     end
+    Cyclopedia.layoutTabs()
     if CyclopediaButton then
-        CyclopediaButton:setOn(type == "items" or type == "charms" or type == "map" or type == "houses" or type == "character" or type == "magicalArchives")
+        CyclopediaButton:setOn(type == "items" or type == "charms" or type == "map" or type == "houses" or type == "character" or type == "magicalArchives" or custom)
     end
     if ButtonBossSlot then
         ButtonBossSlot:setOn(type == "bossSlot")

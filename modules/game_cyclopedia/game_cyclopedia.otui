@@ -1,3 +1,26 @@
+CyclopediaNavigationTab < UIButton
+  size: 34 34
+  image-source: /images/game/cyclopedia/custom_tab_off
+  image-clip: 0 0 34 34
+  font: verdana-11px-antialised
+  color: #dfdfdf
+  text-offset: 16 0
+
+  $on:
+    image-source: /images/game/cyclopedia/custom_tab_on
+    image-clip: 0 0 150 34
+    image-border: 2
+
+  $!on:
+    text:
+    image-source: /images/game/cyclopedia/custom_tab_off
+    image-clip: 0 0 34 34
+    image-border: 0
+
+  $pressed:
+    image-source: /images/game/cyclopedia/custom_tab_off
+    image-clip: 0 34 34 34
+    image-border: 0
 
 MainWindow
   size: 700 560
@@ -9,7 +32,8 @@ MainWindow
     id: buttonSelection
     anchors.top: parent.top
     anchors.left: parent.left
-    size: 668 36
+    anchors.right: parent.right
+    height: 36
     background-color: #404040
     border-width-top: 1
     border-color-top: black
@@ -20,205 +44,204 @@ MainWindow
     border-width-right: 1
     border-color-right: #747474
 
-    UIButton
+    CyclopediaNavigationTab
       id: items
-      anchors.top: parent.top
-      anchors.left: parent.left
-      margin-left: 1
-      size: 668 36
+      tooltip: Items
       @onClick: SelectWindow("items")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/items_on
+        !text: tr('Items')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/items_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/items_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/items_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: bestiary
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Bestiary
       @onClick: SelectWindow("bestiary")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/bestiary_on
+        !text: tr('Bestiary')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/bestiary_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/bestiary_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/bestiary_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: charms
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Charms
       @onClick: SelectWindow("charms")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/charms_on
+        !text: tr('Charms')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/charms_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/charms_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/charms_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: map
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Map
       @onClick: SelectWindow("map")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/map_on
+        !text: tr('Map')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/map_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/map_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/map_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: houses
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Houses
       @onClick: SelectWindow("houses")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/houses_on
+        !text: tr('Houses')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/houses_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/houses_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/houses_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: character
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Character
       @onClick: SelectWindow("character")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/character_on
+        !text: tr('Character')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/character_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/character_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/character_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: bosstiary
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Bosstiary
       @onClick: SelectWindow("bosstiary")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/bosstiary_on
+        !text: tr('Bosstiary')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/bosstiary_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/bosstiary_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/bosstiary_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: bossSlot
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Boss Slots
       @onClick: SelectWindow("bossSlot")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/bossSlot_on
+        !text: tr('Boss Slots')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/bossSlot_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/bossSlot_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/bossSlot_off
-
-    UIButton
+    CyclopediaNavigationTab
       id: magicalArchives
-      anchors.top: prev.top
-      anchors.left: prev.right
-      margin-left: 1
+      tooltip: Magical Archives
       @onClick: SelectWindow("magicalArchives")
 
       $on:
-        size: 150 34
-        image-clip: 0 0 150 34
-        image-source: /images/game/cyclopedia/magical_on
+        !text: tr('Magical Archives')
 
-      $!on:
+      UIWidget
+        id: icon
         size: 34 34
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 0
+        image-source: /images/game/cyclopedia/magical_off
         image-clip: 0 0 34 34
-        image-source: /images/game/cyclopedia/magical_off
+        phantom: true
 
-      $pressed:
-        size: 34 34
-        image-clip: 0 34 34 34
-        image-source: /images/game/cyclopedia/magical_off
-        
+    CyclopediaNavigationTab
+      id: codex
+      tooltip: Codex
+      @onClick: SelectWindow("codex")
+
+      $on:
+        !text: tr('Codex')
+
+      UIWidget
+        id: icon
+        size: 28 28
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 3
+        image-source: /images/game/cyclopedia/codex_custom
+        image-clip: 0 0 28 28
+        phantom: true
+
+    CyclopediaNavigationTab
+      id: tasks
+      tooltip: Tasks
+      @onClick: SelectWindow("tasks")
+
+      $on:
+        !text: tr('Tasks')
+
+      UIWidget
+        id: icon
+        size: 28 28
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        margin-left: 3
+        image-source: /images/game/cyclopedia/tasks_custom
+        image-clip: 0 0 28 28
+        phantom: true
+
   UIWidget
     id: contentContainer
     anchors.top: prev.bottom
