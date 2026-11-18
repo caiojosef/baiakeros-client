@@ -1,5 +1,5 @@
 local OPCODE = 225
-local window, button, refreshEvent, tickEvent
+local window, button, refreshEvent, tickEvent, cooldownSyncEvent
 local state = { bosses = {} }
 local receivedAt = 0
 local pendingUntil = 0
@@ -27,26 +27,43 @@ local function clock(seconds)
 end
 
 local function remaining(boss)
-    return math.max(0, (boss.cooldown or 0) - math.floor((g_clock.millis() - receivedAt) / 1000))
+    return math.max(0, (boss.cooldown or 0) - math.floor((g_clock.millis() - (boss.cooldownAt or receivedAt)) / 1000))
+end
+
+local function travelRemaining()
+    return math.max(0, (state.travelCooldown or 0) -
+        math.floor((g_clock.millis() - (state.travelCooldownAt or receivedAt)) / 1000))
 end
 
 local function reason(boss)
+    local interval = travelRemaining()
+    if interval > 0 then return 'Aguarde ' .. interval .. (interval == 1 and ' segundo' or ' segundos') .. ' para usar outro teleporte de boss.' end
+    local seconds = remaining(boss)
+    if seconds > 0 then return boss.name .. ' em cooldown: ' .. clock(seconds) .. ' restantes.' end
     if not state.canTravel then return state.reason or 'Use apenas em protection zone.' end
     if not state.vip and (state.used or 0) >= (state.limit or 5) then return 'Limite de 5 teleportes diarios atingido.' end
-    if remaining(boss) > 0 then return 'Aguarde o cooldown deste boss.' end
     if not boss.available then return boss.reason or 'Entrada indisponivel.' end
     if pendingUntil > g_clock.millis() then return 'Aguardando resposta do servidor...' end
     return nil
 end
 
 local function updateCards()
+    if not window then return end
+    local interval = travelRemaining()
+    local protection = state.canTravel and 'Protection zone: teleporte permitido.' or
+        (state.reason or 'Entre em protection zone para teleportar.')
+    if interval > 0 then protection = protection .. ' | Proximo teleporte: ' .. clock(interval) end
+    child('protection'):setText(protection)
+    child('protection'):setColor(state.canTravel and interval == 0 and '#9fd18a' or '#e0aa78')
     for _, data in ipairs(cards) do
         local boss, card = data.boss, data.widget
         card.waiting:setText('Aguardando: ' .. tostring(boss.waiting or 0) .. ' jogador(es)')
         local seconds = remaining(boss)
-        card.cooldown:setText(seconds > 0 and ('Cooldown: ' .. clock(seconds)) or 'Disponivel')
-        card.cooldown:setColor(seconds > 0 and '#e0aa78' or '#9fd18a')
+        card.cooldown:setText(seconds > 0 and ('Cooldown: ' .. clock(seconds)) or
+            (boss.available and 'Disponivel' or 'Indisponivel'))
+        card.cooldown:setColor((seconds > 0 or not boss.available) and '#e0aa78' or '#9fd18a')
         local message = reason(boss)
+        card.travel:setText(seconds > 0 and 'Em cooldown' or (interval > 0 and ('Aguarde ' .. interval .. 's') or 'Ir a alavanca'))
         card.travel:setEnabled(not message)
         card.travel:setTooltip(message or 'Teleportar ate a area de espera da alavanca.')
         card:setTooltip(message or 'Clique para ir ate a alavanca deste boss.')
@@ -77,11 +94,29 @@ end
 
 function requestSync() send('sync') end
 
+-- The ordinary Bosstiary packet is emitted whenever a boss cooldown changes.
+-- Ask our own authoritative catalogue too, including after a rejected travel.
+-- A delayed retry covers the server's two-second sync request throttle.
+function onBossCooldown()
+    if not window or not window:isVisible() then return end
+    if cooldownSyncEvent then return end
+    requestSync()
+    cooldownSyncEvent = scheduleEvent(function()
+        cooldownSyncEvent = nil
+        if window and window:isVisible() then requestSync() end
+    end, 2100)
+end
+
 function travel(id)
     for _, boss in ipairs(state.bosses or {}) do
         if boss.id == id then
             local message = reason(boss)
-            if message then child('status'):setText(message); return false end
+            if message then
+                child('status'):setText(message)
+                modules.game_textmessage.displayFailureMessage(message)
+                if pendingUntil <= g_clock.millis() and travelRemaining() == 0 then onBossCooldown() end
+                return false
+            end
             pendingUntil = g_clock.millis() + 5000
             if not send('teleport', id) then pendingUntil = 0; return false end
             updateCards()
@@ -98,7 +133,31 @@ local function onOpcode(protocol, opcode, buffer)
         pendingUntil = 0
         statusMessageUntil = g_clock.millis() + 7000
         if window then child('status'):setText(tostring(data.message or '')) end
-        if data.success then hide() else updateCards() end
+        if tonumber(data.travelCooldown) then
+            state.travelCooldown = math.max(0, tonumber(data.travelCooldown))
+            state.travelCooldownAt = g_clock.millis()
+        end
+        if data.bossId and tonumber(data.cooldown) then
+            for _, boss in ipairs(state.bosses or {}) do
+                if boss.id == tonumber(data.bossId) then
+                    boss.cooldown = math.max(0, tonumber(data.cooldown))
+                    boss.cooldownAt = g_clock.millis()
+                    if boss.cooldown > 0 then boss.available = false; boss.reason = data.message end
+                    break
+                end
+            end
+        end
+        if data.success then
+            hide()
+            local interval = travelRemaining()
+            if interval > 0 then
+                modules.game_textmessage.displayStatusMessage('Teleporte realizado. Aguarde ' .. interval ..
+                    (interval == 1 and ' segundo' or ' segundos') .. ' para usar novamente.')
+            end
+        else
+            updateCards()
+            if travelRemaining() == 0 then onBossCooldown() end
+        end
     elseif data.action == 'sync' then
         local function signature(entries)
             local values = {}
@@ -110,9 +169,6 @@ local function onOpcode(protocol, opcode, buffer)
         if not window or not window:isVisible() then return end
         child('usage'):setText(state.vip and 'VIP - Teleportes ilimitados' or
             string.format('Usos de hoje: %d / %d por personagem', state.used or 0, state.limit or 5))
-        child('protection'):setText(state.canTravel and 'Protection zone: teleporte permitido.' or
-            (state.reason or 'Entre em protection zone para teleportar.'))
-        child('protection'):setColor(state.canTravel and '#9fd18a' or '#e0aa78')
         if statusMessageUntil <= g_clock.millis() then
             child('status'):setText('Clique no boss disponivel para ir a alavanca. O combate e iniciado pela alavanca normal.')
         end
@@ -157,6 +213,7 @@ function show()
 end
 
 function hide()
+    if cooldownSyncEvent then removeEvent(cooldownSyncEvent); cooldownSyncEvent = nil end
     if refreshEvent then removeEvent(refreshEvent); refreshEvent = nil end
     if tickEvent then removeEvent(tickEvent); tickEvent = nil end
     pendingUntil = 0
@@ -168,7 +225,7 @@ local function offline() hide(); state = { bosses = {} }; cards = {}; if window 
 
 function init()
     ProtocolGame.registerExtendedOpcode(OPCODE, onOpcode)
-    connect(g_game, { onGameEnd = offline })
+    connect(g_game, { onGameEnd = offline, onBossCooldown = onBossCooldown })
     button = modules.game_mainpanel.addCompactStoreButton('bossesButton', 'Bosses - cooldowns e teleportes', '/images/options/yellow_large', toggle, 2, nil)
     button:setIcon('/images/topbuttons/bosses-native-v1')
     button:setIconClip('0 0 16 16')
@@ -176,7 +233,7 @@ function init()
 end
 function terminate()
     hide()
-    disconnect(g_game, { onGameEnd = offline })
+    disconnect(g_game, { onGameEnd = offline, onBossCooldown = onBossCooldown })
     ProtocolGame.unregisterExtendedOpcode(OPCODE)
     if window then window:destroy(); window = nil end
     if button then button:destroy(); button = nil end
