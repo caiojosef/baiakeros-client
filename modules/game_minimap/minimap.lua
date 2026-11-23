@@ -20,8 +20,10 @@ local currentDayTime = {
     m = 0
 }
 
+local playerMinimapReady = false
+
 local function savePlayerMinimapIfDirty()
-    if otmm and g_minimap.isDirty() then
+    if otmm and playerMinimapReady and g_minimap.isDirty() then
         g_minimap.saveOtmm(playerMinimapFile)
     end
 end
@@ -129,6 +131,7 @@ function mapController:onGameStart()
     }):execute()
 
     -- Load Map
+    playerMinimapReady = false
     g_minimap.clean()
 
     if otmm then
@@ -137,13 +140,32 @@ function mapController:onGameStart()
 
         if hasBundledMinimap and installedVersion ~= bundledMinimapVersion then
             if g_minimap.loadOtmm(bundledMinimapFile) then
+                playerMinimapReady = true
                 g_minimap.saveOtmm(playerMinimapFile)
                 g_settings.set(bundledMinimapSetting, bundledMinimapVersion)
                 g_settings.save()
             end
         elseif g_resources.fileExists(playerMinimapFile) then
-            g_minimap.loadOtmm(playerMinimapFile)
+            playerMinimapReady = g_minimap.loadOtmm(playerMinimapFile)
+            if not playerMinimapReady and hasBundledMinimap then
+                -- An interrupted save can leave a truncated file. Keep it for
+                -- recovery, then discard partially loaded blocks before fallback.
+                local backupFile = '/baiakeros-player-minimap.recovery-backup.otmm'
+                if not g_resources.fileExists(backupFile) then
+                    pcall(function()
+                        g_resources.writeFileContents(backupFile, g_resources.readFileContents(playerMinimapFile))
+                    end)
+                end
+                g_minimap.clean()
+                playerMinimapReady = g_minimap.loadOtmm(bundledMinimapFile)
+                if playerMinimapReady then
+                    g_minimap.saveOtmm(playerMinimapFile)
+                    g_settings.set(bundledMinimapSetting, bundledMinimapVersion)
+                    g_settings.save()
+                end
+            end
         elseif hasBundledMinimap and g_minimap.loadOtmm(bundledMinimapFile) then
+            playerMinimapReady = true
             g_minimap.saveOtmm(playerMinimapFile)
             g_settings.set(bundledMinimapSetting, bundledMinimapVersion)
             g_settings.save()
