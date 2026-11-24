@@ -64,8 +64,8 @@ MiniWindow
     margin-top: 2
     margin-left: 20
     margin-right: 3
-    font: cipsoftFont
-    height: 12
+    font: verdana-11px-monochrome
+    height: 13
     !text: tr('VIP')
     !tooltip: tr('VIP')
     color: #9d9d9dff

@@ -97,16 +97,15 @@ HelperEmptySlotDecoration < UIWidget
     border-color: #424444
 
 HelperToggleNotification < Label
-  size: 370 36
+  size: 520 20
   anchors.centerIn: parent
   margin-top: -45
   text-align: center
-  font: verdana-11px-antialised
-  color: #79ef8b
-  background-color: #111111dd
-  border-width: 1
-  border-color: #3f934d
-  padding: 8
+  font: verdana-11px-rounded
+  color: #ffffff
+  background-color: alpha
+  border-width: 0
+  padding: 0
   visible: false
   focusable: false
   phantom: true

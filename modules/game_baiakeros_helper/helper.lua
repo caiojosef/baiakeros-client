@@ -1277,15 +1277,20 @@ local function setStatus(text, color)
     end
 end
 
-function showHelperNotification(text, enabled)
+function showHelperNotification(text, enabled, toggleStatus)
     if not helperNotification then return end
     if helperNotificationEvent then
         removeEvent(helperNotificationEvent)
         helperNotificationEvent = nil
     end
-    helperNotification:setText(text)
-    helperNotification:setColor(enabled == false and '#ff7777' or '#79ef8b')
-    helperNotification:setBorderColor(enabled == false and '#9a3434' or '#3f934d')
+    helperNotification:setColor('#ffffff')
+    if toggleStatus then
+        local status = enabled and 'Enable' or 'Disable'
+        local color = enabled and '#79ef8b' or '#ff7777'
+        helperNotification:setColoredText(text .. ' {' .. status .. ', ' .. color .. '}')
+    else
+        helperNotification:setText(text)
+    end
     helperNotification:setOpacity(0)
     helperNotification:show()
     helperNotification:raise()
@@ -4703,25 +4708,19 @@ end
 local function toggleHealingHotkey()
     if not g_game.isOnline() then return end
     setHealingEnabled(not healingEnabled)
-    showHelperNotification((healingEnabled and
-        'Enable Healing' or 'Disable Healing') .. ' - ' ..
-        helperPresetNotificationSuffix(false), healingEnabled)
+    showHelperNotification('Healing', healingEnabled, true)
 end
 
 local function toggleAutoTargetHotkey()
     if not g_game.isOnline() then return end
     setAutoAttackEnabled(not autoAttackEnabled)
-    showHelperNotification((autoAttackEnabled and
-        'Enable Auto Target' or 'Disable Auto Target') .. ' - ' ..
-        helperPresetNotificationSuffix(true), autoAttackEnabled)
+    showHelperNotification('Target', autoAttackEnabled, true)
 end
 
 local function toggleShooterHotkey()
     if not g_game.isOnline() then return end
     setAttackRotationEnabled(not attackRotationEnabled)
-    showHelperNotification((attackRotationEnabled and
-        'Enable Shooter' or 'Disable Shooter') .. ' - ' ..
-        helperPresetNotificationSuffix(true), attackRotationEnabled)
+    showHelperNotification('Spell Shooter', attackRotationEnabled, true)
 end
 
 local function toggleAttackHelpersHotkey()
@@ -4731,10 +4730,7 @@ local function toggleAttackHelpersHotkey()
     local enabled = not (autoAttackEnabled and attackRotationEnabled)
     setAutoAttackEnabled(enabled)
     setAttackRotationEnabled(enabled)
-    showHelperNotification((enabled and
-        'Enable Auto Target + Shooter' or
-        'Disable Auto Target + Shooter') .. ' - ' ..
-        helperPresetNotificationSuffix(true), enabled)
+    showHelperNotification('Target + Spell Shooter', enabled, true)
 end
 
 function cycleHelperPresetHotkey()
