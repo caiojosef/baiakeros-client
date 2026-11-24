@@ -335,6 +335,8 @@ function controllerNpcTrader:onGameStart()
     self.legacyMode = not g_game.getFeature(GameNpcWindowRedesign)
     if self:isLegacyMode() then
         self:legacy_init()
+    else
+        self:connectNpcTalkEvent()
     end
 
     self:registerEvents(g_game, {
@@ -420,6 +422,7 @@ function controllerNpcTrader:disconnectNpcTalkEvent()
 end
 
 function controllerNpcTrader:onTerminate()
+    self:disconnectNpcTalkEvent()
     self:resetSellAllState()
     if self:isLegacyMode() then
         self:legacy_terminate()
@@ -429,6 +432,7 @@ function controllerNpcTrader:onTerminate()
 end
 
 function controllerNpcTrader:onGameEnd()
+    self:disconnectNpcTalkEvent()
     self:resetSellAllState()
     if self:isLegacyMode() then
         self:legacy_hide()
@@ -442,11 +446,13 @@ function controllerNpcTrader:onCloseNpcTrade()
     if self:isLegacyMode() then
         self:legacy_hide()
     else
-        self:disconnectNpcTalkEvent()
         if controllerNpcTrader.ui and controllerNpcTrader.ui:isVisible() then
             controllerNpcTrader:unloadHtml()
         end
         controllerNpcTrader.isTradeOpen = false
+        controllerNpcTrader.creatureName = ""
+        controllerNpcTrader.outfit = nil
+        controllerNpcTrader.npcCreatureId = nil
         if controllerNpcTrader.sellAllWithDelayEvent then
             removeEvent(controllerNpcTrader.sellAllWithDelayEvent)
             controllerNpcTrader.sellAllWithDelayEvent = nil

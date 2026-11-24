@@ -70,12 +70,74 @@ local function buildTalkingToEntry(npcName, timestamp)
     }
 end
 
+local function validNpcName(name)
+    return type(name) == "string" and name ~= "" and name ~= "Unknown"
+end
+
+-- Resolve only the named NPC, never an arbitrary nearby creature/player.
+function controllerNpcTrader:resolveNpcCreature(name, creature, position)
+    local function matches(candidate)
+        return candidate and candidate:isNpc() and
+            (not validNpcName(name) or candidate:getName():lower() == name:lower())
+    end
+    if matches(creature) then return creature end
+    if self.npcCreatureId then
+        local known = g_map.getCreatureById(self.npcCreatureId)
+        if matches(known) then return known end
+    end
+    local player = g_game.getLocalPlayer()
+    local center = position or (player and player:getPosition())
+    if center and validNpcName(name) then
+        for _, candidate in ipairs(g_map.getSpectators(center, false)) do
+            if matches(candidate) then return candidate end
+        end
+    end
+end
+
+function controllerNpcTrader:updateNpcIdentity(name, creature, position)
+    if not validNpcName(name) and creature then name = creature:getName() end
+    if not validNpcName(name) then name = self.creatureName end
+    if validNpcName(name) and name ~= self.creatureName then
+        self.outfit = nil
+        self.npcCreatureId = nil
+    end
+    local npc = self:resolveNpcCreature(name, creature, position)
+    if npc then
+        name = npc:getName()
+        self.npcCreatureId = npc:getId()
+        self.outfit = npc:getOutfit()
+    end
+    self.creatureName = validNpcName(name) and name or "NPC"
+    local label = self:findWidget("#npcName")
+    if label then
+        label:setText(short_text(self.creatureName, 30))
+        label:setTooltip(self.creatureName)
+    end
+    local portrait = self:findWidget("#creatureOutfit")
+    local fallback = self:findWidget("#npcPortraitFallback")
+    local hasOutfit = type(self.outfit) == "table"
+    if portrait then
+        portrait:setImageSource("")
+        portrait:setVisible(hasOutfit)
+        if hasOutfit then portrait:setOutfit(self.outfit) end
+    end
+    if fallback then fallback:setVisible(not hasOutfit) end
+    local buffer = self:findWidget("#consoleBuffer")
+    local header = buffer and buffer:getChildByIndex(1)
+    if header and header.npcDialogHeaderTime then
+        header:setText(buildTalkingToEntry(self.creatureName, header.npcDialogHeaderTime).text)
+    end
+    return npc
+end
+
 function controllerNpcTrader:ensureDialogHeader(consoleBuffer)
     if not consoleBuffer or consoleBuffer:getChildCount() > 0 or not self.creatureName or self.creatureName == "" then
         return
     end
 
-    createDialogLabel(consoleBuffer, buildTalkingToEntry(self.creatureName, os.date('%H:%M')))
+    local timestamp = os.date('%H:%M')
+    local header = createDialogLabel(consoleBuffer, buildTalkingToEntry(self.creatureName, timestamp))
+    header.npcDialogHeaderTime = timestamp
 end
 
 function controllerNpcTrader:onConsoleTextClicked(widget, text)
@@ -130,34 +192,21 @@ function controllerNpcTrader:setupWindowDragBehavior()
     end
 end
 
-function controllerNpcTrader:initNpcWindow(creature, buttons)
+function controllerNpcTrader:initNpcWindow(creature, buttons, npcName)
     if self:isLegacyMode() then
         return
     end
     self:connectNpcTalkEvent()
     self.widthConsole = self.DEFAULT_CONSOLE_WIDTH
     self.isTradeOpen = false
-    if creature then
-        self.creatureName = creature:getName() or "Unknown"
-        self.outfit = creature:getOutfit()
-    else
-        self.creatureName = "Unknown"
-        self.outfit = "/game_npctrade/assets/images/icon-npcdialog-multiplenpcs"
-    end
+    self:updateNpcIdentity(npcName, creature)
     self.buttons = buttons or self.buttons or self.buttonsDefault
     self:updateChatButton()
     if not self.ui or not self.ui:isVisible() then
         self:loadHtml('templates/game_npctrader.html')
     end
     self:setupWindowDragBehavior()
-    local creatureOutfit = self:findWidget("#creatureOutfit")
-    if creatureOutfit then
-        if type(self.outfit) == "string" then
-            creatureOutfit:setImageSource(self.outfit)
-        else
-            creatureOutfit:setOutfit(self.outfit)
-        end
-    end
+    self:updateNpcIdentity(self.creatureName, creature)
     self:cloneConsoleMessages()
 end
 
@@ -189,6 +238,9 @@ function controllerNpcTrader:onConsoleKeyPress(event)
 end
 
 function onNpcTalk(name, level, mode, text, channelId, creaturePos)
+    if mode == MessageModes.NpcFrom or mode == MessageModes.NpcFromStartBlock then
+        controllerNpcTrader:updateNpcIdentity(name, nil, creaturePos)
+    end
     if not controllerNpcTrader.ui or not controllerNpcTrader.ui:isVisible() then
         return
     end

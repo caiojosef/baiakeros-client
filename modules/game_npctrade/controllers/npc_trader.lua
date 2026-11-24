@@ -6,11 +6,17 @@ function controllerNpcTrader:onOpenNpcTrade(items, currencyId, currencyName, npc
     -- A trade packet always starts with a clean Sell All session. Delayed
     -- callbacks from the previous shop were invalidated by the session token.
     controllerNpcTrader:resetSellAllState()
+    local incomingNpcName = npcName and npcName ~= '' and npcName or controllerNpcTrader.creatureName
+    -- Shop packets can arrive without the optional NPC chat-window packet.
+    if controllerNpcTrader.isTradeOpen and controllerNpcTrader.shopNpcName ~= incomingNpcName then
+        controllerNpcTrader:onCloseNpcTrade()
+    end
+    controllerNpcTrader:updateNpcIdentity(incomingNpcName)
     local ui = controllerNpcTrader.ui
     if not ui or not ui:isVisible() then
-        controllerNpcTrader:initNpcWindow()
+        controllerNpcTrader:initNpcWindow(nil, nil, incomingNpcName)
     end
-    local incomingNpcName = npcName and npcName ~= '' and npcName or controllerNpcTrader.creatureName
+    incomingNpcName = controllerNpcTrader.creatureName
     if controllerNpcTrader.rashidSellActive and controllerNpcTrader.shopNpcName ~= incomingNpcName then
         controllerNpcTrader:cancelRashidSellQueue('Selling cancelled.', true)
     end
@@ -40,7 +46,7 @@ function controllerNpcTrader:onOpenNpcTrade(items, currencyId, currencyName, npc
     end
 
     if controllerNpcTrader.shopNpcName and controllerNpcTrader.shopNpcName ~= "" then
-        controllerNpcTrader.creatureName = controllerNpcTrader.shopNpcName
+        controllerNpcTrader:updateNpcIdentity(controllerNpcTrader.shopNpcName)
     end
 
     if items and type(items) == "table" then
