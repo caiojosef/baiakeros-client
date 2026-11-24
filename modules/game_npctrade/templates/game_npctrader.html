@@ -13,11 +13,11 @@
     .fullWidth { width: 100%; }
     
     /* Typography */
-    .fontText { font: verdana-11px-antialised; }
-    .fontTitle { font: cipsoftFont; }
-    .tradeCommand { --image-source: /images/ui/buttons; --image-clip: 0 0 43 20; --image-border: 1; --text-offset: 0 0; color: #dfdfdf; padding: 0; }
+    .fontText { font: verdana-11px-monochrome; }
+    .fontTitle { font: verdana-11px-monochrome; }
+    .tradeCommand { --image-source: /images/ui/buttons; --image-clip: 0 0 43 20; --image-border: 1; --text-offset: 0 0; --text-align: center; text-align: center; color: #dfdfdf; padding: 0; }
     .tradeCommand:active { --image-clip: 0 20 43 20; }
-    .tradeCommand:disabled { color: #888888; }
+    .tradeCommand:disabled { color: #b6b6b6; }
     
     /* Color Palette */
     .colorGrey { color: #cccccc; }
@@ -52,18 +52,20 @@
        NPC INTERACTION (LEFT PANEL)
        ============================================================================================== */
     /* Header & Visuals */
-    .img { width: 186px; height: 27px; }
-    .title { margin-left: 90px; margin-top: 8px; display: block; width: 75%; }
-    .podium { width: 65px; height: 67px; margin-left: 10px; }
-    .creature-display { width: 64px; height: 64px; margin-left: 10px; margin-top: 10px; }
+    .img { display: block; width: 310px; height: 27px; }
+    .title { display: block; margin-left: 84px; margin-top: 8px; width: 210px; height: 16px; font: verdana-11px-monochrome; text-align: left; --text-wrap: false; }
+    .podium { display: block; width: 65px; height: 67px; margin-left: 10px; margin-top: 4px; }
+    .creature-display { display: block; width: 56px; height: 56px; margin-left: 14px; margin-top: 9px; --fixed-creature-size: true; }
+
+    .portrait-fallback { display: block; width: 40px; height: 40px; margin-left: 22px; margin-top: 17px; }
 
     /* Chat & Console */
     .panelConsole { margin-top: 80px; --image-border: 4; padding: 1; padding-right: 12; padding-left: 4; padding-top: 4; padding-bottom: 4; height: 278px; --image-source: /images/ui/3pixel_frame_borderimage; }
     .inputConsole { margin-bottom: 10px; display: inline-block; width: 288px; margin-left: 15px; margin-top: 5px; --placeholder: "Type here to chat"; --placeholder-color: #6E706F}
-    .bottonChat { display: inline; margin-left: 308px; margin-bottom: 10px; font: cipsoftFont; }
+    .bottonChat { width: 56px; height: 20px; margin-left: 308px; margin-bottom: 10px; font: verdana-11px-monochrome; text-align: center; padding: 0; }
     
     /* Buttons Panel */
-    .panelBotons {height: 35px;  margin-bottom: 39px; --focusable: false; width: 100%; margin-left: 15px;}
+    .panelBotons { height: 35px; margin-bottom: 39px; --focusable: false; width: 365px; margin-left: 15px; }
     .npc-button { width: 19px; height: 19px; --icon-source: /game_npctrade/assets/images/icons-npcdialog; margin-right: 2px; }
 
     /* ==============================================================================================
@@ -72,7 +74,7 @@
     /* Trade Header */
     .tradeHeader { height: 66px; width: 255px;  margin-left: 0px; margin-top: 0px; }
     .currencySection { width: 195px; height: 36px;  margin-left: 0px; margin-top: 0px; }
-    .tradeCurrencyName { height: 16px; width: 190px;  margin-left: 0px; margin-top: 18px; }
+    .tradeCurrencyName { display: block; height: 16px; width: 190px; margin-left: 0px; margin-top: 18px; }
     .tradeCurrencyIcon {  margin-right: 4px; margin-top: 0px; }
     .tradeTabs { width: 255px; height: 22px;  margin-left: 0px; margin-top: 44px; }
     .tradeTab { width: 78px; height: 22px;  margin-top: 0px; padding: 0; }
@@ -100,15 +102,15 @@
 
     /* Trade Footer & Controls */
     .tradeFooter { height: 128px; width: 255px;  margin-left: 0px; margin-top: 270px; }
-    .tradeTopRow {  margin-left: 4px; margin-top: 18px; width: 188px; height: 12px; }
-    #amountScrollBar { width: 188px; height: 12px; }
+    .tradeTopRow { margin-left: 4px; margin-top: 18px; width: 196px; height: 12px; }
+    #amountScrollBar { width: 196px; height: 12px; }
     .tradePreviewBox { background: #1a1a1a;  margin-right: 4px; margin-top: 36px; }
     .tradeBuyButton { width: 70px; height: 22px;  margin-right: 4px; margin-bottom: 4px; padding: 0; }
-    .tradeRows {  margin-left: 4px; margin-top: 36px; width: 188px; height: 54px; }
-    .tradeRow { height: 18px; width: 188px; display: block;  }
+    .tradeRows { margin-left: 4px; margin-top: 36px; width: 196px; height: 54px; }
+    .tradeRow { height: 18px; width: 196px; display: block; }
     .tradeFooterLabel { width: 55px; height: 18px;  margin-left: 0px; margin-top: 0px; }
-    .tradeFooterValue { width: 128px; height: 18px;  margin-left: 60px; margin-top: 0px; text-align: right; }
-    .tradeFooterAmountInput { width: 128px; height: 18px;  margin-left: 60px; margin-top: 0px; text-align: right; padding-right: 2px; padding: 0; }
+    .tradeFooterValue { width: 136px; height: 18px; margin-left: 60px; margin-top: 0px; text-align: right; }
+    .tradeFooterAmountInput { width: 136px; height: 18px; margin-left: 60px; margin-top: 0px; text-align: right; padding: 0; }
     .rashidSellAllButton { width: 80px; height: 22px;  margin-left: 4px; margin-bottom: 4px; padding: 0; }
     .rashidCancelSellButton { width: 72px; height: 22px;  margin-left: 90px; margin-bottom: 4px; padding: 0; }
     .rashidSellProgress { width: 247px; height: 14px;  margin-left: 4px; margin-right: 4px; margin-top: 0px; background-color: #2f78c4; }
@@ -134,10 +136,11 @@
         <scrollablepanel id="consoleBuffer" inverted-scroll="true" always-scroll-maximum="true" class="panelConsole panelBase" style="overflow: scroll; padding: 4px;" layout="type: verticalBox; align-bottom: true" placement="top-left">
         </scrollablepanel>
 
-        <img class="img" src="assets/images/blue-golden-flag-banner" placement="top-left" />
-        <label class="title" placement="top-left">{{self.creatureName}}</label>
+        <img id="npcBanner" class="img" src="assets/images/blue-golden-flag-banner" placement="top-left" />
+        <label id="npcName" class="title" placement="top-left" *tooltip="self.creatureName" *text="short_text(self.creatureName, 30)"></label>
         <img class="podium" src="assets/images/backdrop-npcdialog-podestal" placement="top-left" />
         <uicreature id="creatureOutfit" class="creature-display" placement="top-left"></uicreature>
+        <img id="npcPortraitFallback" class="portrait-fallback" src="assets/images/icon-npcdialog-multiplenpcs" placement="top-left" visible="false" />
 
 
         <div id="panelBotons" placement="bottom-left" class="panelBotons">
@@ -147,7 +150,7 @@
             </button>
         </div>
         <input id="chatInput" class="inputConsole" placement="bottom-left" />
-        <button id="chatModeButton" class="bottonChat" placement="bottom-left" onclick="self:toggleChatMode()">{{self.chatMode}}</button>
+        <UIButton id="chatModeButton" class="bottonChat tradeCommand" placement="bottom-left" *text="self.chatMode" onclick="self:toggleChatMode()"></UIButton>
     </div>
 
     <div class="verticalSep VerticalSeparator" *visible="self.isTradeOpen"></div>
@@ -157,7 +160,7 @@
         <!-- Header -->
         <div class="tradeHeader" placement="top-left">
             <div class="currencySection" placement="top-left">
-                <label class="fontText colorGrey" text="Currency:"></label>
+                <label id="currencyCaption" class="fontText colorGrey" placement="top-left" style="display: block; height: 16px; width: 190px;" text="Currency:"></label>
                 <label class="tradeCurrencyName fontText colorWhite" placement="top-left" text="Gold Coin"></label>
             </div>
             <UIItem class="tradeCurrencyIcon iconBox sunkenBorder" placement="top-right" item-id="3031" item-count="100" always-show-count="false" />
