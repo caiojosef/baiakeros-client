@@ -45,6 +45,7 @@ const Color* getLocationLabelPalette(const std::string_view text)
     if (text == "QUESTS") return quests;
     if (text == "BOSS ISLAND") return bossIsland;
     if (text == "MINI BOSSES") return miniBosses;
+    if (text == "300+") return quests;
     return nullptr;
 }
 } // namespace
