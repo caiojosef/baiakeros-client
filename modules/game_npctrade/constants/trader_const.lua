@@ -11,7 +11,7 @@ controllerNpcTrader.BLACKLIST = 3
 -- UI LAYOUT CONSTANTS
 -- ==============================================================================================
 controllerNpcTrader.DEFAULT_CONSOLE_WIDTH = 395
-controllerNpcTrader.TRADE_CONSOLE_WIDTH = 670
+controllerNpcTrader.TRADE_CONSOLE_WIDTH = 720
 
 -- ==============================================================================================
 -- VIRTUAL SCROLLING CONSTANTS

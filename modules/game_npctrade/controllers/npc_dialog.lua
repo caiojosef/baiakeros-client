@@ -94,6 +94,22 @@ function controllerNpcTrader:resolveNpcCreature(name, creature, position)
     end
 end
 
+-- HTML labels update glyph metrics asynchronously. Measure with a temporary
+-- non-HTML widget so long captions are fitted before their first painted frame.
+function controllerNpcTrader:fitNpcText(text, width)
+    local measure = UIWidget.create()
+    measure:setFont("verdana-11px-monochrome")
+    local shown, limit = text, #text
+    measure:setText(shown)
+    while measure:getTextSize().width > width and limit > 3 do
+        limit = limit - 1
+        shown = short_text(text, limit)
+        measure:setText(shown)
+    end
+    measure:destroy()
+    return shown
+end
+
 function controllerNpcTrader:updateNpcIdentity(name, creature, position)
     if not validNpcName(name) and creature then name = creature:getName() end
     if not validNpcName(name) then name = self.creatureName end
@@ -108,9 +124,11 @@ function controllerNpcTrader:updateNpcIdentity(name, creature, position)
         self.outfit = npc:getOutfit()
     end
     self.creatureName = validNpcName(name) and name or "NPC"
+    self.npcDisplayName = self.creatureName
     local label = self:findWidget("#npcName")
     if label then
-        label:setText(short_text(self.creatureName, 30))
+        self.npcDisplayName = self:fitNpcText(self.creatureName, 232)
+        label:setText(self.npcDisplayName)
         label:setTooltip(self.creatureName)
     end
     local portrait = self:findWidget("#creatureOutfit")
@@ -119,7 +137,21 @@ function controllerNpcTrader:updateNpcIdentity(name, creature, position)
     if portrait then
         portrait:setImageSource("")
         portrait:setVisible(hasOutfit)
-        if hasOutfit then portrait:setOutfit(self.outfit) end
+        if hasOutfit then
+            portrait:setOutfit(self.outfit)
+            portrait:setCenter(true)
+            -- Creature previews use a two-tile framebuffer. Scale its visible
+            -- sprite, rather than just making the surrounding widget bigger.
+            local nativeSize = math.max(32, portrait:getCreature():getExactSize(0, 0, 0, 0, 0))
+            if self.outfit.type and self.outfit.type > 0 then
+                local appearance = g_things.getThingType(self.outfit.type, ThingCategoryCreature)
+                if appearance then nativeSize = math.max(nativeSize, appearance:getRealSize()) end
+            end
+            local zoom = math.max(76, math.min(152, math.floor(76 * 64 / nativeSize)))
+            portrait:setCreatureSize(zoom)
+            portrait:setMarginLeft(math.floor((88 - zoom) / 2))
+            portrait:setMarginTop(math.floor((88 - zoom) / 2))
+        end
     end
     if fallback then fallback:setVisible(not hasOutfit) end
     local buffer = self:findWidget("#consoleBuffer")
@@ -192,6 +224,17 @@ function controllerNpcTrader:setupWindowDragBehavior()
     end
 end
 
+function controllerNpcTrader:onDialogButtonsRendered()
+    -- The flex children acquire their final rectangles after the HTML loop.
+    scheduleEvent(function()
+        local panel = self:findWidget("#panelBotons")
+        if panel and panel.verticalScrollBar then
+            panel:getLayout():setNumColumns(self.dialogButtonsScroll and 13 or 14)
+            panel:updateScrollBars()
+        end
+    end, 50)
+end
+
 function controllerNpcTrader:initNpcWindow(creature, buttons, npcName)
     if self:isLegacyMode() then
         return
@@ -201,9 +244,17 @@ function controllerNpcTrader:initNpcWindow(creature, buttons, npcName)
     self.isTradeOpen = false
     self:updateNpcIdentity(npcName, creature)
     self.buttons = buttons or self.buttons or self.buttonsDefault
+    local buttonCount = #(self.buttons or {})
+    self.dialogButtonsHeight = math.min(84, math.max(28, math.ceil(buttonCount / 14) * 28))
+    self.dialogButtonsScroll = buttonCount > 42
+    self.dialogConsoleHeight = 298 - self.dialogButtonsHeight
     self:updateChatButton()
     if not self.ui or not self.ui:isVisible() then
         self:loadHtml('templates/game_npctrader.html')
+    end
+    local keywordPanel = self:findWidget("#panelBotons")
+    if keywordPanel then
+        keywordPanel:mergeStyle({ overflow = self.dialogButtonsScroll and "scroll" or "hidden" })
     end
     self:setupWindowDragBehavior()
     self:updateNpcIdentity(self.creatureName, creature)
