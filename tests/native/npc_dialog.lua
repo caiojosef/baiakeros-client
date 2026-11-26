@@ -1,4 +1,4 @@
--- Use only in a fresh disposable --user-dir; do not use a personal profile.
+-- Run only in a disposable --user-dir, never a personal profile.
 pcall(function()g_window.hide()end)
 local report={cases={},rects={}}
 local function case(name,fn)local ok,err=xpcall(fn,debug.traceback);report.cases[#report.cases+1]={name=name,passed=ok,error=not ok and tostring(err)or nil}end
@@ -10,7 +10,7 @@ scheduleEvent(function()
   local c=modules.game_npctrade.controllerNpcTrader
   c.legacyMode=false;c.playerMoney=19187881
   c.getSellQuantity=function()return 92 end
-  c.refreshPlayerGoods=function(self)local w=self:findWidget('#playerMoneyDisplay');if w then w:setText('19187881')end end
+
 
   local activeNpc = 'Rashid'
   local outfits = {Rashid={type=146,head=0,body=101,legs=122,feet=115},Galuna={type=138,head=78,body=69,legs=58,feet=76},
@@ -49,7 +49,7 @@ scheduleEvent(function()
    local good,msg=xpcall(function()
     case('window reserves the complete trading panel',function()
      rect('#windowTrader')
-     assert(c.ui:getWidth()==670 and c.ui:getHeight()==440,'window size');within('.rightPanel','#windowTrader');within('.tradeFooter','.rightPanel');within('#tradeListScroll','.rightPanel')
+     assert(c.ui:getWidth()==720 and c.ui:getHeight()==480,'window size');within('.rightPanel','#windowTrader');within('.tradeFooter','.rightPanel');within('#tradeListScroll','.rightPanel')
     end)
     case('all three tabs fit with complete captions',function()
      for _,s in ipairs({'#tabBuy','#tabSell','#tabBlacklist'})do within(s,'.tradeHeader');textFits(s)end
@@ -80,9 +80,9 @@ scheduleEvent(function()
      assert(header:getText():find('talking to Rashid',1,true) and not header:getText():find('Unknown',1,true))
     end)
     case('portrait and name fit above the transcript',function()
-     for _,s in ipairs({'#npcName','#creatureOutfit','.podium'})do within(s,'.leftPanel');separate(s,'#consoleBuffer')end
-     separate('#npcName','#creatureOutfit');textFits('#npcName')
-     within('#npcName','#npcBanner');within('#creatureOutfit','.podium')
+     for _,s in ipairs({'#npcName','#npcPortraitViewport','.podium'})do within(s,'.leftPanel');separate(s,'#consoleBuffer')end
+     separate('#npcName','#npcPortraitViewport');textFits('#npcName')
+     within('#npcName','#npcBanner');within('#npcPortraitViewport','.podium');within('#npcPortraitViewport','.leftPanel')
     end)
     case('all commands have normal readable centered text',function()
      for _,s in ipairs({'#tabBuy','#tabSell','#tabBlacklist','#toggleButton','#rashidSellAllButton','#rashidCancelSellButton'})do
@@ -130,6 +130,23 @@ scheduleEvent(function()
       assert(widget('#consoleBuffer'):getChildByIndex(1):getText():find('talking to '..name,1,true),name..' conversation header')
      end
     end)
+
+    case('portrait is visibly enlarged and safely clipped to its frame',function()
+     local portrait=widget('#creatureOutfit')
+     assert(portrait:getCreatureSize()>=76 and portrait:isCentered(),'sprite not enlarged/centered')
+     assert(widget('#npcPortraitViewport'):getWidth()==88 and widget('.podium'):getWidth()==96)
+     within('#npcPortraitViewport','.podium')
+    end)
+    case('left and right bottom controls share the same baseline',function()
+     assert(widget('#chatModeButton'):getY()==widget('#toggleButton'):getY(),'action baseline differs')
+     assert(widget('#chatInput'):getY()==widget('#toggleButton'):getY(),'input baseline differs')
+    end)
+    case('item tooltips preserve full names prices and weights',function()
+     c:onOpenNpcTrade({{Item.create(3280),'a remarkably long and elaborate equipment name',5678,123456789,123456789}},3031,'Gold Coin','Rashid')
+     local item=c.buyItems[1]
+     local text=c:getTradeItemTooltip(item)
+     assert(text:find(item.name,1,true) and text:find('123,456,789',1,true) and text:find('56.78',1,true))
+    end)
     case('long NPC name is bounded and preserves full tooltip',function()
      local name='An Incredibly Long Named Travelling Equipment Merchant'
      c:updateNpcIdentity(name,npc(name,900))
@@ -155,10 +172,10 @@ scheduleEvent(function()
       local w=widget(s);report.finalRects[s]={rect=w:getRect(),marginTop=w:getMarginTop(),marginBottom=w:getMarginBottom(),height=w:getHeight(),text=w:getText()}
      end
      save();g_app.doScreenshot('/npc-dialog-preview.png')
-    end,100)
+    end,600)
    end,debug.traceback)
    if not good then report.setupError=tostring(msg)end
-   save();scheduleEvent(function()g_app.exit()end,300)
+   save();scheduleEvent(function()g_app.exit()end,1000)
   end,600)
  end,debug.traceback)
  if not ok then report.setupError=tostring(err);save();g_app.exit()end

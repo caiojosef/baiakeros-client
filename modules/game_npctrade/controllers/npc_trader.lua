@@ -289,6 +289,15 @@ function controllerNpcTrader:getRowItem(child)
     return (child.__for_values and child.__for_values[1]) or child.tradeItem
 end
 
+function controllerNpcTrader:getTradeItemTooltip(item)
+    return string.format("%s\nPrice: %s %s\nWeight: %.2f oz", item.name, comma_value(item.price), self.currencyName or "", item.weight)
+end
+
+local function fitTradeText(label, text)
+    local width = label:getWidth()
+    label:setText(controllerNpcTrader:fitNpcText(text, math.min(width > 0 and width or 210, 210)))
+end
+
 function controllerNpcTrader:onTradeListRendered()
     local list = self:findWidget("#tradeListScroll")
     if list then
@@ -310,9 +319,13 @@ function controllerNpcTrader:onTradeListRendered()
                     local infoLabel = infoBlock:getChildById("infoLabel")
                     if nameLabel then
                         nameLabel:setColor(color)
+                        nameLabel:setTooltip(self:getTradeItemTooltip(item))
+                        fitTradeText(nameLabel, item.name)
                     end
                     if infoLabel then
                         infoLabel:setColor(color)
+                        infoLabel:setTooltip(self:getTradeItemTooltip(item))
+                        fitTradeText(infoLabel, string.format("Price %s, %.2f oz", comma_value(item.price), item.weight))
                     end
                 end
 
@@ -593,7 +606,7 @@ function controllerNpcTrader:refreshPlayerGoods(skipFilter)
     local money = self:getPlayerMoney()
     local display = self:findWidget("#playerMoneyDisplay")
     if display then
-        display:setText(tostring(money))
+        display:setText(comma_value(money))
     end
     if not skipFilter and self.tradeMode == controllerNpcTrader.SELL then
         self:filterTradeList(self.searchText or "")
