@@ -275,7 +275,8 @@ function controllerNpcTrader:onTradeScroll(widget, offset)
     local viewportHeight = widget:getHeight()
     local maxScroll = math.max(0, contentHeight - viewportHeight)
     local value = offset.y
-    if value >= maxScroll - controllerNpcTrader.SCROLL_THRESHOLD then
+    local preloadDistance = math.max(viewportHeight, controllerNpcTrader.SCROLL_THRESHOLD)
+    if value >= maxScroll - preloadDistance then
         self:loadNextBatch()
     end
 end

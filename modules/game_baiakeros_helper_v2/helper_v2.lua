@@ -203,7 +203,51 @@ function showHelperV2Tab(tabName)
     if PARTY_HUNT_ENABLED and tabName == 'party' and g_game.isOnline() and PartyHuntV2 then PartyHuntV2.refresh() end
 end
 
+local function paidSupplies()
+    local helper = modules.game_baiakeros_helper
+    return helper and helper.PaidSupplies
+end
+
+function refreshPaidSupplies()
+    if not helperV2Window or not paidSupplies() then return end
+    local vip, enabled = paidSupplies().state()
+    local box = helperV2Window:recursiveGetChildById('v2PaidSuppliesBox')
+    local button = helperV2Window:recursiveGetChildById('v2PaidSuppliesVip')
+    local hint = helperV2Window:recursiveGetChildById('v2PaidSuppliesHint')
+    box:setVisible(vip ~= nil)
+    box:setEnabled(vip == true)
+    if box:isChecked() ~= enabled then
+        box.refreshing = true
+        box:setChecked(enabled)
+        box.refreshing = false
+    end
+    hint:setVisible(vip ~= nil)
+    button:setVisible(vip == false)
+end
+
+local function openVipStore()
+    if not modules.game_store then return end
+    local store = modules.game_store
+    store.show()
+    local function selectVip(attempt)
+        if not g_game.isOnline() then return end
+        local ui = store.getUI()
+        if not ui or not ui:isVisible() then return end
+        local categories = ui:recursiveGetChildById('listCategory')
+        local vip = categories and categories:getChildById('VIP Time')
+        if vip and vip.Button then
+            vip.Button:onClick()
+        elseif attempt < 12 then
+            scheduleEvent(function() selectVip(attempt + 1) end, 250)
+        else
+            g_game.requestStoreOffers('VIP Time', '', 0, 1)
+        end
+    end
+    scheduleEvent(function() selectVip(1) end, 250)
+end
+
 function show()
+    if paidSupplies() and g_game.isOnline() then paidSupplies().sync() end
     if not helperV2Window or not g_game.isOnline() then return end
     if cavebotDetached then
         attachCavebot(true)
@@ -260,6 +304,12 @@ function init()
     g_ui.importStyle('healing')
     g_ui.importStyle('helper_v2')
     helperV2Window = g_ui.createWidget('BaiakerosHelperV2Window', rootWidget)
+    local suppliesBox = helperV2Window:recursiveGetChildById('v2PaidSuppliesBox')
+    suppliesBox.onCheckChange = function(widget, checked)
+        if not widget.refreshing and paidSupplies() then paidSupplies().setEnabled(checked) end
+    end
+    helperV2Window:recursiveGetChildById('v2PaidSuppliesVip').onClick = openVipStore
+    refreshPaidSupplies()
     cavebotFloatWindow = g_ui.createWidget('BaiakerosCavebotFloatWindow', rootWidget)
     cavebotPanel = helperV2Window:recursiveGetChildById('cavebotPanel')
     cavebotHomeParent = cavebotPanel:getParent()

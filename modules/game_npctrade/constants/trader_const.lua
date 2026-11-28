@@ -17,7 +17,7 @@ controllerNpcTrader.TRADE_CONSOLE_WIDTH = 720
 -- VIRTUAL SCROLLING CONSTANTS
 -- ==============================================================================================
 controllerNpcTrader.ITEM_BATCH_SIZE = 30
-controllerNpcTrader.ITEM_ROW_HEIGHT = 48
+controllerNpcTrader.ITEM_ROW_HEIGHT = 50
 controllerNpcTrader.SCROLL_THRESHOLD = 50
 
 -- ==============================================================================================

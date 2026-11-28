@@ -1778,11 +1778,35 @@ BaiakerosHelperV2Window < MainWindow
     anchors.bottom: closeButton.top
     margin-bottom: 10
 
-  Label
-    text: Baiakeros Helper
+  QtCheckBox
+    id: v2PaidSuppliesBox
+    image-rect: 0 3 14 14
+    text: Pagar poções e runas com ouro · VIP
+    size: 235 20
     anchors.left: parent.left
     anchors.bottom: parent.bottom
-    color: #888888
+    visible: false
+    !tooltip: tr('Marcado: usa ouro da mochila e completa com o banco. Desmarcado: usa os itens da mochila.')
+
+  Label
+    id: v2PaidSuppliesHint
+    text: VIPs usam poções e runas sem estocar. O ouro é descontado a cada uso.
+    size: 445 20
+    anchors.left: parent.left
+    margin-left: 250
+    anchors.bottom: parent.bottom
+    text-align: left
+    color: #c4b794
+    visible: false
+
+  Button
+    id: v2PaidSuppliesVip
+    text: Comprar VIP
+    size: 90 20
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-right: 56
+    visible: false
 
   Button
     id: closeButton

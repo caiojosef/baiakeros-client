@@ -9,6 +9,6 @@ Module
     - game_mainpanel
     - game_actionbar
     - client_options
-  scripts: [ helper ]
+  scripts: [ paid_supplies, helper ]
   @onLoad: init()
   @onUnload: terminate()

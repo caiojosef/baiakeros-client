@@ -31,7 +31,7 @@
     .borderGrey { border: 1 #444444; }
     .sunkenBorder { --border-width-top: 1; --border-color-top: #141414; --border-width-left: 1; --border-color-left: #141414; --border-width-bottom: 1; --border-color-bottom: #747474; --border-width-right: 1; --border-color-right: #747474; }
     .panelBase { width: 351px; display: block; margin-left: 14px; }
-    .windowBtn { width: 12px; height: 12px; --image-source: /images/ui/miniwindow_buttons; --image-size: 14 14; margin-top: 7px; }
+    .windowBtn { width: 12px; height: 12px; --image-source: /images/ui/miniwindow_buttons; --image-size: 14 14; }
 
     /* ==============================================================================================
        MAIN WINDOW & STRUCTURE
@@ -40,11 +40,11 @@
     .leftPanel { width: 395px; height: 480px; float: left; }
     .rightPanel { width: 300px; height: 448px; margin-top: 27px; margin-left: 9px; float: left; position: relative; }
     .verticalSep { height: 442px; margin-top: 26px; float: left; margin-left: 0px; }
-    .dragHandle { height: 27px; background-color: alpha; }
-    .closeButton { --image-clip: 28 0 14 14; margin-right: 10px; }
+    .dragHandle { height: 19px; margin-left: 3px; margin-top: 2px; background-color: #333333; --image-source: /images/ui/window_new; --image-clip: 4 3 248 11; --border-width-bottom: 1; --border-color-bottom: #232323; }
+    .closeButton { --image-clip: 28 0 14 14; margin-right: 7px; }
     .closeButton:hover { --image-clip: 28 14 14 14; }
     .closeButton:active { --image-clip: 28 28 14 14; }
-    .bottonOptions { --image-clip: 112 0 14 14; margin-right: 25px; }
+    .bottonOptions { --image-clip: 112 0 14 14; margin-right: 22px; }
     .bottonOptions:hover { --image-clip: 112 14 14 14; }
     .bottonOptions:active { --image-clip: 112 28 14 14; }
 
@@ -53,16 +53,16 @@
        ============================================================================================== */
     /* Header & Visuals */
     .img { display: block; width: 270px; height: 28px; margin-left: 108px; margin-top: 42px; }
-    .title { display: block; margin-left: 126px; margin-top: 48px; width: 232px; height: 18px; font: verdana-11px-monochrome; text-align: left; --text-wrap: false; }
-    .podium { display: block; width: 96px; height: 100px; margin-left: 12px; margin-top: 8px; }
-    .creature-display { display: block; width: 152px; height: 152px; margin-left: -32px; margin-top: -32px; --creature-center: true; }
+    .title { display: block; margin-left: 132px; margin-top: 44px; width: 226px; height: 18px; font: verdana-11px-monochrome; text-align: left; --text-wrap: false; }
+    .podium { display: block; width: 72px; height: 75px; margin-left: 22px; margin-top: 20px; }
+    .creature-display { display: block; width: 112px; height: 112px; margin-left: -24px; margin-top: -24px; --creature-center: true; }
 
-    .portrait-fallback { display: block; width: 56px; height: 56px; margin-left: 32px; margin-top: 28px; }
+    .portrait-fallback { display: block; width: 44px; height: 44px; margin-left: 36px; margin-top: 34px; }
 
-    .npcPortraitViewport { display: block; width: 88px; height: 88px; margin-left: 16px; margin-top: 12px; overflow: hidden; }
+    .npcPortraitViewport { display: block; width: 64px; height: 64px; margin-left: 26px; margin-top: 24px; overflow: hidden; }
 
     /* Chat & Console */
-    .panelConsole { margin-top: 120px; --image-border: 4; padding: 4; padding-right: 12; padding-left: 4; --image-source: /images/ui/3pixel_frame_borderimage; }
+    .panelConsole { margin-top: 108px; --image-border: 4; padding: 4; padding-right: 12; padding-left: 4; --image-source: /images/ui/3pixel_frame_borderimage; }
     .inputConsole { height: 22px; margin-bottom: 12px; display: inline-block; width: 287px; margin-left: 14px; --placeholder: "Type here to chat"; --placeholder-color: #909090; }
     .bottonChat { width: 70px; height: 22px; margin-left: 311px; margin-bottom: 12px; font: verdana-11px-monochrome; text-align: center; padding: 0; }
     
@@ -111,8 +111,8 @@
     .tradeRows { margin-left: 4px; margin-top: 36px; width: 244px; height: 54px; }
     .tradeRow { height: 18px; width: 244px; display: block; }
     .tradeFooterLabel { width: 55px; height: 18px;  margin-left: 0px; margin-top: 0px; }
-    .tradeFooterValue { display: block; width: 184px; height: 18px; margin-left: 60px; margin-top: 0px; text-align: right; }
-    .tradeFooterAmountInput { display: block; width: 184px; height: 18px; margin-left: 60px; margin-top: 0px; text-align: right; padding: 0; }
+    .tradeFooterValue { display: block; width: 177px; height: 18px; margin-left: 67px; margin-top: 0px; text-align: left; }
+    .tradeFooterAmountInput { display: block; width: 170px; height: 18px; margin-left: 60px; margin-top: 0px; text-align: left; padding: 0 7px; }
     .rashidSellAllButton { width: 80px; height: 22px;  margin-left: 4px; margin-bottom: 4px; padding: 0; }
     .rashidCancelSellButton { width: 72px; height: 22px;  margin-left: 90px; margin-bottom: 4px; padding: 0; }
     .rashidSellProgress { width: 292px; height: 14px; margin-left: 4px; margin-right: 4px; margin-top: 0px; background-color: #2f78c4; }
@@ -237,10 +237,10 @@
 
     </div>
 
-    <div id="dragHandle" class="dragHandle" placement="top-left" *width="self.widthConsole" focusable="false"></div>
-
-    <UIButton class="bottonOptions windowBtn" placement="top-right" *visible="self.isTradeOpen" onclick="self:onOptionsClick()"></UIButton>
-    <UIButton class="closeButton windowBtn" placement="top-right" onclick="self:onCloseNpcTrade()"></UIButton>
+    <div id="dragHandle" class="dragHandle" placement="top-left" *width="self.widthConsole - 6" focusable="false">
+        <UIButton class="bottonOptions windowBtn" placement="right-center" *visible="self.isTradeOpen" onclick="self:onOptionsClick()"></UIButton>
+        <UIButton class="closeButton windowBtn" placement="right-center" onclick="self:onCloseNpcTrade()"></UIButton>
+    </div>
 
 </uiwindow>
 

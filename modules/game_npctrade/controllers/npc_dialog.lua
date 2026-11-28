@@ -127,7 +127,7 @@ function controllerNpcTrader:updateNpcIdentity(name, creature, position)
     self.npcDisplayName = self.creatureName
     local label = self:findWidget("#npcName")
     if label then
-        self.npcDisplayName = self:fitNpcText(self.creatureName, 232)
+        self.npcDisplayName = self:fitNpcText(self.creatureName, 226)
         label:setText(self.npcDisplayName)
         label:setTooltip(self.creatureName)
     end
@@ -147,10 +147,10 @@ function controllerNpcTrader:updateNpcIdentity(name, creature, position)
                 local appearance = g_things.getThingType(self.outfit.type, ThingCategoryCreature)
                 if appearance then nativeSize = math.max(nativeSize, appearance:getRealSize()) end
             end
-            local zoom = math.max(76, math.min(152, math.floor(76 * 64 / nativeSize)))
+            local zoom = math.max(54, math.min(108, math.floor(54 * 64 / nativeSize)))
             portrait:setCreatureSize(zoom)
-            portrait:setMarginLeft(math.floor((88 - zoom) / 2))
-            portrait:setMarginTop(math.floor((88 - zoom) / 2))
+            portrait:setMarginLeft(math.floor((64 - zoom) / 2))
+            portrait:setMarginTop(math.floor((64 - zoom) / 2))
         end
     end
     if fallback then fallback:setVisible(not hasOutfit) end

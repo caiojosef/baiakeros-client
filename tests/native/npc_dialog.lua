@@ -131,10 +131,10 @@ scheduleEvent(function()
      end
     end)
 
-    case('portrait is visibly enlarged and safely clipped to its frame',function()
+    case('portrait is compact and safely clipped to its frame',function()
      local portrait=widget('#creatureOutfit')
-     assert(portrait:getCreatureSize()>=76 and portrait:isCentered(),'sprite not enlarged/centered')
-     assert(widget('#npcPortraitViewport'):getWidth()==88 and widget('.podium'):getWidth()==96)
+     assert(portrait:getCreatureSize()>=54 and portrait:getCreatureSize()<=108 and portrait:isCentered(),'sprite not compact/centered')
+     assert(widget('#npcPortraitViewport'):getWidth()==64 and widget('.podium'):getWidth()==72)
      within('#npcPortraitViewport','.podium')
     end)
     case('left and right bottom controls share the same baseline',function()

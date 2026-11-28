@@ -3582,9 +3582,7 @@ local function checkHealing()
         if now < nextPotionAt then return end
         local selected = getPotionCandidates(healthPercent, manaPercent, resource)[1]
         if selected then
-            -- Same path used by a "Use on yourself" item hotkey. The server
-            -- remains authoritative for vocation and level restrictions.
-            g_game.useInventoryItemWith(selected.potion.id, player, -1)
+            if not PaidSupplies.use(selected.potion.id, player) then return end
             nextPotionAt = now + POTION_COOLDOWN
             setStatus(string.format('%s %d%%  %s',
                 selected.resource == 'mana' and 'MP' or 'HP',
@@ -4231,9 +4229,10 @@ local function checkAttackRotation()
                 rune, monsters, playerPosition, target)
             if rune and (not singleTargetOnly or not rune.area) and
                 #affectedMonsters >= (slot.attackMinEnemies or 1) and target then
-                g_game.useInventoryItemWith(rune.id, target, -1)
-                guardSpellCommand(nil, 1, now)
-                return
+                if PaidSupplies.use(rune.id, target) then
+                    guardSpellCommand(nil, 1, now)
+                    return
+                end
             end
         end
     end
@@ -4909,6 +4908,7 @@ function showHelperTab(tabName)
 end
 
 local function online()
+    PaidSupplies.online()
     manualSpellPriorityUntil,manualItemPriorityUntil=0,0
     nextPotionAt = 0
     nextFriendHealingAt = 0
@@ -4967,6 +4967,7 @@ local function onLocalPlayerVocationChange(player, newVocation, oldVocation)
 end
 
 local function offline()
+    PaidSupplies.offline()
     manualSpellPriorityUntil,manualItemPriorityUntil=0,0
     cancelExtrasToggleReset()
     if attackPostureCastEvent then
@@ -5034,6 +5035,7 @@ function setHelperButtonOn(enabled)
 end
 
 function init()
+    PaidSupplies.init()
     g_ui.importStyle('helper')
     helperWindow = g_ui.createWidget('BaiakerosHelperWindow', rootWidget)
     -- Keep the old window for comparison while V2 owns all configuration input.
@@ -5406,6 +5408,7 @@ function init()
 end
 
 function terminate()
+    PaidSupplies.terminate()
     cancelExtrasToggleReset()
     unregisterHelperHotkeys()
     disconnect(g_game, {
